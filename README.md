@@ -1,6 +1,6 @@
 # Study Workspace
 
-A personal study workspace for the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
+A study workspace for an individual or a group working through the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
 
 This is where learner state lives: labs, exercises, notes, project work, and the progress/evidence log. The standard itself (course files, book maps, templates, scripts) lives in the OEE repository. This workspace references it and does not duplicate it.
 
