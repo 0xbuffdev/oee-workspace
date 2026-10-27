@@ -1,6 +1,6 @@
 # Labs
 
-Labs are where a course becomes evidence. Each lab answers **one concrete question** and leaves a runnable artifact, a measurement, or a diagnostic trace.
+Labs are where a course becomes evidence. Each lab answers one concrete question and leaves a runnable artifact, a measurement, or a diagnostic trace.
 
 ## Create a workspace
 

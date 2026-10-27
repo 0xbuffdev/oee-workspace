@@ -22,7 +22,7 @@ The script creates a matching directory under `labs/` and `exercises/` at the sa
 
 ### `resources.md`
 
-Record what you actually used, not what the course suggested:
+Record every resource you used:
 
 - exact book edition and chapter/section;
 - URL, access date, and whether it was free, purchased, or borrowed;
@@ -98,4 +98,4 @@ If recall fails, reopen the smallest section that explains the gap. Do not resta
 - Prefer diagrams and failure tables over long prose.
 - Link evidence by path or commit, not by "I did the lab".
 - Redact secrets, tokens, personal data, and sensitive logs.
-- Keep notes small enough to review. A 40-page summary is a archive, not a study aid.
+- Keep notes small enough to review. A 40-page summary is an archive, not a study aid.

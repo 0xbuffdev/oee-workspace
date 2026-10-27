@@ -1,0 +1,13 @@
+{
+  // Markdown lint for the workspace docs, matching the Open Engineering
+  // Education repository: long lines are deliberate (tables, link rows),
+  // and section names repeat across the per-directory READMEs.
+  "globs": ["**/*.md"],
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD024": { "siblings_only": true },
+    "MD033": false,
+    "MD034": false
+  }
+}

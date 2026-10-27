@@ -1,6 +1,6 @@
-# Progress and evidence log
+# Progress and Evidence Log
 
-This is the evidence log, not a reading checklist. It belongs to your study workspace, not to the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education); course links below point into that repository. Mark a course complete only when its exit check is demonstrable and the summary links to the committed artifact.
+This is the evidence log, not a reading checklist. It lives in your study workspace; the course links below point into the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education). Mark a course complete only when its exit check is demonstrable and the summary links to the committed artifact.
 
 ## Current focus
 
@@ -45,8 +45,8 @@ Update this table at the start of each week. Do not keep more than one active co
 | S13 | [AI Infrastructure (Systems Lens)](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S13-ai-infrastructure-systems-lens.md) | [ ] | [ ] | |
 | S14 | [Containers, Virtualization & Cloud Operations](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S14-containers-virtualization-and-cloud-operations.md) | [ ] | [ ] | |
 | S15 | [Reliability, Incident Response & SRE](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S15-reliability-incident-response-and-sre.md) | [ ] | [ ] | |
-| S16 | [Networking & Protocols Deep Dive](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S16-networking-and-protocols-deep-dive.md) — elective | [ ] | [ ] | |
-| S17 | [Compilers & Language Runtimes](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S17-compilers-and-language-runtimes.md) — elective | [ ] | [ ] | |
+| S16 | [Networking & Protocols Deep Dive](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S16-networking-and-protocols-deep-dive.md) (elective) | [ ] | [ ] | |
+| S17 | [Compilers & Language Runtimes](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/systems/S17-compilers-and-language-runtimes.md) (elective) | [ ] | [ ] | |
 
 ## AI & Machine Learning
 
@@ -65,12 +65,12 @@ Update this table at the start of each week. Do not keep more than one active co
 | AI11 | [MLOps & Production Deployment](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI11-mlops-and-production-deployment.md) | [ ] | [ ] | |
 | AI12 | [Responsible AI, Safety & Governance](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI12-responsible-ai-safety-and-governance.md) | [ ] | [ ] | |
 | AI13 | [Data Engineering for ML](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI13-data-engineering-for-ml.md) | [ ] | [ ] | |
-| AI14 | [Generative & Multimodal Models](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI14-generative-and-multimodal-models.md) — elective | [ ] | [ ] | |
-| AI15 | [Reinforcement Learning & RLHF](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI15-reinforcement-learning-and-rlhf.md) — elective | [ ] | [ ] | |
-| AI16 | [GPU Programming & Kernels](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI16-gpu-programming-and-kernels.md) — elective | [ ] | [ ] | |
-| AI17 | [Causal Inference & Experimentation](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI17-causal-inference-and-experimentation.md) — elective | [ ] | [ ] | |
-| AI18 | [Recommender Systems & Ranking](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI18-recommender-systems-and-ranking.md) — elective | [ ] | [ ] | |
-| AI19 | [Time Series & Forecasting](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI19-time-series-and-forecasting.md) — elective | [ ] | [ ] | |
+| AI14 | [Generative & Multimodal Models](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI14-generative-and-multimodal-models.md) (elective) | [ ] | [ ] | |
+| AI15 | [Reinforcement Learning & RLHF](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI15-reinforcement-learning-and-rlhf.md) (elective) | [ ] | [ ] | |
+| AI16 | [GPU Programming & Kernels](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI16-gpu-programming-and-kernels.md) (elective) | [ ] | [ ] | |
+| AI17 | [Causal Inference & Experimentation](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI17-causal-inference-and-experimentation.md) (elective) | [ ] | [ ] | |
+| AI18 | [Recommender Systems & Ranking](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI18-recommender-systems-and-ranking.md) (elective) | [ ] | [ ] | |
+| AI19 | [Time Series & Forecasting](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/ai/AI19-time-series-and-forecasting.md) (elective) | [ ] | [ ] | |
 
 ## Security Engineering
 
@@ -81,15 +81,15 @@ Update this table at the start of each week. Do not keep more than one active co
 | D3 | [Network & Web Application Security](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D3-network-and-web-application-security.md) | [ ] | [ ] | |
 | D4 | [Systems & Infrastructure Penetration Testing](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D4-systems-and-infrastructure-penetration-testing.md) | [ ] | [ ] | |
 | D5 | [Applied Cryptography & Secure Systems Design](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D5-applied-cryptography-and-secure-systems-design.md) | [ ] | [ ] | |
-| D6 | [AI Security & Red Teaming](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D6-ai-security-and-red-teaming.md) — elective | [ ] | [ ] | |
+| D6 | [AI Security & Red Teaming](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D6-ai-security-and-red-teaming.md) (elective) | [ ] | [ ] | |
 | D7 | [Detection, Incident Response & Forensics](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D7-detection-incident-response-and-forensics.md) | [ ] | [ ] | |
 | D8 | [Cloud, Container & Kubernetes Security](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D8-cloud-container-and-kubernetes-security.md) | [ ] | [ ] | |
 | D9 | [Secure SDLC, AppSec & Supply Chain](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D9-secure-sdlc-appsec-and-supply-chain.md) | [ ] | [ ] | |
 | D10 | [Privacy, Compliance & Governance](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D10-privacy-compliance-and-governance.md) | [ ] | [ ] | |
-| D11 | [Reverse Engineering & Malware Analysis](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D11-reverse-engineering-and-malware-analysis.md) — elective | [ ] | [ ] | |
-| D12 | [Hardware, Embedded & IoT Security](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D12-hardware-embedded-and-iot-security.md) — elective | [ ] | [ ] | |
-| D13 | [Mobile Application Security](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D13-mobile-application-security.md) — elective | [ ] | [ ] | |
-| D14 | [Red Team Operations & Adversary Emulation](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D14-red-team-operations-and-adversary-emulation.md) — elective | [ ] | [ ] | |
+| D11 | [Reverse Engineering & Malware Analysis](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D11-reverse-engineering-and-malware-analysis.md) (elective) | [ ] | [ ] | |
+| D12 | [Hardware, Embedded & IoT Security](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D12-hardware-embedded-and-iot-security.md) (elective) | [ ] | [ ] | |
+| D13 | [Mobile Application Security](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D13-mobile-application-security.md) (elective) | [ ] | [ ] | |
+| D14 | [Red Team Operations & Adversary Emulation](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/security/D14-red-team-operations-and-adversary-emulation.md) (elective) | [ ] | [ ] | |
 
 ## Project ladder
 

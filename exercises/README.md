@@ -44,7 +44,7 @@ For every implementation:
 - record one mistake or trade-off;
 - make the code runnable with one command.
 
-Do not copy a solution without reproducing it from memory later. A copied exercise is not evidence.
+Do not copy a solution unless you can reproduce it from memory later. A copied exercise is not evidence.
 
 ## Rules for security exercises
 

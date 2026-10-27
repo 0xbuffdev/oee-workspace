@@ -2,11 +2,11 @@
 
 A personal study workspace for the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
 
-This is where learner state lives: labs, exercises, notes, project work, and the progress/evidence log. The standard itself — course files, book maps, templates, scripts — lives in the OEE repository. This workspace references it and does not duplicate it.
+This is where learner state lives: labs, exercises, notes, project work, and the progress/evidence log. The standard itself (course files, book maps, templates, scripts) lives in the OEE repository. This workspace references it and does not duplicate it.
 
 ## Why a separate repository
 
-OEE ships templates only. Your work is yours: experiments, answers, notes, projects, and the evidence log must not be committed to the standard's repository.
+OEE ships templates only. Experiments, answers, notes, projects, and the evidence log must not be committed to the standard's repository.
 
 ## Setup
 
