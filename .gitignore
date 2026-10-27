@@ -1,0 +1,76 @@
+# Local reference library. Legal copies only; never commit books or scans.
+books/
+*.epub
+*.mobi
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+.ssh/
+.kubeconfig
+kubeconfig*
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Rust and native builds
+target/
+*.o
+*.so
+*.a
+build/
+dist/
+
+# Node tooling
+node_modules/
+
+# Datasets, model weights, checkpoints, and generated runs
+data/
+datasets/
+artifacts/
+models/
+checkpoints/
+runs/
+wandb/
+mlruns/
+*.safetensors
+*.gguf
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.parquet
+*.arrow
+*.h5
+*.pkl
+
+# Captures
+*.pcap
+*.pcapng
+
+# Infrastructure state
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Logs, caches, and editor/OS noise
+*.log
+.cache/
+tmp/
+.DS_Store
+.idea/
+.vscode/
+*.swp
