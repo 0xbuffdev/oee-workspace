@@ -1,56 +1,94 @@
-# Portfolio Projects
+# Projects and portfolio
 
-Projects are where courses become evidence. The full briefs, gates, milestones, and acceptance criteria live in the curriculum:
+Projects integrate engineering concepts into systems that can be built, tested, evaluated, and reviewed. They should provide evidence of design judgment and implementation ability, and go beyond showing that something runs.
 
-- [Project ladder: P1–P11](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/project-ladder.md)
-- [Capstones: C1–C4](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/capstones.md)
-- [Portfolio guide](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/portfolio-guide.md)
+The canonical project briefs, prerequisite gates, milestones, and acceptance criteria are maintained in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/projects).
 
-Do not start a project because the name sounds impressive. Start it when the stated gate is passed and the prerequisite labs are complete.
+## Create a project workspace
 
-## Create a workspace
+From the root of your OEE Workspace checkout, run a project generator:
 
 ```bash
-../open-engineering-education/scripts/new-project-workspace ledgerlab
-../open-engineering-education/scripts/new-project-workspace workbenchd
-../open-engineering-education/scripts/new-project-workspace c1-resilient-backend-platform
+./scripts/new-project-workspace ledgerlab
 ```
 
-The script validates the project name and creates:
+You can specify a different destination:
+
+```bash
+./scripts/new-project-workspace ledgerlab /path/to/workspace
+```
+
+The generator validates the project slug against its supported list and creates a project directory containing a README and technical documents.
+
+The example uses the currently published project catalogue. Project names and prerequisite gates must remain aligned with the canonical curriculum.
+
+## Suggested structure
 
 ```text
-projects/<slug>/
+projects/<project-slug>/
   README.md
   BRIEF.md
   docs/
     design.md
     evaluation.md
     retrospective.md
+    authorization.md
 ```
 
-The brief stays canonical in `curriculum/projects/`; the workspace is your implementation and evidence. For security work, add an authorization/scope record before collecting any evidence.
+The authorization record is required for projects that involve security testing or another activity requiring explicit permission. The generator creates it for the security projects it currently recognizes.
 
-## Rules
+## Before implementation
 
-1. **Gate first.** A project begun before its prerequisites becomes tutorial copying.
-2. **One project at a time.** Small increments are fine; parallel half-built systems are not.
-3. **Evidence over demo.** Every claim needs a test, benchmark, trace, or reproducible command.
-4. **Failure is part of the deliverable.** Include one broken case, one wrong assumption, and one correction.
-5. **Security boundary.** Networked, AI, and security projects need a threat model and an authorization note. Test only systems you own or are explicitly authorized to test.
-6. **No secrets, private data, weights, or copyrighted books in Git.** Use synthetic fixtures and documented downloads.
-7. **Clean-checkout test.** A reviewer must be able to run the minimal demo and evaluation from a fresh clone.
+1. Read the canonical project brief.
+2. Confirm that the stated prerequisites have been met.
+3. Define the problem, intended users, scope, and explicit non-goals.
+4. Record important design decisions and constraints.
+5. Identify relevant failure modes and evaluation criteria.
+6. Establish data, access, and authorization boundaries where applicable.
+
+Do not begin a gated project until its entry requirements have been met. A project begun before its prerequisites becomes tutorial copying.
+
+## Engineering expectations
+
+### Correctness
+
+Test normal behavior, boundary conditions, invalid inputs, and relevant failure cases. Explain what each test establishes and what it does not.
+
+### Reproducibility
+
+Document setup, build, test, demo, evaluation, and teardown commands as applicable. A reviewer should be able to reproduce the minimum useful result from a clean checkout.
+
+### Design
+
+Record the architecture, component responsibilities, interfaces, important trade-offs, and rejected alternatives. Explain why the chosen approach fits the problem and where it may fail.
+
+### Evaluation
+
+State the claim being tested and the acceptance criteria before recording results. Include the baseline, method, relevant environment, observed results, and limitations.
+
+### Security and privacy
+
+Projects that process sensitive data, use networks, or invoke AI tools should document relevant trust boundaries and risks.
+
+Security testing must remain within systems you own or are explicitly authorized to test. Record the authorized scope and stop conditions before testing. Keep sensitive authorization records outside public version control and commit only a suitable sanitized record.
 
 ## Definition of done
 
-- [ ] README with problem, scope, setup, commands, and limitations.
-- [ ] Tests for normal, boundary, invalid, and failure cases.
-- [ ] Reproducible evaluation, benchmark, or threat-model verification.
-- [ ] Design doc with decisions and trade-offs.
-- [ ] Threat model and authorization note where relevant.
-- [ ] One significant failure and the evidence that changed the design.
-- [ ] Retrospective with next steps.
-- [ ] Clean-checkout reproduction.
+- Problem, scope, and non-goals are documented.
+- Relevant prerequisites have been met.
+- The minimal artifact runs from a clean checkout.
+- Tests cover normal, boundary, invalid, and failure cases where relevant.
+- Design decisions and trade-offs are documented.
+- Evaluation results can be reproduced.
+- Material limitations are clearly stated.
+- A significant failure, correction, or rejected approach is documented.
+- Required authorization and safety records are in place.
+- The retrospective identifies lessons and next steps.
 
-## Portfolio
+A project's completion claim must be supported by the evidence required in its canonical brief.
 
-Not every project belongs on a CV. Choose two or three deep artifacts and write case studies that explain the problem, the design, the measurement, the failure, and the limitation. See the [portfolio guide](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/portfolio-guide.md).
+## Portfolio presentation
+
+Choose projects that demonstrate meaningful engineering depth. A case study should explain the problem, design, implementation, evaluation, trade-offs, failure analysis, and limitations.
+
+Avoid making claims that the included evidence cannot substantiate. See the [portfolio guide](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/portfolio-guide.md) for what belongs in a portfolio.

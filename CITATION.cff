@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use or adapt OEE Workspace, cite this repository."
+title: "OEE Learner Workspace"
+type: software
+authors:
+  - name: "0xBUFF"
+repository-code: "https://github.com/0xbuffdev/oee-workspace"

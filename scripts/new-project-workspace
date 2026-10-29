@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: new-project-workspace <project-slug> [workspace-dir]
+
+Creates a project workspace using templates from oee-workspace and validates
+the project's canonical brief against a local OEE checkout.
+
+Environment:
+  OEE_REPO                Path to the local OEE repository.
+  OEE_WORKSPACE           Default destination for generated files.
+  OEE_CURRICULUM_URL      Base URL for OEE project links.
+
+By default, OEE_REPO is ../open-engineering-education relative to this
+workspace repository.
+
+Current project slugs:
+  ledgerlab
+  sysprobe
+  cachebench
+  workbenchd
+  minikv
+  raftkv
+  signal-score
+  tinygpt
+  doc-compass
+  secure-review
+  authorized-assessment
+  c1-resilient-backend-platform
+  c2-distributed-storage-service
+  c3-evaluated-ai-assistant
+  c4-authorized-security-assessment
+EOF
+}
+
+if [[ "$#" -lt 1 || "$#" -gt 2 ]]; then
+  usage
+  exit 64
+fi
+
+project="$1"
+
+case "$project" in
+  ledgerlab)
+    project_title="P1 — ledgerlab"
+    brief_fragment="#p1--ledgerlab"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  sysprobe)
+    project_title="P2 — sysprobe"
+    brief_fragment="#p2--sysprobe"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  cachebench)
+    project_title="P3 — cachebench"
+    brief_fragment="#p3--cachebench"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  workbenchd)
+    project_title="P4 — workbenchd"
+    brief_fragment="#p4--workbenchd"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  minikv)
+    project_title="P5 — minikv"
+    brief_fragment="#p5--minikv"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  raftkv)
+    project_title="P6 — raftkv"
+    brief_fragment="#p6--raftkv"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  signal-score)
+    project_title="P7 — signal-score"
+    brief_fragment="#p7--signal-score"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  tinygpt)
+    project_title="P8 — tinygpt"
+    brief_fragment="#p8--tinygpt"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  doc-compass)
+    project_title="P9 — doc-compass"
+    brief_fragment="#p9--doc-compass"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=0
+    ;;
+  secure-review)
+    project_title="P10 — secure-review"
+    brief_fragment="#p10--secure-review"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=1
+    ;;
+  authorized-assessment)
+    project_title="P11 — authorized-assessment"
+    brief_fragment="#p11--authorized-assessment"
+    brief_doc="curriculum/projects/project-ladder.md"
+    security=1
+    ;;
+  c1-resilient-backend-platform)
+    project_title="C1 — Resilient Backend Platform"
+    brief_fragment="#c1--resilient-backend-platform"
+    brief_doc="curriculum/projects/capstones.md"
+    security=0
+    ;;
+  c2-distributed-storage-service)
+    project_title="C2 — Distributed Storage Service"
+    brief_fragment="#c2--distributed-storage-service"
+    brief_doc="curriculum/projects/capstones.md"
+    security=0
+    ;;
+  c3-evaluated-ai-assistant)
+    project_title="C3 — Evaluated AI Assistant"
+    brief_fragment="#c3--evaluated-ai-assistant"
+    brief_doc="curriculum/projects/capstones.md"
+    security=0
+    ;;
+  c4-authorized-security-assessment)
+    project_title="C4 — Authorized Security Assessment"
+    brief_fragment="#c4--authorized-security-assessment"
+    brief_doc="curriculum/projects/capstones.md"
+    security=1
+    ;;
+  *)
+    echo "Unknown project: $project" >&2
+    usage
+    exit 64
+    ;;
+esac
+
+workspace_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+default_oee_repo="$(dirname "$workspace_repo_root")/open-engineering-education"
+oee_repo="${OEE_REPO:-$default_oee_repo}"
+
+if [[ ! -d "$oee_repo/curriculum/projects" ]]; then
+  echo "OEE project curriculum not found under: $oee_repo/curriculum/projects" >&2
+  echo "Set OEE_REPO to the root of your local OEE checkout." >&2
+  exit 1
+fi
+
+oee_repo="$(cd "$oee_repo" && pwd)"
+
+if [[ ! -f "$oee_repo/$brief_doc" ]]; then
+  echo "Canonical project brief not found: $oee_repo/$brief_doc" >&2
+  echo "Check the local OEE checkout and curriculum version." >&2
+  exit 1
+fi
+
+oee_url="${OEE_CURRICULUM_URL:-https://github.com/0xbuffdev/open-engineering-education/blob/main}"
+brief_link="$oee_url/$brief_doc$brief_fragment"
+
+workspace="${2:-${OEE_WORKSPACE:-.}}"
+
+if [[ ! -d "$workspace" ]]; then
+  echo "Workspace directory does not exist: $workspace" >&2
+  exit 1
+fi
+
+workspace="$(cd "$workspace" && pwd)"
+
+if [[ "$workspace" == "$oee_repo" ]]; then
+  echo "Refusing to create learner files inside the canonical OEE repository." >&2
+  echo "Run this from your own workspace or supply its directory." >&2
+  exit 1
+fi
+
+template_dir="$workspace_repo_root/templates/project-workspace"
+project_dir="$workspace/projects/$project"
+
+required_templates=(
+  "README.md"
+  "design.md"
+  "evaluation.md"
+  "retrospective.md"
+)
+
+if [[ "$security" -eq 1 ]]; then
+  required_templates+=("authorization.md")
+fi
+
+for template in "${required_templates[@]}"; do
+  if [[ ! -f "$template_dir/$template" ]]; then
+    echo "Required template not found: $template_dir/$template" >&2
+    exit 1
+  fi
+done
+
+if [[ -e "$project_dir" ]]; then
+  echo "Project workspace already exists: $project_dir" >&2
+  echo "Nothing has been overwritten." >&2
+  exit 1
+fi
+
+mkdir -p "$project_dir/docs"
+
+for template_and_destination in \
+  "README.md:$project_dir/README.md" \
+  "design.md:$project_dir/docs/design.md" \
+  "evaluation.md:$project_dir/docs/evaluation.md" \
+  "retrospective.md:$project_dir/docs/retrospective.md"; do
+
+  template="${template_and_destination%%:*}"
+  destination="${template_and_destination#*:}"
+
+  sed \
+    -e "s|<project_title>|$project_title|g" \
+    -e "s|<brief_link>|$brief_link|g" \
+    "$template_dir/$template" > "$destination"
+done
+
+if [[ "$security" -eq 1 ]]; then
+  sed \
+    -e "s|<project_title>|$project_title|g" \
+    "$template_dir/authorization.md" > "$project_dir/docs/authorization.md"
+fi
+
+cat > "$project_dir/BRIEF.md" <<EOF
+# $project_title project workspace
+
+The canonical brief, prerequisites, milestones, and acceptance criteria
+are maintained in the OEE curriculum:
+
+- [$project_title]($brief_link)
+
+Read the canonical brief before writing code. Record the evidence required
+to satisfy the project gate in [../../progress.md](../../progress.md)
+before beginning implementation.
+EOF
+
+echo "Created project workspace in $workspace:"
+echo "  projects/$project/"
+echo "Canonical brief: $brief_link"
+
+if [[ "$security" -eq 1 ]]; then
+  echo "Security requirement: complete docs/authorization.md before testing."
+fi

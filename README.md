@@ -1,74 +1,161 @@
-# Study Workspace
+# OEE Learner Workspace
 
-A study workspace for an individual or a group working through the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
+A reusable workspace for individuals and groups studying the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
 
-This is where learner state lives: labs, exercises, notes, project work, and the progress/evidence log. The standard itself (course files, book maps, templates, scripts) lives in the OEE repository. This workspace references it and does not duplicate it.
+OEE Workspace supports the full learning workflow. It provides templates and generation scripts for organizing practical work, while giving learners a consistent structure for their actual implementations, labs, exercises, notes, projects, and evidence records.
 
-## Why a separate repository
+The OEE repository remains the canonical source for the specification and curriculum. This workspace links to those definitions rather than maintaining independent copies of them.
 
-OEE ships templates only. Experiments, answers, notes, projects, and the evidence log must not be committed to the standard's repository.
+## Repository responsibilities
 
-## Setup
+| Repository | Responsibility |
+| --- | --- |
+| [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education) | Canonical specification, curriculum, course requirements, assessments, and project briefs |
+| [OEE Workspace](https://github.com/0xbuffdev/oee-workspace) | Workspace structure, templates, generation scripts, and conventions for learning and evidence |
+| Personal or group workspace derived from OEE Workspace | Actual implementations, labs, exercises, notes, project work, and progress/evidence records |
 
-Clone OEE next to this workspace. The examples below assume that:
+Use OEE Workspace as the baseline for your own learning environment. You may adapt its structure to your workflow, provided you preserve the references needed to identify the relevant OEE course or project.
+
+A personal or group workspace is where the learning work accumulates over time. It should contain the artifacts and records needed to demonstrate what was built, tested, understood, and improved.
+
+## Getting started
+
+### 1. Create your workspace copy
+
+Fork or copy this repository for your own use or for a group. You may keep your workspace public or private, depending on your needs.
+
+Do not commit personal work to the upstream starter repository. All content committed to a public repository is publicly visible.
+
+### 2. Clone the OEE repository
+
+The generation scripts validate course and project identifiers against a local OEE checkout. Keep both repositories in the same parent directory:
 
 ```bash
-cd ~/projects    # or wherever you keep your repositories
-git clone git@github.com:0xbuffdev/open-engineering-education.git
+mkdir -p ~/projects
+cd ~/projects
+
+git clone https://github.com/0xbuffdev/open-engineering-education.git
+git clone https://github.com/0xbuffdev/oee-workspace.git
+
+cd oee-workspace
 ```
 
-## Start a course
+If you use a fork or a different local location for OEE, set `OEE_REPO` to the path of that checkout. The default is a sibling directory named `open-engineering-education`.
 
-Run from the root of this workspace:
+### 3. Generate a course workspace
+
+Run the course generator from the root of your workspace copy:
 
 ```bash
-../open-engineering-education/scripts/new-course-workspace foundations F0
+./scripts/new-course-workspace foundations F0
 ```
 
-The script validates the course against the OEE curriculum and writes into the current directory:
+To write into another directory:
+
+```bash
+./scripts/new-course-workspace foundations F0 /path/to/workspace
+```
+
+You can also set a default destination:
+
+```bash
+OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace foundations F0
+```
+
+The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`.
+
+The examples use the currently published curriculum layout. Program names and course identifiers will be updated when the curriculum migration is completed.
+
+### 4. Generate a project workspace
+
+Use the project generator for a project defined by the OEE curriculum:
+
+```bash
+./scripts/new-project-workspace ledgerlab
+```
+
+To choose a destination:
+
+```bash
+./scripts/new-project-workspace ledgerlab /path/to/workspace
+```
+
+The generator creates the project's documentation structure and links back to its canonical OEE brief. It does not copy the canonical brief into the workspace as an independent source of truth.
+
+## Workspace structure
 
 ```text
-labs/<track>/<CODE>/README.md
-exercises/<track>/<CODE>/README.md
-notes/<track>/<CODE>/resources.md
-notes/<track>/<CODE>/summary.md
+oee-workspace/
+├── README.md
+├── progress.md
+├── labs/
+│   └── <program>/<COURSE_CODE>/
+├── exercises/
+│   └── <program>/<COURSE_CODE>/
+├── notes/
+│   └── <program>/<COURSE_CODE>/
+├── projects/
+│   └── <project-slug>/
+├── scripts/
+│   ├── new-course-workspace
+│   └── new-project-workspace
+└── templates/
+    ├── course-workspace/
+    ├── project-workspace/
+    └── progress.md
 ```
 
-To write somewhere else, pass a target directory or set `OEE_WORKSPACE`:
+The generated directories hold your own work. The templates describe the expected structure; they do not contain completed assignments.
 
-```bash
-../open-engineering-education/scripts/new-course-workspace foundations F0 /path/to/workspace
-OEE_WORKSPACE=/path/to/workspace ../open-engineering-education/scripts/new-course-workspace foundations F0
-```
+## What belongs in the workspace
 
-Do not create a workspace for a course you have not reached; an empty directory is not progress.
+Use the workspace to retain:
 
-## Start a project
+- Practical lab work and reproducible experiments.
+- Exercise implementations, tests, and written reasoning.
+- Course summaries and links to completion evidence.
+- Project implementations, design decisions, and evaluations.
+- Progress records that link to actual artifacts.
 
-```bash
-../open-engineering-education/scripts/new-project-workspace ledgerlab
-```
+A completion claim should be supported by inspectable evidence, not by a checked box alone.
 
-The briefs, gates, and acceptance criteria stay canonical in [curriculum/projects/](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/README.md). This repository holds your implementation and evidence. Start a project only when its gate is recorded in [progress.md](progress.md).
+## Evidence and reproducibility
 
-## Layout
+For work involving code or executable systems:
 
-```text
-labs/<track>/<CODE>/        experiments and implementation notes
-exercises/<track>/<CODE>/   drills, written answers, tests
-notes/<track>/<CODE>/       resource log, summary, retrospective
-projects/<slug>/            portfolio and capstone work
-progress.md                 completion and evidence log
-books/                      legal local copies only; ignored by Git
-```
+- Record the environment and relevant tool versions.
+- Keep the commands required to build, run, and test the artifact.
+- Test normal, boundary, invalid-input, and failure cases where relevant.
+- Record important assumptions, trade-offs, and limitations.
+- Explain at least one failed assumption, debugging result, or significant correction.
+- Ensure another person can reproduce the documented result.
 
-## Rules
+See the [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md) for the canonical requirements.
 
-- A course is complete only when its exit check is demonstrable and the artifact runs from a clean checkout. A checked box without a link to evidence is not progress.
-- Keep secrets, private data, model weights, and copyrighted books out of Git.
-- Record versions, seeds, hardware, commands, and limitations for every measurement.
-- Commit small, explain what changed, and keep a runnable artifact.
+## Security and privacy
+
+Never commit credentials, API keys, private learner data, or unrelated personal material.
+
+For security work, use only systems you own or are explicitly authorized to test. Record the authorized scope and follow the applicable rules of engagement before testing.
+
+Do not commit sensitive logs, private datasets, model weights, or other large generated artifacts unnecessarily. Prefer synthetic fixtures and documented steps for reproducing results.
+
+## Updating templates and scripts
+
+Generated workspaces are snapshots. Updating a source template does not automatically rewrite files already generated in a learner's workspace.
+
+When changing a template or generator:
+
+1. Explain the intended behavior.
+2. Preserve the canonical OEE curriculum as the source of course requirements.
+3. Validate the generator against a clean test workspace.
+4. Check that existing files are not overwritten.
+5. Update the documentation and examples when command syntax changes.
 
 ## Curriculum status
 
 Every OEE course currently carries the `draft` status label. Labels are promoted to `tested` and `verified` only against committed evidence; see [spec/status-labels.md](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/status-labels.md).
+
+## Project status
+
+The OEE specification and curriculum are maintained in the [OEE repository](https://github.com/0xbuffdev/open-engineering-education). This workspace supports their use; it does not independently define or certify course completion.

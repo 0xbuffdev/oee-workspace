@@ -1,65 +1,73 @@
 # Exercises
 
-Exercises are short, closed-book drills. They force recall and implementation so that a lab does not become a guided tutorial.
+Exercises reinforce recall, reasoning, and implementation. They require you to produce an answer or artifact and explain the reasoning behind it, rather than follow a guided demonstration.
 
-## Create a workspace
+## Create a course workspace
+
+From the root of your OEE Workspace checkout, run:
 
 ```bash
-../open-engineering-education/scripts/new-course-workspace foundations F2
+./scripts/new-course-workspace foundations F2
 ```
 
-This creates `exercises/foundations/F2/README.md`. The course file lists the required exercises; this directory holds your answers and tests.
+The example uses a course identifier from the currently published OEE curriculum. The generator creates the exercise directory alongside the matching lab and notes directories.
 
-## Layout
+The course definition in OEE determines which exercises are required. This directory contains your own solutions, tests, traces, and explanations.
+
+## Suggested layout
 
 ```text
-exercises/<track>/<CODE>/
+exercises/<program>/<COURSE_CODE>/
   README.md
-  01-<topic>.py             implementation exercise
-  01-<topic>.test.py        tests, or a `tests/` directory
-  02-<topic>.md             written answer, derivation, or trace
-  03-<topic>/               larger exercise with multiple files
+  01-<topic>.py
+  01-<topic>.test.py
+  02-<topic>.md
+  03-<larger-exercise>/
+    README.md
 ```
 
-Name files by topic, not by "homework". Use a number to preserve the course order.
+Choose extensions appropriate to the language or format. Use descriptive names and numbering to preserve the intended order.
 
-## Types of exercise
+## Exercise types
 
-| Type | What good evidence looks like |
+| Type | Evidence of completion |
 | --- | --- |
-| Implementation | Code, tests for normal/boundary/invalid cases, complexity note |
-| Derivation | Assumptions, steps, units, a sanity check, and a limiting case |
-| Trace | Input, state at each step, output, and a hand-check against the implementation |
-| Debugging | Failing command, minimized reproduction, root cause, regression test |
-| Security | Scope, harmless reproduction, root cause, fix, and retest |
-| Written | Your reasoning in your own words, with one concrete example |
+| Implementation | Working code, relevant tests, and a complexity or design note where appropriate |
+| Derivation | Assumptions, reasoning steps, units, a sanity check, and a limiting case where applicable |
+| Trace | Input, intermediate state, output, and a check against observed behavior |
+| Debugging | Failing case, minimal reproduction, identified cause, and regression test |
+| Security | Authorized scope, minimal reproduction, root cause, fix, and retest |
+| Written explanation | Reasoning in the learner's own words, supported by a concrete example |
 
-## Rules for programming exercises
+## Programming exercise requirements
 
-For every implementation:
+For an implementation exercise:
 
-- restate the problem in your own words;
-- include tests for normal, boundary, and invalid inputs;
-- state time and space complexity where relevant;
-- record one mistake or trade-off;
-- make the code runnable with one command.
+1. Restate the problem in your own words.
+2. Produce a complete solution.
+3. Test normal, boundary, invalid-input, and relevant failure cases.
+4. Explain complexity and trade-offs where applicable.
+5. Record a meaningful mistake, failed attempt, or correction.
+6. Provide a clear command or procedure for reproducing the result.
 
-Do not copy a solution unless you can reproduce it from memory later. A copied exercise is not evidence.
+A copied solution is not evidence unless you can reproduce it from memory later.
 
-## Rules for security exercises
+## Security exercise requirements
 
-- Work only against a local, intentionally vulnerable target or an authorized training platform.
-- Keep the target isolated and clearly marked.
-- Use minimal, non-destructive proof.
-- Do not retain or publish real credentials, personal data, or weaponized payloads.
-- Record the authorization or lab boundary before you begin.
-- Add a regression test for the fix.
+Security exercises must be conducted only against local training targets, systems you own, or systems you are explicitly authorized to test.
+
+- Keep the target isolated and identify the permitted scope.
+- Use minimal, non-destructive demonstrations.
+- Do not publish credentials, personal data, or sensitive operational details.
+- Record relevant authorization before testing.
+- Test the correction and retain a regression test where applicable.
 
 ## Completion checklist
 
-- [ ] Problem restated in my own words.
-- [ ] Solution complete and runnable.
-- [ ] Tests or worked cases recorded.
-- [ ] Complexity and trade-offs recorded where relevant.
-- [ ] One mistake, failed attempt, or correction recorded.
-- [ ] No secrets, private data, or copied copyrighted material.
+- The problem is understood and stated in my own words.
+- The solution or implementation is complete.
+- Tests or worked cases are recorded.
+- Relevant complexity, assumptions, and trade-offs are explained.
+- A meaningful failure or correction is documented.
+- The work is reproducible.
+- No secrets or private data are included.

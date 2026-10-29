@@ -1,101 +1,106 @@
-# Notes and Retrospectives
+# Notes and technical retrospectives
 
-Notes are for retrieval, not transcription. If a page only copies the book, it is not useful a month later.
+Notes should help you recover an idea, explain a mechanism, revisit a decision, or identify a gap in understanding. They are working documents, not transcripts of everything encountered during a course.
 
-## Create a workspace
+The course definition in OEE remains the authoritative source for course outcomes and completion requirements. Use your notes to record your own understanding and link to evidence in your workspace.
+
+## Create a course workspace
+
+From the root of your OEE Workspace checkout, run:
 
 ```bash
-../open-engineering-education/scripts/new-course-workspace ai AI6
+./scripts/new-course-workspace ai AI6
 ```
 
-This creates:
+The example uses a course identifier from the currently published OEE curriculum. The generator creates the course's notes directory together with the corresponding lab and exercise directories.
+
+## Suggested structure
 
 ```text
-notes/ai/AI6/
-  resources.md     edition, URL, access, environment, blockers
-  summary.md       mental model, evidence, exit-check self-assessment
+notes/<program>/<COURSE_CODE>/
+  resources.md
+  summary.md
+  retrospective.md
+  weekly.md
 ```
 
-The script creates a matching directory under `labs/` and `exercises/` at the same time.
+Use the files you need. Keep notes focused, and avoid duplicating material that is already maintained in the canonical course definition.
 
-## What to write
+## Resource log
 
-### `resources.md`
+`resources.md` records the exact materials you used: book edition and section, URL and access date, paper or specification version, tool and runtime versions, and hardware where it affects a result. Record unavailable resources and the substitute you chose. Do not paste long copyrighted excerpts.
 
-Record every resource you used:
+## Course summary
 
-- exact book edition and chapter/section;
-- URL, access date, and whether it was free, purchased, or borrowed;
-- paper/spec version;
-- tool and runtime versions;
-- hardware where it affects a result;
-- any unavailable resource and the substitute you chose.
+Write a summary when you have completed the course's required work. The summary should explain what you can now demonstrate and link to the artifacts supporting that claim.
 
-Do not paste long copyrighted excerpts. Record the section, your own summary, and the page range only in your private local copy if needed.
+A useful structure is:
 
-### `summary.md`
-
-Write this at the end of a course, in one page:
-
-```markdown
-# <course> summary
+````markdown
+# <Course code> — Summary
 
 ## Mental model
 
-Explain the central mechanism without looking at the book.
+Explain the central mechanism in your own words.
 
-## Key terms I can explain
+## Concepts I can explain
 
-Five to ten terms, each with an example.
+List the key concepts and give an example for each.
 
 ## Evidence
 
-Links to labs, exercises, project increment, and benchmark/threat model.
+Link to relevant labs, exercises, project work, tests, and reports.
 
 ## Failure or misconception corrected
 
-What did I predict, what happened, and what changed in my model?
+Describe one prediction, assumption, or implementation decision that
+changed after you examined the evidence.
 
 ## Exit-check self-assessment
 
-- [ ] I can demonstrate each item without notes.
-- [ ] The artifact runs from a clean setup.
-- [ ] I can explain the limitations and next experiment.
+- [ ] I can demonstrate the required outcomes.
+- [ ] The required artifacts can be reproduced.
+- [ ] I can explain the design decisions and limitations.
+- [ ] The evidence links are complete.
 
-## References used
+## Remaining gaps
 
-Exact editions/sections and the environment.
-```
+Identify what is still unclear and the next action that will address it.
+````
 
-### Optional: weekly log
+## Technical retrospective
 
-Keep `weekly.md` if you need to track hours, blockers, and the next action. One paragraph per week is enough:
+A retrospective should capture what changed in your understanding or engineering approach. Explain:
+
+- The assumption or approach you started with.
+- The result you observed.
+- The evidence that contradicted or refined your understanding.
+- The correction you made.
+- What you would do differently next time.
+
+Use concrete examples from your work rather than general statements such as "the project was challenging" or "I learned a lot".
+
+## Optional weekly log
+
+For longer courses or projects, a short weekly entry can help identify blockers and maintain focus:
 
 ```markdown
-## 2026-W12
+### Week of YYYY-MM-DD
 
-- Hours:
-- Finished:
-- Blocked by:
-- Next:
-- One thing I would do differently:
+- Time spent:
+- Work completed:
+- Evidence produced:
+- Current blocker:
+- Key lesson:
+- Next smallest deliverable:
 ```
 
-## Review schedule
-
-Revisit the summary, not the whole chapter:
-
-- **Day 1:** close the book and explain the mechanism.
-- **Day 3:** redo one exercise or trace from memory.
-- **Week 2:** answer the exit check again.
-- **Month 1:** connect the idea to a later course or project.
-
-If recall fails, reopen the smallest section that explains the gap. Do not restart the course.
-
-## Rules
+## Review practices
 
 - Write in your own words.
-- Prefer diagrams and failure tables over long prose.
-- Link evidence by path or commit, not by "I did the lab".
-- Redact secrets, tokens, personal data, and sensitive logs.
-- Keep notes small enough to review. A 40-page summary is an archive, not a study aid.
+- Prefer diagrams, examples, traces, and failure analyses where they communicate the idea more clearly than long prose.
+- Link to actual artifacts or commits.
+- Separate observations from assumptions.
+- Record uncertainty and limitations.
+- Keep secrets, personal data, and sensitive logs out of public commits.
+- Revisit a summary when you need to recover an idea rather than restarting the entire course.
