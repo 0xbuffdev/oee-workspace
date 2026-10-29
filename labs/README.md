@@ -7,10 +7,10 @@ Labs turn course concepts into practical evidence. Each lab answers one concrete
 From the root of your OEE Workspace checkout, run the generator for the course you are starting:
 
 ```bash
-./scripts/new-course-workspace systems S1
+./scripts/new-course-workspace SYS S1
 ```
 
-The example uses the currently published OEE course identifiers. The generator creates a directory under `labs/`, along with matching directories under `exercises/` and `notes/`.
+The example uses the current OEE course identifiers. The generator creates a directory under `labs/`, along with matching directories under `exercises/` and `notes/`.
 
 The canonical assignment stays in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education). This directory is where you perform the lab and retain the evidence.
 

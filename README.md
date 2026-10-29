@@ -47,24 +47,24 @@ If you use a fork or a different local location for OEE, set `OEE_REPO` to the p
 Run the course generator from the root of your workspace copy:
 
 ```bash
-./scripts/new-course-workspace foundations F0
+./scripts/new-course-workspace SEF F0
 ```
 
 To write into another directory:
 
 ```bash
-./scripts/new-course-workspace foundations F0 /path/to/workspace
+./scripts/new-course-workspace SEF F0 /path/to/workspace
 ```
 
 You can also set a default destination:
 
 ```bash
-OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace foundations F0
+OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace SEF F0
 ```
 
 The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`.
 
-The examples use the currently published curriculum layout. Program names and course identifiers will be updated when the curriculum migration is completed.
+Program codes are the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`); course identifiers reflect the current curriculum files. Course files are still being re-added under each program directory, and generation fails until the requested course file exists.
 
 ### 4. Generate a project workspace
 

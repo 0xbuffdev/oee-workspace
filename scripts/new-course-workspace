@@ -4,14 +4,14 @@ set -euo pipefail
 
 usage() {
   cat >&2 <<'EOF'
-Usage: new-course-workspace <track> <course-code> [workspace-dir]
+Usage: new-course-workspace <program> <course-code> [workspace-dir]
 
 Creates a course workspace using templates from oee-workspace and validates
 the course against a local Open Engineering Education checkout.
 
 Arguments:
-  track          foundations | systems | ai | security
-  course-code    e.g. F2, S1, AI6, D3
+  program        SEF | APP | SYS | AI | SEC
+  course-code    e.g. F0, S1, AI6, D1
   workspace-dir  destination; defaults to $OEE_WORKSPACE, then current dir
 
 Environment:
@@ -29,23 +29,26 @@ if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
   exit 64
 fi
 
-track="$1"
+program="$1"
 course="$2"
 
-case "$track" in
-  foundations) prefix="F" ;;
-  systems)     prefix="S" ;;
-  ai)          prefix="AI" ;;
-  security)    prefix="D" ;;
+# Course-code prefixes match the current course files; APP courses are not
+# yet published. Update this mapping together with the curriculum.
+case "$program" in
+  SEF) prefix="F" ;;
+  APP) prefix="A" ;;
+  SYS) prefix="S" ;;
+  AI)  prefix="AI" ;;
+  SEC) prefix="D" ;;
   *)
-    echo "Unknown track: $track" >&2
-    echo "Choose one of: foundations, systems, ai, security" >&2
+    echo "Unknown program: $program" >&2
+    echo "Choose one of: SEF, APP, SYS, AI, SEC" >&2
     exit 64
     ;;
 esac
 
 if ! [[ "$course" =~ ^${prefix}[0-9]+$ ]]; then
-  echo "Invalid course code '$course' for track '$track'." >&2
+  echo "Invalid course code '$course' for program '$program'." >&2
   echo "Expected ${prefix} followed by a number." >&2
   exit 64
 fi
@@ -54,16 +57,16 @@ workspace_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 default_oee_repo="$(dirname "$workspace_repo_root")/open-engineering-education"
 oee_repo="${OEE_REPO:-$default_oee_repo}"
 
-if [[ ! -d "$oee_repo/curriculum/$track" ]]; then
+if [[ ! -d "$oee_repo/curriculum/$program" ]]; then
   echo "OEE curriculum directory not found:" >&2
-  echo "  $oee_repo/curriculum/$track" >&2
+  echo "  $oee_repo/curriculum/$program" >&2
   echo "Set OEE_REPO to the root of your local OEE checkout." >&2
   exit 1
 fi
 
 oee_repo="$(cd "$oee_repo" && pwd)"
 
-course_dir="$oee_repo/curriculum/$track"
+course_dir="$oee_repo/curriculum/$program"
 
 shopt -s nullglob
 matches=("$course_dir/$course"-*.md)
@@ -79,7 +82,7 @@ course_file="${matches[0]}"
 course_name="$(basename "$course_file")"
 
 oee_url="${OEE_CURRICULUM_URL:-https://github.com/0xbuffdev/open-engineering-education/blob/main}"
-course_link="$oee_url/curriculum/$track/$course_name"
+course_link="$oee_url/curriculum/$program/$course_name"
 
 workspace="${3:-${OEE_WORKSPACE:-.}}"
 
@@ -112,9 +115,9 @@ for template in "${required_templates[@]}"; do
   fi
 done
 
-lab_dir="$workspace/labs/$track/$course"
-exercise_dir="$workspace/exercises/$track/$course"
-notes_dir="$workspace/notes/$track/$course"
+lab_dir="$workspace/labs/$program/$course"
+exercise_dir="$workspace/exercises/$program/$course"
+notes_dir="$workspace/notes/$program/$course"
 
 for destination in "$lab_dir" "$exercise_dir" "$notes_dir"; do
   if [[ -e "$destination" ]]; then
@@ -142,7 +145,7 @@ for template_and_destination in \
 done
 
 echo "Created workspace for $course in $workspace:"
-echo "  labs/$track/$course/"
-echo "  exercises/$track/$course/"
-echo "  notes/$track/$course/"
+echo "  labs/$program/$course/"
+echo "  exercises/$program/$course/"
+echo "  notes/$program/$course/"
 echo "Course definition: $course_link"

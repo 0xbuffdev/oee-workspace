@@ -9,10 +9,10 @@ The course definition in OEE remains the authoritative source for course outcome
 From the root of your OEE Workspace checkout, run:
 
 ```bash
-./scripts/new-course-workspace ai AI6
+./scripts/new-course-workspace AI AI6
 ```
 
-The example uses a course identifier from the currently published OEE curriculum. The generator creates the course's notes directory together with the corresponding lab and exercise directories.
+The example uses a course identifier from the current OEE curriculum. The generator creates the course's notes directory together with the corresponding lab and exercise directories.
 
 ## Suggested structure
 
