@@ -20,24 +20,45 @@ A personal or group workspace is where the learning work accumulates over time. 
 
 ## Getting started
 
-### 1. Create your workspace copy
+### 1. Create your own workspace fork
 
-Fork or copy this repository for your own use or for a group. You may keep your workspace public or private, depending on your needs.
+Fork this repository and clone your fork. Your learner work is committed to your own repository and tracked on GitHub under your account; the upstream starter stays clean.
+
+From the parent directory where you keep your projects:
+
+```bash
+mkdir -p ~/projects
+cd ~/projects
+```
+
+If the GitHub CLI is installed, one command creates the fork and clones it, adding `upstream` so you can pull template updates from the starter later:
+
+```bash
+gh repo fork 0xbuffdev/oee-workspace --clone
+cd oee-workspace
+```
+
+Without the GitHub CLI, fork the repository on github.com first, then:
+
+```bash
+git clone https://github.com/<your-username>/oee-workspace.git
+cd oee-workspace
+```
+
+A fork of a public repository is public. For private work, create your repository from the template instead: use `Use this template` on the repository page, or run `gh repo create <name> --template 0xbuffdev/oee-workspace --private --clone`. A plain copy of the files also works when GitHub is not part of your workflow.
 
 Do not commit personal work to the upstream starter repository. All content committed to a public repository is publicly visible.
 
 ### 2. Clone the OEE repository
 
-The generation scripts validate course and project identifiers against a local OEE checkout. Keep both repositories in the same parent directory:
+The generation scripts validate course and project identifiers against a local OEE checkout before creating any files. The checkout also lets you read the canonical course definitions and project briefs next to your work, and it keeps validation working offline.
+
+Stay in the parent directory from step 1 and clone OEE as a sibling of your fork:
 
 ```bash
-mkdir -p ~/projects
 cd ~/projects
 
 git clone https://github.com/0xbuffdev/open-engineering-education.git
-git clone https://github.com/0xbuffdev/oee-workspace.git
-
-cd oee-workspace
 ```
 
 If you use a fork or a different local location for OEE, set `OEE_REPO` to the path of that checkout. The default is a sibling directory named `open-engineering-education`.
