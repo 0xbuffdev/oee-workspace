@@ -2,7 +2,7 @@
 
 Projects integrate engineering concepts into systems that can be built, tested, evaluated, and reviewed. They should provide evidence of design judgment and implementation ability, and go beyond showing that something runs.
 
-The canonical project briefs, prerequisite gates, milestones, and acceptance criteria are maintained in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/projects).
+The canonical project briefs, prerequisite gates, milestones, and acceptance criteria are maintained in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum).
 
 ## Create a project workspace
 
@@ -20,7 +20,7 @@ You can specify a different destination:
 
 The generator validates the project slug against its supported list and creates a project directory containing a README and technical documents.
 
-The example uses the currently published project catalogue. Project names and prerequisite gates must remain aligned with the canonical curriculum.
+It reads each project's canonical brief from the local OEE checkout and fails until that brief exists. Keep its slug list and brief locations aligned with the project documentation in the OEE curriculum.
 
 ## Suggested structure
 
@@ -91,4 +91,4 @@ A project's completion claim must be supported by the evidence required in its c
 
 Choose projects that demonstrate meaningful engineering depth. A case study should explain the problem, design, implementation, evaluation, trade-offs, failure analysis, and limitations.
 
-Avoid making claims that the included evidence cannot substantiate. See the [portfolio guide](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/projects/portfolio-guide.md) for what belongs in a portfolio.
+Avoid making claims that the included evidence cannot substantiate.

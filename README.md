@@ -2,7 +2,7 @@
 
 A reusable workspace for individuals and groups studying the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
 
-OEE Workspace supports the full learning workflow. It provides templates and generation scripts for organizing practical work, while giving learners a consistent structure for their actual implementations, labs, exercises, notes, projects, and evidence records.
+OEE Workspace supports the practical side of studying OEE. It provides templates and generation scripts for organizing practical work, while giving learners a consistent structure for their actual implementations, labs, exercises, notes, projects, and evidence records.
 
 The OEE repository remains the canonical source for the specification and curriculum. This workspace links to those definitions rather than maintaining independent copies of them.
 
@@ -80,7 +80,7 @@ To choose a destination:
 ./scripts/new-project-workspace ledgerlab /path/to/workspace
 ```
 
-The generator creates the project's documentation structure and links back to its canonical OEE brief. It does not copy the canonical brief into the workspace as an independent source of truth.
+The generator creates the project's documentation structure and links back to its canonical OEE brief. It does not copy the canonical brief into the workspace as an independent source of truth. The generator validates the project brief against the local OEE checkout and fails until that brief exists in the checkout.
 
 ## Workspace structure
 
@@ -154,7 +154,7 @@ When changing a template or generator:
 
 ## Curriculum status
 
-Every OEE course currently carries the `draft` status label. Labels are promoted to `tested` and `verified` only against committed evidence; see [spec/status-labels.md](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/status-labels.md).
+OEE courses begin as `draft` and are promoted to `tested` or `verified` only against recorded evidence; see [spec/status-labels.md](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/status-labels.md).
 
 ## Project status
 
