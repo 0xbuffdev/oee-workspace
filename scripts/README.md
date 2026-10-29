@@ -61,7 +61,7 @@ The expected format is a base URL that precedes paths such as `curriculum/SEF/<c
 
 ## Current compatibility
 
-The generators support the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and validate the requested course against the local OEE checkout. Course codes are the program code plus a number, and project slugs reflect the current project catalogue. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
+The generators support the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and validate the requested course against the local OEE checkout. Course codes are the program code plus a number, and project slugs reflect the current project catalog. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
 
 Do not invent new identifiers in a generator just to make a command pass.
 
