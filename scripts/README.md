@@ -31,7 +31,7 @@ projects/
 If your directories differ, set `OEE_REPO` to the OEE repository's root:
 
 ```bash
-OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF F0
+OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF SEF0
 ```
 
 `OEE_REPO` must point to the local checkout containing the `curriculum/` directory.
@@ -41,7 +41,7 @@ OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF 
 Both scripts accept an optional destination directory:
 
 ```bash
-./scripts/new-course-workspace SEF F0 /path/to/workspace
+./scripts/new-course-workspace SEF SEF0 /path/to/workspace
 ./scripts/new-project-workspace ledgerlab /path/to/workspace
 ```
 
@@ -54,14 +54,14 @@ The destination directory must already exist. The scripts refuse to overwrite ex
 Generated files link to the canonical definitions in the public OEE repository. If you work from a fork or another published source, set `OEE_CURRICULUM_URL` to the appropriate base URL:
 
 ```bash
-OEE_CURRICULUM_URL=https://github.com/example/oee-fork/blob/main ./scripts/new-course-workspace SEF F0
+OEE_CURRICULUM_URL=https://github.com/example/oee-fork/blob/main ./scripts/new-course-workspace SEF SEF0
 ```
 
 The expected format is a base URL that precedes paths such as `curriculum/SEF/<course-file>.md`.
 
 ## Current compatibility
 
-The generators support the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and validate the requested course against the local OEE checkout. Course-code prefixes and project slugs reflect the current curriculum files. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
+The generators support the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and validate the requested course against the local OEE checkout. Course codes are the program code plus a number, and project slugs reflect the current project catalogue. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
 
 Do not invent new identifiers in a generator just to make a command pass.
 

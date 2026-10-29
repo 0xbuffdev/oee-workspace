@@ -7,7 +7,7 @@ Exercises reinforce recall, reasoning, and implementation. They require you to p
 From the root of your OEE Workspace checkout, run:
 
 ```bash
-./scripts/new-course-workspace SEF F2
+./scripts/new-course-workspace SEF SEF2
 ```
 
 The example uses a course identifier from the current OEE curriculum. The generator creates the exercise directory alongside the matching lab and notes directories.

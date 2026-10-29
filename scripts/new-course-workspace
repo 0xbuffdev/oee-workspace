@@ -11,7 +11,7 @@ the course against a local Open Engineering Education checkout.
 
 Arguments:
   program        SEF | APP | SYS | AI | SEC
-  course-code    e.g. F0, S1, AI6, D1
+  course-code    e.g. SEF0, SYS1, AI1, SEC1
   workspace-dir  destination; defaults to $OEE_WORKSPACE, then current dir
 
 Environment:
@@ -32,14 +32,10 @@ fi
 program="$1"
 course="$2"
 
-# Course-code prefixes match the current course files; APP courses are not
-# yet published. Update this mapping together with the curriculum.
+# Course codes are the canonical program code plus a number, so the
+# course-code prefix always equals the program code.
 case "$program" in
-  SEF) prefix="F" ;;
-  APP) prefix="A" ;;
-  SYS) prefix="S" ;;
-  AI)  prefix="AI" ;;
-  SEC) prefix="D" ;;
+  SEF|APP|SYS|AI|SEC) prefix="$program" ;;
   *)
     echo "Unknown program: $program" >&2
     echo "Choose one of: SEF, APP, SYS, AI, SEC" >&2
@@ -49,7 +45,7 @@ esac
 
 if ! [[ "$course" =~ ^${prefix}[0-9]+$ ]]; then
   echo "Invalid course code '$course' for program '$program'." >&2
-  echo "Expected ${prefix} followed by a number." >&2
+  echo "Expected the program code followed by a number, e.g. ${prefix}0." >&2
   exit 64
 fi
 
