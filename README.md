@@ -1,3 +1,6 @@
+
+<img width="1600" height="600" alt="oee-workspace-banner" src="https://github.com/user-attachments/assets/0dc42aba-657b-4d58-9609-9bbbe8bba37d" />
+
 # OEE Learner Workspace
 
 A reusable workspace for individuals and groups studying the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
