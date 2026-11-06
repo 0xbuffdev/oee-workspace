@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD041 -->
 <img width="1800" height="298" alt="oee-workspace-banner" src="https://github.com/user-attachments/assets/137ba418-0429-418e-8e71-917bd008577f" />
 
 # OEE Learner Workspace

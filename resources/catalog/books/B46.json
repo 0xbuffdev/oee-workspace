@@ -1,0 +1,18 @@
+{
+  "id": "B46",
+  "kind": "book",
+  "title": "Code: The Hidden Language of Computer Hardware and Software",
+  "authors": [
+    "Charles Petzold"
+  ],
+  "edition": "2",
+  "year": 2022,
+  "access": {
+    "mode": "paid",
+    "notes": "Optional second explanation of binary codes; obtain a legal copy."
+  },
+  "verification": {
+    "status": "review-needed",
+    "basis": "Edition and Chapter 1–2 titles inherited from legacy content; confirm against this edition."
+  }
+}

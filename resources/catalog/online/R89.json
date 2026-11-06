@@ -1,0 +1,19 @@
+{
+  "id": "R89",
+  "kind": "course-material",
+  "title": "Nand to Tetris — Official Projects",
+  "authors": [
+    "Noam Nisan",
+    "Shimon Schocken"
+  ],
+  "access": {
+    "mode": "free",
+    "url": "https://www.nand2tetris.org/course",
+    "notes": "Official project guidelines and learning materials; observe non-profit use terms."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Official project page lists Projects 1–6 and their topics.",
+    "checkedOn": "2026-11-06"
+  }
+}

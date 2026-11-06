@@ -1,0 +1,15 @@
+{
+  "id": "R90",
+  "kind": "interactive-tool",
+  "title": "NandGame",
+  "access": {
+    "mode": "free",
+    "url": "https://nandgame.com/",
+    "notes": "Optional interactive gate-to-processor puzzles."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Official game URL corroborated by public resource listing.",
+    "checkedOn": "2026-11-06"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "B1",
+  "kind": "book",
+  "title": "But How Do It Know?",
+  "authors": [
+    "J. Clark Scott"
+  ],
+  "access": {
+    "mode": "paid",
+    "notes": "Borrow or purchase a legitimate copy. Not a required paid OEE dependency."
+  },
+  "verification": {
+    "status": "review-needed",
+    "basis": "Bibliography and section titles carried from legacy Content; publisher contents not independently confirmed."
+  }
+}
