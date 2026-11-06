@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OEE Workspace public resource",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "title",
+    "access",
+    "verification"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(B[1-9][0-9]*|R[1-9][0-9]*)$"
+    },
+    "kind": {
+      "enum": [
+        "book",
+        "course-material",
+        "interactive-tool",
+        "documentation",
+        "article",
+        "video"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subtitle": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "edition": {
+      "type": "string",
+      "minLength": 1
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1400,
+      "maximum": 2100
+    },
+    "isbn13": {
+      "type": "string",
+      "pattern": "^[0-9]{13}$"
+    },
+    "access": {
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "free",
+            "paid",
+            "mixed"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "freeMaterialsUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": [
+        "status",
+        "basis"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "verified",
+            "review-needed"
+          ]
+        },
+        "basis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checkedOn": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    }
+  }
+}

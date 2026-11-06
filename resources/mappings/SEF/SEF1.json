@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "status": "draft",
+  "curriculum": {
+    "repository": "0xbuffdev/open-engineering-education",
+    "revision": "938b5426716c5e5809f6dbf1997c4e50f263bea9",
+    "course": "SEF1",
+    "path": "curriculum/SEF/SEF1.md"
+  },
+  "notes": "Resources are non-normative. OEE defines outcomes and assessments. Paid books cannot be prerequisites. 'mapped' means verified anchor materials exist, not every lesson is fully supported. Legacy chapter references require independent review.",
+  "modules": [
+    {
+      "number": 1,
+      "title": "Inside the Machine",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B1",
+          "role": "reference",
+          "part": {
+            "type": "section-range",
+            "start": "Just the Facts Ma'am",
+            "end": "Eight Is Enough"
+          },
+          "purpose": "Physical two-state systems, bits and bytes.",
+          "verification": "review-needed"
+        }
+      ],
+      "gap": "Verify B1's titles and locate freely accessible instructional readings for the introductory lessons."
+    },
+    {
+      "number": 2,
+      "title": "Codes, Numbers & Addresses",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B1",
+          "role": "reference",
+          "part": {
+            "type": "section-titles",
+            "titles": [
+              "Codes",
+              "Numbers",
+              "Addresses"
+            ]
+          },
+          "purpose": "Meaning assigned to bit patterns, numeric representation and addressing.",
+          "verification": "review-needed"
+        },
+        {
+          "resource": "B46",
+          "role": "optional",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              1,
+              2
+            ]
+          },
+          "purpose": "An alternative introduction to codes and combinations.",
+          "verification": "review-needed"
+        }
+      ],
+      "gap": "Confirm B1 section placement and supply a free reference for encoding and addresses."
+    },
+    {
+      "number": 3,
+      "title": "Gates & Circuits",
+      "coverage": "mapped",
+      "resources": [
+        {
+          "resource": "B7",
+          "role": "reference",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              1
+            ]
+          },
+          "purpose": "Boolean logic, gates and hardware descriptions.",
+          "verification": "verified"
+        },
+        {
+          "resource": "R89",
+          "role": "practice",
+          "part": {
+            "type": "projects",
+            "numbers": [
+              1
+            ]
+          },
+          "purpose": "Build and test logic gates using the official project materials.",
+          "verification": "verified",
+          "lesson": {
+            "number": 5,
+            "title": "Build logic gates"
+          }
+        },
+        {
+          "resource": "R90",
+          "role": "optional",
+          "part": {
+            "type": "topics",
+            "titles": [
+              "Early logic-gate levels"
+            ]
+          },
+          "purpose": "Interactive introductory gate practice.",
+          "verification": "verified"
+        },
+        {
+          "resource": "B1",
+          "role": "optional",
+          "part": {
+            "type": "section-titles",
+            "titles": [
+              "What the…?",
+              "Simple Variations"
+            ]
+          },
+          "purpose": "Alternative explanation of gates.",
+          "verification": "review-needed"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Registers & Memory",
+      "coverage": "mapped",
+      "resources": [
+        {
+          "resource": "B7",
+          "role": "reference",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              3
+            ]
+          },
+          "purpose": "Sequential logic, registers and memory hierarchy.",
+          "verification": "verified"
+        },
+        {
+          "resource": "R89",
+          "role": "practice",
+          "part": {
+            "type": "projects",
+            "numbers": [
+              3
+            ]
+          },
+          "purpose": "Implement and test memory components.",
+          "verification": "verified",
+          "lesson": {
+            "number": 4,
+            "title": "Build memory"
+          }
+        },
+        {
+          "resource": "B1",
+          "role": "optional",
+          "part": {
+            "type": "section-titles",
+            "titles": [
+              "Remember When",
+              "Back to the Byte",
+              "The Magic Bus",
+              "More Gate Combinations",
+              "First Half of the Computer"
+            ]
+          },
+          "purpose": "Alternative account of held state and memory.",
+          "verification": "review-needed"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "How Hardware Computes",
+      "coverage": "mapped",
+      "resources": [
+        {
+          "resource": "B7",
+          "role": "reference",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              2
+            ]
+          },
+          "purpose": "Binary arithmetic and ALU design.",
+          "verification": "verified"
+        },
+        {
+          "resource": "R89",
+          "role": "practice",
+          "part": {
+            "type": "projects",
+            "numbers": [
+              2
+            ]
+          },
+          "purpose": "Construct and test adders and an ALU.",
+          "verification": "verified",
+          "lesson": {
+            "number": 6,
+            "title": "Build the ALU"
+          }
+        },
+        {
+          "resource": "R90",
+          "role": "optional",
+          "part": {
+            "type": "topics",
+            "titles": [
+              "Arithmetic and ALU levels"
+            ]
+          },
+          "purpose": "Optional interactive arithmetic practice.",
+          "verification": "verified"
+        },
+        {
+          "resource": "B1",
+          "role": "optional",
+          "part": {
+            "type": "section-range",
+            "start": "More Gates",
+            "end": "The Arithmetic and Logic Unit"
+          },
+          "purpose": "Alternative account of adders and ALU.",
+          "verification": "review-needed"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Building the Processor",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B1",
+          "role": "reference",
+          "part": {
+            "type": "section-titles",
+            "titles": [
+              "The Other Half of the Computer",
+              "More of the Processor",
+              "What's Next?"
+            ]
+          },
+          "purpose": "Processor components, clock and execution cycle.",
+          "verification": "review-needed"
+        },
+        {
+          "resource": "B7",
+          "role": "optional",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              5
+            ]
+          },
+          "purpose": "Additional CPU and architecture perspective.",
+          "verification": "verified"
+        },
+        {
+          "resource": "R89",
+          "role": "optional",
+          "part": {
+            "type": "projects",
+            "numbers": [
+              5
+            ]
+          },
+          "purpose": "Stretch CPU-construction project, not the OEE lab itself.",
+          "verification": "verified"
+        }
+      ],
+      "gap": "Verify B1 subsections for clock and control logic; find accessible instruction for a stepwise execution trace."
+    },
+    {
+      "number": 7,
+      "title": "Instructions & Programs",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B1",
+          "role": "reference",
+          "part": {
+            "type": "section-range",
+            "start": "The First Great Invention",
+            "end": "Ta Daa!"
+          },
+          "purpose": "Instruction types, jumps and control flow.",
+          "verification": "review-needed"
+        },
+        {
+          "resource": "B7",
+          "role": "optional",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              4
+            ]
+          },
+          "purpose": "Machine-language examples.",
+          "verification": "verified"
+        },
+        {
+          "resource": "R89",
+          "role": "optional",
+          "part": {
+            "type": "projects",
+            "numbers": [
+              4
+            ]
+          },
+          "purpose": "Stretch assembly programming exercise.",
+          "verification": "verified"
+        }
+      ],
+      "gap": "Confirm the B1 title range and find a free explanation of instruction registers and flags."
+    },
+    {
+      "number": 8,
+      "title": "Instruction Encoding & Control",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B7",
+          "role": "reference",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              4
+            ]
+          },
+          "purpose": "Machine-language encodings and branch instructions.",
+          "verification": "verified"
+        },
+        {
+          "resource": "R89",
+          "role": "optional",
+          "part": {
+            "type": "projects",
+            "numbers": [
+              4
+            ]
+          },
+          "purpose": "Supplementary machine-language practice.",
+          "verification": "verified"
+        }
+      ],
+      "gap": "Find readings on instruction fields, operand addressing, branch targets, status flags and decoder control signals."
+    },
+    {
+      "number": 9,
+      "title": "I/O, Firmware & Boot",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B1",
+          "role": "reference",
+          "part": {
+            "type": "section-titles",
+            "titles": [
+              "The Outside World"
+            ]
+          },
+          "purpose": "Introductory account of external devices.",
+          "verification": "review-needed"
+        }
+      ],
+      "gap": "Research free instruction on memory-mapped I/O, polling/interrupts, firmware, bootloaders, OS boundaries and device errors."
+    },
+    {
+      "number": 10,
+      "title": "Hardware, Software & Booting",
+      "coverage": "partial",
+      "resources": [
+        {
+          "resource": "B1",
+          "role": "reference",
+          "part": {
+            "type": "section-range",
+            "start": "The Outside World",
+            "end": "Full Disclosure"
+          },
+          "purpose": "Broad legacy introduction to devices, programs, operating systems and files.",
+          "verification": "review-needed"
+        },
+        {
+          "resource": "B7",
+          "role": "optional",
+          "part": {
+            "type": "chapters",
+            "numbers": [
+              5
+            ]
+          },
+          "purpose": "Stretch architecture material for the integrated computer model.",
+          "verification": "verified"
+        }
+      ],
+      "gap": "Split broad B1 reading into checked sections; add free instruction on storage/boot and the final tiny-computer lab."
+    }
+  ]
+}

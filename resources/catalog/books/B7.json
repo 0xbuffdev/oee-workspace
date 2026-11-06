@@ -1,0 +1,24 @@
+{
+  "id": "B7",
+  "kind": "book",
+  "title": "The Elements of Computing Systems",
+  "subtitle": "Building a Modern Computer from First Principles",
+  "authors": [
+    "Noam Nisan",
+    "Shimon Schocken"
+  ],
+  "edition": "2",
+  "year": 2021,
+  "isbn13": "9780262539807",
+  "access": {
+    "mode": "mixed",
+    "url": "https://mitpress.mit.edu/9780262539807/the-elements-of-computing-systems/",
+    "freeMaterialsUrl": "https://www.nand2tetris.org/",
+    "notes": "Book is sold; official project guidelines, lectures and tools are freely accessible subject to provider terms."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "MIT Press second-edition contents and official Nand to Tetris project list.",
+    "checkedOn": "2026-11-06"
+  }
+}
