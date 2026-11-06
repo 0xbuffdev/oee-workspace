@@ -8,10 +8,13 @@ The scripts in this directory create workspace structures for OEE courses and pr
 | --- | --- |
 | `new-course-workspace` | Creates the lab, exercise, and notes directories for a course |
 | `new-project-workspace` | Creates the documentation structure for a project |
+| `check-resources.py` | Validates public catalogue records and canonical course mappings |
+| `render-resource-guides.py` | Produces deterministic, portable Markdown guides |
 
 ## Prerequisites
 
 - Bash.
+- Python 3 (for resource validation and mapped-course study guides).
 - A local clone of [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education).
 - A workspace directory that already exists.
 - The templates included in this repository.
@@ -31,7 +34,7 @@ projects/
 If your directories differ, set `OEE_REPO` to the OEE repository's root:
 
 ```bash
-OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF SEF0
+OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF SEF1
 ```
 
 `OEE_REPO` must point to the local checkout containing the `curriculum/` directory.
@@ -41,7 +44,7 @@ OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF 
 Both scripts accept an optional destination directory:
 
 ```bash
-./scripts/new-course-workspace SEF SEF0 /path/to/workspace
+./scripts/new-course-workspace SEF SEF1 /path/to/workspace
 ./scripts/new-project-workspace ledgerlab /path/to/workspace
 ```
 
@@ -54,7 +57,7 @@ The destination directory must already exist. The scripts refuse to overwrite ex
 Generated files link to the canonical definitions in the public OEE repository. If you work from a fork or another published source, set `OEE_CURRICULUM_URL` to the appropriate base URL:
 
 ```bash
-OEE_CURRICULUM_URL=https://github.com/example/oee-fork/blob/main ./scripts/new-course-workspace SEF SEF0
+OEE_CURRICULUM_URL=https://github.com/example/oee-fork/blob/main ./scripts/new-course-workspace SEF SEF1
 ```
 
 The expected format is a base URL that precedes paths such as `curriculum/SEF/<course-file>.md`.
@@ -88,3 +91,15 @@ npx --yes markdownlint-cli2@0.24.0
 ```
 
 Test generation in a disposable directory before relying on a changed script in a real workspace.
+
+## Public reading plans
+
+For courses with resource mappings, the generator validates the selected map against local OEE before creating any files. It then renders `notes/<program>/<COURSE>/reading-plan.md` alongside an editable `resources.md` log.
+
+```bash
+./scripts/new-course-workspace SEF SEF1
+python3 scripts/check-resources.py --oee ../open-engineering-education --course SEF1
+python3 scripts/render-resource-guides.py --check
+```
+
+Course files are resolved by their exact canonical names, such as `SEF1.md`. Courses without public resource mappings are still supported but do not receive a reading plan. Existing course directories are not overwritten, so learners can retain their personal notes and decide when to refresh a guide.

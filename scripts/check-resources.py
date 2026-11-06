@@ -139,8 +139,10 @@ def valid_part(part):
     return False
 
 
-def validate_maps(oee: Path, catalog: dict, check: Check):
+def validate_maps(oee: Path, catalog: dict, check: Check, course_filter: str | None = None):
     paths = sorted(MAPPINGS.rglob("*.json"))
+    if course_filter:
+        paths = [p for p in paths if p.stem == course_filter]
     if not paths:
         check.error("mappings", "no mappings found")
     for path in paths:
@@ -259,10 +261,11 @@ def validate_maps(oee: Path, catalog: dict, check: Check):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--oee", type=Path, default=Path("../open-engineering-education"), help="path to a local canonical OEE checkout")
+    parser.add_argument("--course", help="validate only the named course map")
     args = parser.parse_args()
     check = Check()
     catalog = validate_catalog(check)
-    validate_maps(args.oee.resolve(), catalog, check)
+    validate_maps(args.oee.resolve(), catalog, check, args.course)
     for warning in check.warnings:
         print(f"WARNING: {warning}", file=sys.stderr)
     for error in check.errors:

@@ -11,7 +11,7 @@ the course against a local Open Engineering Education checkout.
 
 Arguments:
   program        SEF | APP | SYS | AI | SEC
-  course-code    e.g. SEF0, SYS1, AI1, SEC1
+  course-code    e.g. SEF1, SYS1, AI1, SEC1
   workspace-dir  destination; defaults to $OEE_WORKSPACE, then current dir
 
 Environment:
@@ -43,9 +43,9 @@ case "$program" in
     ;;
 esac
 
-if ! [[ "$course" =~ ^${prefix}[0-9]+$ ]]; then
+if ! [[ "$course" =~ ^${prefix}[1-9][0-9]*$ ]]; then
   echo "Invalid course code '$course' for program '$program'." >&2
-  echo "Expected the program code followed by a number, e.g. ${prefix}0." >&2
+  echo "Expected the program code followed by a number, e.g. ${prefix}1." >&2
   exit 64
 fi
 
@@ -64,18 +64,15 @@ oee_repo="$(cd "$oee_repo" && pwd)"
 
 course_dir="$oee_repo/curriculum/$program"
 
-shopt -s nullglob
-matches=("$course_dir/$course"-*.md)
-shopt -u nullglob
-
-if [[ "${#matches[@]}" -ne 1 ]]; then
-  echo "Course '$course' was not found uniquely in $course_dir." >&2
-  echo "Expected exactly one file matching '$course-*.md'." >&2
+# Canonical course files are named exactly CODE.md (for example, SEF1.md).
+course_file="$course_dir/$course.md"
+if [[ ! -f "$course_file" ]]; then
+  echo "Course '$course' was not found in $course_dir." >&2
+  echo "Expected the canonical OEE file '$course.md'." >&2
   exit 64
 fi
 
-course_file="${matches[0]}"
-course_name="$(basename "$course_file")"
+course_name="$course.md"
 
 oee_url="${OEE_CURRICULUM_URL:-https://github.com/0xbuffdev/open-engineering-education/blob/main}"
 course_link="$oee_url/curriculum/$program/$course_name"
@@ -123,6 +120,17 @@ for destination in "$lab_dir" "$exercise_dir" "$notes_dir"; do
   fi
 done
 
+# Validate public mappings before creating files in a learner workspace.
+mapping_file="$workspace_repo_root/resources/mappings/$program/$course.json"
+if [[ -f "$mapping_file" ]]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Python 3 is required for public resource mapping." >&2
+    exit 1
+  fi
+  python3 "$workspace_repo_root/scripts/check-resources.py" --oee "$oee_repo" --course "$course"
+  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --stdout >/dev/null
+fi
+
 mkdir -p "$lab_dir" "$exercise_dir" "$notes_dir"
 
 for template_and_destination in \
@@ -140,8 +148,20 @@ for template_and_destination in \
     "$template_dir/$template" > "$destination"
 done
 
+# The study guide is generated from public resource data, never from a paid
+# content source. Keep it separate from the learner-owned resources.md log.
+if [[ -f "$mapping_file" ]]; then
+  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --stdout > "$notes_dir/reading-plan.md"
+fi
+
 echo "Created workspace for $course in $workspace:"
 echo "  labs/$program/$course/"
 echo "  exercises/$program/$course/"
 echo "  notes/$program/$course/"
 echo "Course definition: $course_link"
+
+if [[ -f "$mapping_file" ]]; then
+  echo "  notes/$program/$course/reading-plan.md (public resource snapshot)"
+else
+  echo "No public resource guide has been mapped for $course yet."
+fi

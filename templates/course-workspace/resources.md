@@ -2,7 +2,7 @@
 
 **Course:** [<course>](<course_link>)
 
-The canonical required reading and alternatives are in the course file. Record the exact materials and versions you actually used here.
+The canonical course requirements are in OEE. Public resource recommendations and their verification status live in the [OEE Workspace resource library](https://github.com/0xbuffdev/oee-workspace/tree/main/resources). If your course has a generated `reading-plan.md`, use it as a study aid. Record the exact materials and versions **you actually used** below; this log belongs to the learner and is never replaced by resource updates.
 
 | Date | Resource / chapter / section / URL | Access | Notes |
 | --- | --- | --- | --- |

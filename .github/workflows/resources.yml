@@ -5,11 +5,17 @@ on:
     paths:
       - "resources/**"
       - "scripts/check-resources.py"
+      - "scripts/render-resource-guides.py"
+      - "scripts/new-course-workspace"
+      - "templates/course-workspace/resources.md"
       - ".github/workflows/resources.yml"
   pull_request:
     paths:
       - "resources/**"
       - "scripts/check-resources.py"
+      - "scripts/render-resource-guides.py"
+      - "scripts/new-course-workspace"
+      - "templates/course-workspace/resources.md"
       - ".github/workflows/resources.yml"
 
 jobs:
@@ -26,3 +32,26 @@ jobs:
           persist-credentials: false
       - name: Validate catalogue and OEE course mappings
         run: python3 scripts/check-resources.py --oee _oee
+      - name: Verify rendered resource guides
+        run: python3 scripts/render-resource-guides.py --check
+      - name: Test course generator and learner file protection
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/new-course-workspace
+          dir="$(mktemp -d)"
+          trap 'rm -rf "$dir"' EXIT
+          mkdir -p "$dir/learner" "$dir/other"
+          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$dir/learner"
+          plan="$dir/learner/notes/SEF/SEF1/reading-plan.md"
+          log="$dir/learner/notes/SEF/SEF1/resources.md"
+          test -s "$plan"
+          grep -q "Module 10 — Hardware, Software & Booting" "$plan"
+          printf '\nLearner-owned entry\n' >> "$log"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$dir/learner"; then
+            echo "ERROR: existing learner directories were overwritten" >&2
+            exit 1
+          fi
+          grep -q "Learner-owned entry" "$log"
+          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$dir/other"
+          test ! -e "$dir/other/notes/SEF/SEF2/reading-plan.md"
