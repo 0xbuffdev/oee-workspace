@@ -1,5 +1,4 @@
-
-<img width="1600" height="600" alt="oee-workspace-banner" src="https://github.com/user-attachments/assets/0dc42aba-657b-4d58-9609-9bbbe8bba37d" />
+<img width="1800" height="298" alt="oee-workspace-banner" src="https://github.com/user-attachments/assets/137ba418-0429-418e-8e71-917bd008577f" />
 
 # OEE Learner Workspace
 
