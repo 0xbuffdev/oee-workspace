@@ -40,4 +40,11 @@ python3 scripts/check-resources.py --oee ../open-engineering-education
 
 The validator will check catalogue identities, all resource pointers and mapping correspondence to the actual OEE module and lesson titles. The OEE source revision is recorded for provenance, not used to reject unrelated curriculum changes; structural drift fails validation.
 
-Generated guides and generator integration are the next PR, after this mapping format is reviewed. Learner resource logs and progress must never be overwritten by public mapping updates.
+## Generated course guides
+
+- [Browse the SEF1 study guide](guides/SEF/SEF1.md).
+- Regenerate public guides with `python3 scripts/render-resource-guides.py --write`.
+- Check committed guides with `python3 scripts/render-resource-guides.py --check`.
+- Print a course with `python3 scripts/render-resource-guides.py --course SEF1 --stdout`.
+
+These public guides are deterministic snapshots derived from the catalogue and mappings. Do not edit generated guides directly; change the source records and regenerate. The course generator creates a `notes/SEF/SEF1/reading-plan.md` snapshot when a map exists, while the personal `resources.md` reading log remains separate. Existing learner directories are never overwritten. Courses without mappings can still be created, but receive no reading plan yet.

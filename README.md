@@ -71,24 +71,24 @@ If you use a fork or a different local location for OEE, set `OEE_REPO` to the p
 Run the course generator from the root of your workspace copy:
 
 ```bash
-./scripts/new-course-workspace SEF SEF0
+./scripts/new-course-workspace SEF SEF1
 ```
 
 To write into another directory:
 
 ```bash
-./scripts/new-course-workspace SEF SEF0 /path/to/workspace
+./scripts/new-course-workspace SEF SEF1 /path/to/workspace
 ```
 
 You can also set a default destination:
 
 ```bash
-OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace SEF SEF0
+OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace SEF SEF1
 ```
 
-The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`.
+The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`. When a public resource mapping exists, a generated `reading-plan.md` snapshot is also placed in the course notes directory. The separate `resources.md` file remains a learner-owned reading log.
 
-Course codes are the program code plus a number, such as `SEF0` or `SYS1`. The generator validates the code against the local OEE checkout and fails until the matching course file exists.
+Course codes are the program code plus a positive number, such as `SEF1` or `SYS1`. The generator validates the code against the local OEE checkout and fails until the matching course file exists.
 
 ### 4. Generate a project workspace
 
@@ -142,6 +142,12 @@ Use the workspace to retain:
 - Progress records that link to actual artifacts.
 
 A completion claim should be supported by inspectable evidence, not by a checked box alone.
+
+## Public study resources
+
+The [public resource library](resources/README.md) contains book and online references mapped to canonical OEE modules, as well as generated Markdown study guides. These resources support, but do not replace, the OEE curriculum. Chapter and section entries have verification labels; a module marked partial still has unresolved research gaps.
+
+For a mapped course, the generator validates the mapping against the local OEE checkout and produces a portable `reading-plan.md`. Python 3 is needed for this step. Public resource guides are separate from the private 0xNAND instructional content. Course generation never overwrites existing learner directories.
 
 ## Evidence and reproducibility
 
