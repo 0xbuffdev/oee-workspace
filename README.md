@@ -21,6 +21,10 @@ Use OEE Workspace as the baseline for your own learning environment. You may ada
 
 A personal or group workspace is where the learning work accumulates over time. It should contain the artifacts and records needed to demonstrate what was built, tested, understood, and improved.
 
+## Architecture decisions
+
+The [proposed Architecture Decision Records](docs/adr/README.md) document workspace evidence, tooling, resource-mapping, and optional AI integration boundaries. They do not change canonical OEE requirements or imply that the proposed functionality is implemented.
+
 ## Getting started
 
 ### 1. Create your own workspace fork
