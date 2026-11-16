@@ -147,7 +147,7 @@ A completion claim should be supported by inspectable evidence, not by a checked
 
 The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. Its historical SEF1 mapping and guide have been retired because they describe a different curriculum. No reviewed v2 course mapping or guide is currently published.
 
-Courses currently initialize **without a reading-plan snapshot** while the new v2 map undergoes pinned-source and human editorial review. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Public resources stay independent of private 0xNAND content.
+Courses currently initialize **without a reading-plan snapshot** while the new v2 map undergoes pinned-source and human editorial review. Once a map exists, its validator resolves the exact OEE Git commit recorded in that map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Public resources stay independent of private 0xNAND content.
 
 ## Evidence and reproducibility
 

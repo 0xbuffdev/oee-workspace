@@ -6,7 +6,10 @@ Standard-library only. No historical-schema adapter or moving-HEAD source fallba
 from __future__ import annotations
 
 import argparse
+import functools
 import importlib.util
+import os
+import subprocess
 import json
 import re
 import sys
@@ -29,12 +32,16 @@ class Check:
     def __init__(self):
         self.errors: list[str] = []
         self.warnings: list[str] = []
+        self.incomplete: list[str] = []
 
     def error(self, location: str, msg: str):
         self.errors.append(f"{location}: {msg}")
 
     def warn(self, location: str, msg: str):
         self.warnings.append(f"{location}: {msg}")
+
+    def missing(self, location: str, msg: str):
+        self.incomplete.append(f"{location}: {msg}")
 
 
 def text(value):
@@ -233,6 +240,7 @@ def validate_map_shape(mapping, catalog, check, loc):
     return len(check.errors) == before
 
 
+@functools.lru_cache(maxsize=1)
 def load_consumer():
     name = "oee_workspace_export_consumer"
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / "verify-oee-export.py")
@@ -242,18 +250,74 @@ def load_consumer():
     return module
 
 
-def validate_maps(catalog, check, course_filter=None, export_path=None):
+class PinnedSourceError(Exception):
+    """Typed failure to obtain a supported immutable OEE course export."""
+
+    def __init__(self, category: str, detail: str):
+        super().__init__(detail)
+        self.category = category
+
+
+def read_pinned_export(oee: Path, revision: str, course: str) -> dict:
+    """Ask the single public Toolkit parser to read the map's local Git commit.
+
+    No HEAD, worktree, network or user-supplied JSON export is a substitute.
+    """
+    if not isinstance(revision, str) or not SHA.fullmatch(revision):
+        raise PinnedSourceError("unsupported_format", "full lowercase commit SHA required")
+    if not isinstance(course, str) or not CODE.fullmatch(course):
+        raise PinnedSourceError("invalid_reference", "invalid course code")
+    repo = oee.expanduser().resolve()
+    if not repo.is_dir():
+        raise PinnedSourceError("source_missing", "local OEE Git checkout not found")
+    argv = [
+        sys.executable, "-m", "tooling.oee_toolkit", "export",
+        "--repo", str(repo), "--revision", revision,
+        "--course", course, "--output", "-",
+    ]
+    try:
+        result = subprocess.run(argv, cwd=repo, capture_output=True,
+                                timeout=90, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise PinnedSourceError("tool_error", f"Toolkit execution: {type(exc).__name__}") from exc
+    if result.returncode:
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        detail = " ".join(stderr.strip().splitlines()[:3])[:500] or "Toolkit export failed"
+        if result.returncode == 3:
+            category = "unsupported_format" if "unsupported_format" in stderr else "source_missing"
+        elif result.returncode == 1:
+            category = "invalid_reference"
+        else:
+            category = "tool_error"
+        raise PinnedSourceError(category, detail)
+    try:
+        exported = json.loads(result.stdout.decode("utf-8"))
+    except (UnicodeError, ValueError) as exc:
+        raise PinnedSourceError("tool_error", "invalid Toolkit export JSON") from exc
+    if not isinstance(exported, dict):
+        raise PinnedSourceError("tool_error", "Toolkit export must be an object")
+    return exported
+
+
+def check_pinned_map(mapping: dict, oee: Path) -> dict:
+    canon = mapping["curriculum"]
+    consumer = load_consumer()
+    exported = read_pinned_export(oee, canon["revision"], canon["course"])
+    checked = consumer.check_export(exported, canon["revision"])
+    consumer.check_map(mapping, checked)
+    return checked
+
+
+def validate_maps(catalog, check, course_filter=None, oee=None):
     paths = sorted(MAPPINGS.rglob("*.json"))
     if course_filter:
-        paths = [path for path in paths if path.stem == course_filter]
+        paths = [p for p in paths if p.stem == course_filter]
     if not paths:
         if course_filter:
             check.error("mappings", f"unmapped course {course_filter}; no active v2 map")
         return
-    if export_path is not None and len(paths) != 1:
-        check.error("mappings", "--export requires exactly one selected map (--course CODE)")
-        return
-    consumer = load_consumer() if export_path is not None else None
+    source = oee or Path(os.environ.get(
+        "OEE_REPO", str(ROOT.parent / "open-engineering-education")))
     for path in paths:
         loc = str(path.relative_to(ROOT))
         mapping = load_json(path, check)
@@ -265,32 +329,52 @@ def validate_maps(catalog, check, course_filter=None, export_path=None):
         if path.parent.name != program or path.stem != course:
             check.error(loc, f"map path must be mappings/{program}/{course}.json")
             continue
-        if consumer is None:
-            check.error(loc, "source_missing: exact pinned OEE export required; automatic Git resolution pending WS-I01")
-            continue
         try:
-            verified = consumer.check_export(consumer.load_json(export_path), canon["revision"])
-            consumer.check_map(mapping, verified)
-        except consumer.ContractError as exc:
-            check.error(loc, f"{exc.category}: {exc.code}: {exc}")
+            check_pinned_map(mapping, source)
+        except PinnedSourceError as exc:
+            if exc.category in ("source_missing", "unsupported_format"):
+                check.missing(loc, f"{exc.category}: {exc}")
+            else:
+                check.error(loc, f"{exc.category}: {exc}")
+        except load_consumer().ContractError as exc:
+            if exc.category in ("missing_input", "unsupported_format"):
+                check.missing(loc, f"{exc.category}: {exc.code}: {exc}")
+            else:
+                check.error(loc, f"{exc.category}: {exc.code}: {exc}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--course", help="check one active v2 course map")
-    parser.add_argument("--export", type=Path, help="independently generated pinned OEE export-format-v1 JSON")
+    parser.add_argument("--oee", type=Path, default=Path(os.environ.get(
+        "OEE_REPO", str(ROOT.parent / "open-engineering-education"))),
+        help="trusted local OEE Git checkout; never fetches")
+    parser.add_argument("--course", help="check one active v2 map")
+    parser.add_argument("--json", action="store_true", help="machine-readable diagnostics")
     args = parser.parse_args()
     check = Check()
     catalog = validate_catalog(check)
-    validate_maps(catalog, check, args.course, args.export)
-    for warning in check.warnings:
-        print(f"WARNING: {warning}", file=sys.stderr)
-    for error in check.errors:
-        print(f"ERROR: {error}", file=sys.stderr)
-    print(f"Resource check: {len(catalog)} catalogue IDs, {len(check.warnings)} warnings, {len(check.errors)} errors")
-    if not list(MAPPINGS.rglob("*.json")):
-        print("No active v2 resource maps; catalog validation only.")
-    return 1 if check.errors else 0
+    validate_maps(catalog, check, args.course, args.oee)
+    status = "failed" if check.errors else "incomplete" if check.incomplete else "passed"
+    if args.json:
+        print(json.dumps({
+            "outcome": status, "errors": check.errors,
+            "incomplete": check.incomplete, "warnings": check.warnings,
+            "cataloguedResources": len(catalog),
+            "manualReviewRequired": True
+        }, sort_keys=True, separators=(",", ":")))
+    else:
+        for warning in check.warnings:
+            print(f"WARNING: {warning}", file=sys.stderr)
+        for missing in check.incomplete:
+            print(f"INCOMPLETE: {missing}", file=sys.stderr)
+        for error in check.errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        print(f"Resource check: {len(catalog)} catalogue IDs, "
+              f"{len(check.warnings)} warnings, {len(check.incomplete)} incomplete, "
+              f"{len(check.errors)} errors")
+        if not list(MAPPINGS.rglob("*.json")):
+            print("No active v2 resource maps; catalog validation only.")
+    return {"passed": 0, "failed": 1, "incomplete": 3}[status]
 
 
 if __name__ == "__main__":
