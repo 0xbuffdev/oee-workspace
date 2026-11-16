@@ -145,9 +145,9 @@ A completion claim should be supported by inspectable evidence, not by a checked
 
 ## Public study resources
 
-The [public resource library](resources/README.md) contains book and online references mapped to canonical OEE modules, as well as generated Markdown study guides. These resources support, but do not replace, the OEE curriculum. Chapter and section entries have verification labels; a module marked partial still has unresolved research gaps.
+The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. Its historical SEF1 mapping and guide have been retired because they describe a different curriculum. No reviewed v2 course mapping or guide is currently published.
 
-For a mapped course, the generator validates the mapping against the local OEE checkout and produces a portable `reading-plan.md`. Python 3 is needed for this step. Public resource guides are separate from the private 0xNAND instructional content. Course generation never overwrites existing learner directories.
+Courses currently initialize **without a reading-plan snapshot** while the new v2 map undergoes pinned-source and human editorial review. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Public resources stay independent of private 0xNAND content.
 
 ## Evidence and reproducibility
 
