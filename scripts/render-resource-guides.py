@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -110,7 +111,7 @@ def render(mapping, catalog):
     return "\n".join(lines)
 
 
-def outputs(course_filter, export_path):
+def outputs(course_filter, oee_repo):
     catalog = load_catalog()
     found = False
     for path in sorted(MAPPINGS.rglob("*.json")):
@@ -121,11 +122,9 @@ def outputs(course_filter, export_path):
         if course_filter and code != course_filter:
             continue
         found = True
-        if export_path is None:
-            raise ValueError("source_missing: mapped guides require a reviewed, pinned --export")
         checked = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "check-resources.py"),
-             "--course", code, "--export", str(export_path)],
+             "--course", code, "--oee", str(oee_repo)],
             capture_output=True, text=True, check=False)
         if checked.returncode:
             raise ValueError("resource map failed pinned-source validation: " + checked.stderr.strip())
@@ -142,8 +141,9 @@ def main():
     modes.add_argument("--check", action="store_true", help="verify all guides match their mappings")
     modes.add_argument("--stdout", action="store_true", help="print one course guide")
     parser.add_argument("--course", help="course code (required with --stdout)")
-    parser.add_argument("--export", type=Path,
-                        help="independently generated pinned OEE Toolkit export for one selected map")
+    parser.add_argument("--oee", type=Path, default=Path(os.environ.get(
+        "OEE_REPO", str(ROOT.parent / "open-engineering-education"))),
+        help="local OEE Git checkout supplying the map's exact pinned commit")
     args = parser.parse_args()
     if args.stdout and not args.course:
         parser.error("--stdout requires --course")
@@ -152,7 +152,7 @@ def main():
     if args.check and args.course:
         parser.error("--check validates all guides; omit --course")
     try:
-        results = list(outputs(args.course, args.export))
+        results = list(outputs(args.course, args.oee))
         if args.stdout:
             if len(results) != 1:
                 raise ValueError("Expected exactly one mapped course")

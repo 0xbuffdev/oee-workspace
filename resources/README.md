@@ -28,11 +28,11 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 scripts/render-resource-guides.py --check
 ~~~
 
-For a newly reviewed v2 map and an independently generated pinned OEE Toolkit export, use:
+For a future reviewed v2 map, validate against its **exact local OEE Git commit**:
 
 ~~~sh
-python3 scripts/check-resources.py --course SEF1 --export /path/to/pinned-SEF1-export.json
-python3 scripts/render-resource-guides.py --course SEF1 --export /path/to/pinned-SEF1-export.json --stdout
+python3 scripts/check-resources.py --course SEF1 --oee /path/to/open-engineering-education --json
+python3 scripts/render-resource-guides.py --course SEF1 --oee /path/to/open-engineering-education --stdout
 ~~~
 
-The export consumer checks source identity, module/lesson locators and outcome/assessment references. The caller must independently prove that the export was derived from the named Git commit; a JSON claim alone is not cryptographic provenance. Source lookup and end-to-end binding remain WS-I01; editorial resource review is WS-I02; safe final publishing and regeneration are WS-I04. A map presented without its pinned export **fails closed as source_missing**. No new course guide has yet been accepted.
+The resource validator now invokes the public OEE Toolkit directly on the map's recorded full Git commit and checks the derived export's exact source identity, modules, lessons, outcomes and assessments. When the commit is missing or unsupported, it returns **incomplete** (exit `3`) rather than using `HEAD`. The selected local checkout must be trusted; Git object IDs do not independently authenticate repository origin. Human bibliography/edition review remains separate (WS-I02), as does safe mapped-guide publishing (WS-I04). No current SEF1 map or reading guide has been accepted.

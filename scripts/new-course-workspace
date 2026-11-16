@@ -133,8 +133,8 @@ if [[ -f "$mapping_file" ]]; then
     echo "Python 3 is required for public resource mapping." >&2
     exit 1
   fi
-  python3 "$workspace_repo_root/scripts/check-resources.py" --course "$course"
-  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --stdout >/dev/null
+  python3 "$workspace_repo_root/scripts/check-resources.py" --oee "$oee_repo" --course "$course"
+  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --oee "$oee_repo" --course "$course" --stdout >/dev/null
 fi
 
 mkdir -p "$lab_dir" "$exercise_dir" "$notes_dir"

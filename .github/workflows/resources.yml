@@ -6,6 +6,7 @@ on:
       - "resources/**"
       - "tests/**"
       - "scripts/check-resources.py"
+      - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
       - "scripts/new-course-workspace"
       - ".github/workflows/resources.yml"
@@ -14,6 +15,7 @@ on:
       - "resources/**"
       - "tests/**"
       - "scripts/check-resources.py"
+      - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
       - "scripts/new-course-workspace"
       - ".github/workflows/resources.yml"
@@ -30,11 +32,12 @@ jobs:
           repository: 0xbuffdev/open-engineering-education
           path: _oee
           persist-credentials: false
-      - name: Validate catalogue only (no active v1 maps)
-        run: python3 scripts/check-resources.py
+          fetch-depth: 0
+      - name: Validate all maps against exact source commits
+        run: python3 scripts/check-resources.py --oee _oee
       - name: Reject stale generated reading guides
-        run: python3 scripts/render-resource-guides.py --check
-      - name: Strict v2 shape and pinned export regression suite
+        run: python3 scripts/render-resource-guides.py --oee _oee --check
+      - name: Strict v2 and pinned source export regression suite
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Verify unmapped scaffolding and preserve learner files
         shell: bash
