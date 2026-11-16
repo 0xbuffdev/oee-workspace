@@ -32,13 +32,7 @@ version, wrong SHA, unknown assessment, missing outcome coverage or changed
 module/lesson locator **fails explicitly**. There is no v1 reader,
 conversion process or fallback to the checkout's moving HEAD.
 
-This is a narrow **derived-export consumer check**, not the complete
-resource-catalog or v2 mapping validator. Workspace still has an
-**old schema-v1 pilot map**, which is not eligible for this command or
-proof of source compatibility. The separately reviewed WS-I03,
-WS-I01 and WS-I02 work must replace that active map and validate it against
-the exact source revision. Until then, this implementation is a
-cross-repository test seam, not a release-ready mapped-course workflow.
+This export consumer is a narrow reference-checking seam, not an editorial review. WS-I03 now provides one active v2 schema, and historical v1 SEF1 data is only a negative fixture. WS-I01 will wire exact source Git-object lookup into the validator, WS-I02 will author a new reviewed map, and WS-I04 will harden guide publishing. No active course mapping is currently approved.
 
 The source revision text in an exported file is **not cryptographic proof**
 by itself. For trusted provenance, derive exports from the actual selected
@@ -101,7 +95,7 @@ The expected format is a base URL that precedes paths such as `curriculum/SEF/<c
 
 ## Current compatibility
 
-The generators support the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and validate the requested course against the local OEE checkout. Course codes are the program code plus a number. The project generator reads each project's canonical brief from the local OEE checkout and fails until that brief exists. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
+The generators recognize the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) but scaffold only course definitions that explicitly declare OEE `v0.2.0`; historical formats fail as `unsupported_format`. Each requested course is checked against the local OEE checkout. Course codes are the program code plus a number. The project generator reads each project's canonical brief from the local OEE checkout and fails until that brief exists. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
 
 Do not invent new identifiers in a generator just to make a command pass.
 
@@ -131,12 +125,19 @@ Test generation in a disposable directory before relying on a changed script in 
 
 ## Public reading plans
 
-For courses with resource mappings, the generator validates the selected map against local OEE before creating any files. It then renders `notes/<program>/<COURSE>/reading-plan.md` alongside an editable `resources.md` log.
+There is currently **no active reviewed map or public study guide**. The retired SEF1 v1 mapping must not be used for the redesigned OEE modules. Unmapped course scaffolding creates notes, labs, exercises, and an editable resources log without a reading plan.
 
-```bash
-./scripts/new-course-workspace SEF SEF1
-python3 scripts/check-resources.py --oee ../open-engineering-education --course SEF1
+```sh
+python3 scripts/check-resources.py
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 scripts/render-resource-guides.py --check
 ```
 
-Course files are resolved by their exact canonical names, such as `SEF1.md`. Courses without public resource mappings are still supported but do not receive a reading plan. Existing course directories are not overwritten, so learners can retain their personal notes and decide when to refresh a guide.
+For a future reviewed v2 map, validation requires the exact pinned Toolkit export:
+
+```sh
+python3 scripts/check-resources.py --course SEF1 --export /path/to/pinned-export.json
+python3 scripts/render-resource-guides.py --course SEF1 --export /path/to/pinned-export.json --stdout
+```
+
+Without a source export, mapped validation and guide generation fail closed; there is no fallback to the checkout's HEAD. Automatic commit resolution and review/publishing gates belong to WS-I01, WS-I02, and WS-I04. The generator continues to protect existing learner directories.

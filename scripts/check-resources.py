@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""Validate public resource records and maps against a local canonical OEE checkout.
+"""Validate OEE Workspace resource-map v2 shape and pinned export identities.
 
-Only Python 3 standard library is needed. JSON Schemas under resources/schemas
-describe the interchange format; these checks additionally enforce OEE identity
-and cross-file invariants that JSON Schema alone cannot express.
+Standard-library only. No historical-schema adapter or moving-HEAD source fallback.
 """
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -24,8 +22,6 @@ REVIEW_STATES = {"verified", "review-needed"}
 COVERAGE = {"mapped", "partial", "unmapped"}
 IDENTIFIER = re.compile(r"(?:B|R)[1-9][0-9]*\Z")
 CODE = re.compile(r"([A-Z]{2,4})([1-9][0-9]*)\Z")
-COURSE_MODULE = re.compile(r"(?m)^### Module ([1-9][0-9]*) — ([^\n]+)$")
-COURSE_LESSON = re.compile(r"(?m)^([1-9][0-9]*)\. \*\*(.*?)\*\* — \`(?:lesson|test|lab)\`$")
 SHA = re.compile(r"[a-f0-9]{40}\Z")
 
 
@@ -100,30 +96,6 @@ def validate_catalog(check: Check):
     return result
 
 
-def course_structure(path: Path, check: Check):
-    try:
-        body = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        check.error(str(path), f"canonical OEE course not found: {exc}")
-        return None
-    heads = list(COURSE_MODULE.finditer(body))
-    if not heads:
-        check.error(str(path), "OEE course has no numbered module headings")
-        return None
-    modules = {}
-    for index, match in enumerate(heads):
-        number = int(match.group(1))
-        boundary = heads[index + 1].start() if index + 1 < len(heads) else body.find("\n## Completion requirements", match.end())
-        if boundary < 0:
-            boundary = len(body)
-        section = body[match.end():boundary]
-        lessons = {int(m.group(1)): m.group(2) for m in COURSE_LESSON.finditer(section)}
-        if number in modules:
-            check.error(str(path), f"duplicate OEE module {number}")
-        modules[number] = (match.group(2).strip(), lessons)
-    return modules
-
-
 def valid_part(part):
     if not isinstance(part, dict):
         return False
@@ -139,138 +111,185 @@ def valid_part(part):
     return False
 
 
-def validate_maps(oee: Path, catalog: dict, check: Check, course_filter: str | None = None):
+def known_fields(value, expected, loc, check):
+    for key in sorted(set(value) - set(expected)):
+        check.error(loc, f"unknown field {key!r}")
+
+
+def validate_map_shape(mapping, catalog, check, loc):
+    """Validate schema-v2 shape/catalogue; source references require pinned export."""
+    before = len(check.errors)
+    if not isinstance(mapping, dict):
+        check.error(loc, "mapping must be an object")
+        return False
+    if type(mapping.get("schemaVersion")) is not int or mapping["schemaVersion"] != 2:
+        check.error(loc, "unsupported_schema: only resource-map v2 is accepted")
+        return False
+    known_fields(mapping, {"schemaVersion", "status", "curriculum", "modules", "notes"}, loc, check)
+    if mapping.get("status") not in ("draft", "reviewed"):
+        check.error(loc, "invalid map status")
+    if "notes" in mapping and not isinstance(mapping["notes"], str):
+        check.error(loc, "notes must be a string")
+    canon = mapping.get("curriculum")
+    if not isinstance(canon, dict):
+        check.error(loc, "curriculum must be an object")
+        return False
+    known_fields(canon, {"repository", "revision", "specification", "course", "path"}, loc, check)
+    course = canon.get("course")
+    match = CODE.fullmatch(course) if isinstance(course, str) else None
+    if not match:
+        check.error(loc, "invalid canonical course code")
+        return False
+    program = match.group(1)
+    wanted = f"curriculum/{program}/{course}.md"
+    if canon.get("repository") != "0xbuffdev/open-engineering-education":
+        check.error(loc, "invalid canonical OEE repository")
+    if canon.get("path") != wanted:
+        check.error(loc, f"invalid canonical OEE path; expected {wanted}")
+    if canon.get("specification") != "v0.2.0":
+        check.error(loc, "unsupported_format: only OEE v0.2.0 is supported")
+    revision = canon.get("revision")
+    if not isinstance(revision, str) or not SHA.fullmatch(revision):
+        check.error(loc, "curriculum.revision must be a full lowercase Git SHA")
+    modules = mapping.get("modules")
+    if not isinstance(modules, list) or not modules:
+        check.error(loc, "modules must be a nonempty array")
+        return False
+    for index, module in enumerate(modules, start=1):
+        ml = f"{loc}: module {index}"
+        if not isinstance(module, dict):
+            check.error(ml, "module must be an object")
+            continue
+        known_fields(module, {"number", "title", "coverage", "gap", "resources"}, ml, check)
+        if type(module.get("number")) is not int or module["number"] != index:
+            check.error(ml, "module numbers must be ordered and contiguous from 1")
+        if not text(module.get("title")):
+            check.error(ml, "missing module title")
+        coverage = module.get("coverage")
+        if coverage not in COVERAGE:
+            check.error(ml, "invalid coverage")
+        if coverage in ("partial", "unmapped") and not text(module.get("gap")):
+            check.error(ml, f"{coverage} module requires an explicit gap")
+        if "gap" in module and not text(module["gap"]):
+            check.error(ml, "gap must contain explanatory text")
+        entries = module.get("resources")
+        if not isinstance(entries, list):
+            check.error(ml, "resources must be an array")
+            continue
+        if coverage == "mapped" and not entries:
+            check.error(ml, "mapped module requires resource anchors")
+        if coverage == "unmapped" and entries:
+            check.error(ml, "unmapped module cannot claim resources")
+        seen = set()
+        free_verified = False
+        for ordinal, item in enumerate(entries, start=1):
+            el = f"{ml}: entry {ordinal}"
+            if not isinstance(item, dict):
+                check.error(el, "resource entry must be an object")
+                continue
+            known_fields(item, {"resource", "role", "part", "purpose", "verification",
+                                "lesson", "outcomeIds", "assessmentIds"}, el, check)
+            rid = item.get("resource")
+            record = catalog.get(rid) if isinstance(rid, str) else None
+            if record is None:
+                check.error(el, f"unknown catalogue resource {rid!r}")
+            if item.get("role") not in RESOURCE_ROLES or not text(item.get("purpose")):
+                check.error(el, "invalid role or missing purpose")
+            state = item.get("verification")
+            if state not in REVIEW_STATES:
+                check.error(el, "invalid mapping verification")
+            if state == "verified" and record and record.get("verification", {}).get("status") != "verified":
+                check.error(el, "catalogue cannot support verified mapping claim")
+            part = item.get("part")
+            if not valid_part(part):
+                check.error(el, "invalid chapter/project/section locator")
+            lesson = item.get("lesson")
+            if lesson is not None:
+                if not isinstance(lesson, dict):
+                    check.error(el, "lesson must be an object")
+                else:
+                    known_fields(lesson, {"number", "title"}, el + ": lesson", check)
+                    if type(lesson.get("number")) is not int or lesson["number"] < 1 or not text(lesson.get("title")):
+                        check.error(el, "invalid revision-scoped lesson locator")
+            for field, suffix in (("outcomeIds", "O"), ("assessmentIds", "AS")):
+                if field in item:
+                    ids = item[field]
+                    pattern = re.compile(rf"{re.escape(course)}-{suffix}[1-9][0-9]*\Z")
+                    if not isinstance(ids, list) or not ids or any(
+                            not isinstance(value, str) or not pattern.fullmatch(value) for value in ids):
+                        check.error(el, f"{field} must contain canonical {course} IDs")
+                    elif len(ids) != len(set(ids)):
+                        check.error(el, f"duplicate {field}")
+            key = (str(rid), json.dumps(part, sort_keys=True), json.dumps(lesson, sort_keys=True))
+            if key in seen:
+                check.error(el, "duplicate resource/part/lesson reference")
+            seen.add(key)
+            if record and state == "verified" and record.get("access", {}).get("mode") in ("free", "mixed"):
+                free_verified = True
+        if coverage == "mapped" and not free_verified:
+            check.error(ml, "mapped coverage requires verified free/companion anchor")
+        if coverage == "partial" and text(module.get("gap")):
+            check.warn(ml, module["gap"])
+    return len(check.errors) == before
+
+
+def load_consumer():
+    name = "oee_workspace_export_consumer"
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / "verify-oee-export.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def validate_maps(catalog, check, course_filter=None, export_path=None):
     paths = sorted(MAPPINGS.rglob("*.json"))
     if course_filter:
-        paths = [p for p in paths if p.stem == course_filter]
+        paths = [path for path in paths if path.stem == course_filter]
     if not paths:
-        check.error("mappings", "no mappings found")
+        if course_filter:
+            check.error("mappings", f"unmapped course {course_filter}; no active v2 map")
+        return
+    if export_path is not None and len(paths) != 1:
+        check.error("mappings", "--export requires exactly one selected map (--course CODE)")
+        return
+    consumer = load_consumer() if export_path is not None else None
     for path in paths:
         loc = str(path.relative_to(ROOT))
         mapping = load_json(path, check)
-        if not isinstance(mapping, dict):
-            check.error(loc, "mapping must be an object")
+        if not validate_map_shape(mapping, catalog, check, loc):
             continue
-        if mapping.get("schemaVersion") != 1 or mapping.get("status") not in ("draft", "reviewed"):
-            check.error(loc, "expected schemaVersion 1 and status draft/reviewed")
-        canon = mapping.get("curriculum")
-        if not isinstance(canon, dict):
-            check.error(loc, "curriculum must be an object")
-            continue
-        course = canon.get("course")
-        match = CODE.fullmatch(course) if isinstance(course, str) else None
-        if not match:
-            check.error(loc, "invalid canonical course code")
-            continue
-        program = match.group(1)
-        wanted = f"curriculum/{program}/{course}.md"
+        canon = mapping["curriculum"]
+        course = canon["course"]
+        program = CODE.fullmatch(course).group(1)
         if path.parent.name != program or path.stem != course:
-            check.error(loc, f"mapping path must be mappings/{program}/{course}.json")
-        if canon.get("repository") != "0xbuffdev/open-engineering-education" or canon.get("path") != wanted:
-            check.error(loc, f"curriculum repository/path must be canonical {wanted}")
+            check.error(loc, f"map path must be mappings/{program}/{course}.json")
             continue
-        revision = canon.get("revision")
-        if not isinstance(revision, str) or not SHA.fullmatch(revision):
-            check.error(loc, "curriculum.revision must be a 40-character Git SHA")
-        course_modules = course_structure(oee / wanted, check)
-        if course_modules is None:
+        if consumer is None:
+            check.error(loc, "source_missing: exact pinned OEE export required; automatic Git resolution pending WS-I01")
             continue
-        module_items = mapping.get("modules")
-        if not isinstance(module_items, list):
-            check.error(loc, "modules must be an array")
-            continue
-        seen = set()
-        for module in module_items:
-            if not isinstance(module, dict):
-                check.error(loc, "module must be an object")
-                continue
-            number = module.get("number")
-            if type(number) is not int or number < 1 or number in seen:
-                check.error(loc, f"invalid/duplicate module number {number!r}")
-                continue
-            seen.add(number)
-            ml = f"{loc}: module {number}"
-            if number not in course_modules:
-                check.error(ml, "module not found in OEE")
-                continue
-            canonical_title, canonical_lessons = course_modules[number]
-            if module.get("title") != canonical_title:
-                check.error(ml, f"title differs from OEE ({canonical_title})")
-            coverage = module.get("coverage")
-            if coverage not in COVERAGE:
-                check.error(ml, "invalid coverage")
-            if coverage == "partial" and not text(module.get("gap")):
-                check.error(ml, "partial module needs an explicit gap explanation")
-            entries = module.get("resources")
-            if not isinstance(entries, list):
-                check.error(ml, "resources must be an array")
-                continue
-            if coverage == "mapped" and not entries:
-                check.error(ml, "mapped module has no resources")
-            if coverage == "unmapped" and entries:
-                check.error(ml, "unmapped module should not carry resources")
-            used = set()
-            free_verified = False
-            for entry in entries:
-                if not isinstance(entry, dict):
-                    check.error(ml, "resource entry must be an object")
-                    continue
-                rid = entry.get("resource")
-                item = catalog.get(rid) if isinstance(rid, str) else None
-                if not item:
-                    check.error(ml, f"unknown resource {rid!r}")
-                    continue
-                role = entry.get("role")
-                if role not in RESOURCE_ROLES or not text(entry.get("purpose")):
-                    check.error(ml, f"{rid}: invalid role or missing purpose")
-                status = entry.get("verification")
-                if status not in REVIEW_STATES:
-                    check.error(ml, f"{rid}: invalid verification state")
-                if status == "verified" and item.get("verification", {}).get("status") != "verified":
-                    check.error(ml, f"{rid}: cannot verify a map entry using unverified catalogue metadata")
-                part = entry.get("part")
-                if not valid_part(part):
-                    check.error(ml, f"{rid}: invalid chapter/project/section locator")
-                lesson = entry.get("lesson")
-                if lesson is not None:
-                    if not isinstance(lesson, dict) or type(lesson.get("number")) is not int or canonical_lessons.get(lesson["number"]) != lesson.get("title"):
-                        check.error(ml, f"{rid}: lesson reference does not match canonical OEE")
-                key = (rid, json.dumps(part, sort_keys=True), json.dumps(lesson, sort_keys=True))
-                if key in used:
-                    check.error(ml, f"{rid}: duplicate resource/locator/lesson entry")
-                used.add(key)
-                if status == "verified" and item.get("access", {}).get("mode") in ("free", "mixed"):
-                    free_verified = True
-            if coverage == "mapped" and not free_verified:
-                check.error(ml, "mapped status needs at least one verified free/companion-material resource")
-            if coverage == "partial":
-                check.warn(ml, module.get("gap", "open coverage gap"))
-        if set(course_modules) != seen:
-            check.error(loc, f"module coverage differs from OEE: missing {sorted(set(course_modules)-seen)}, extra {sorted(seen-set(course_modules))}")
-    try:
-        head = subprocess.run(["git", "-C", str(oee), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-        for path in paths:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            expected = data.get("curriculum", {}).get("revision")
-            if expected and expected != head:
-                check.warn(str(path.relative_to(ROOT)), f"source revision {expected[:12]} differs from local OEE HEAD {head[:12]}; structural checks still ran")
-    except (OSError, subprocess.CalledProcessError, ValueError):
-        pass
+        try:
+            verified = consumer.check_export(consumer.load_json(export_path), canon["revision"])
+            consumer.check_map(mapping, verified)
+        except consumer.ContractError as exc:
+            check.error(loc, f"{exc.category}: {exc.code}: {exc}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--oee", type=Path, default=Path("../open-engineering-education"), help="path to a local canonical OEE checkout")
-    parser.add_argument("--course", help="validate only the named course map")
+    parser.add_argument("--course", help="check one active v2 course map")
+    parser.add_argument("--export", type=Path, help="independently generated pinned OEE export-format-v1 JSON")
     args = parser.parse_args()
     check = Check()
     catalog = validate_catalog(check)
-    validate_maps(args.oee.resolve(), catalog, check, args.course)
+    validate_maps(catalog, check, args.course, args.export)
     for warning in check.warnings:
         print(f"WARNING: {warning}", file=sys.stderr)
     for error in check.errors:
         print(f"ERROR: {error}", file=sys.stderr)
-    print(f"Resource check: {len(catalog)} catalogued IDs, {len(check.warnings)} warnings, {len(check.errors)} errors")
+    print(f"Resource check: {len(catalog)} catalogue IDs, {len(check.warnings)} warnings, {len(check.errors)} errors")
+    if not list(MAPPINGS.rglob("*.json")):
+        print("No active v2 resource maps; catalog validation only.")
     return 1 if check.errors else 0
 
 

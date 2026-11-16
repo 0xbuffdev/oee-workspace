@@ -72,6 +72,12 @@ if [[ ! -f "$course_file" ]]; then
   exit 64
 fi
 
+# Scaffold only explicitly supported OEE v0.2.0 courses, even when unmapped.
+if ! grep -Fqx '**Specification:** `v0.2.0`' "$course_file"; then
+  echo "unsupported_format: OEE course $course must declare Specification v0.2.0." >&2
+  exit 64
+fi
+
 course_name="$course.md"
 
 oee_url="${OEE_CURRICULUM_URL:-https://github.com/0xbuffdev/open-engineering-education/blob/main}"
@@ -127,7 +133,7 @@ if [[ -f "$mapping_file" ]]; then
     echo "Python 3 is required for public resource mapping." >&2
     exit 1
   fi
-  python3 "$workspace_repo_root/scripts/check-resources.py" --oee "$oee_repo" --course "$course"
+  python3 "$workspace_repo_root/scripts/check-resources.py" --course "$course"
   python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --stdout >/dev/null
 fi
 

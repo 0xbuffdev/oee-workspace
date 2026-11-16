@@ -1,50 +1,38 @@
-# Public OEE resource library (SEF1 pilot)
+# Public OEE resource library
 
-This is the **public resource index** for [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education) independent study.
+This library supports independent study of [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education). OEE owns course requirements, outcomes and assessments. This free Workspace owns optional resource recommendations and learner-authored records.
 
-## Ownership
+## Current mapping status
 
-- **OEE** owns curriculum, outcomes, lesson order, assessments and completion requirements.
-- **OEE Workspace** owns public resource metadata and optional course/module/lesson mappings.
-- **Private 0xNAND Content** may import these mappings but adds its own instructional implementation. No private authored lessons are published here.
+**No active reviewed course map or generated study guide is published.** The former SEF1 schema-v1 mapping describes a different curriculum. It is now a deliberately rejected [negative test fixture](../tests/fixtures/resource-map-v1-SEF1.json) and remains in Git history; its chapter assignments must not be transferred by module number.
 
-## Browse
+The public catalogue remains available: [books](catalog/books/) and [online resources](catalog/online/). The single [active mapping schema](schemas/course-map.schema.json) is **v2 only**, with an explicit OEE specification v0.2.0, exact 40-character lowercase source commit, canonical path, and optional outcome/assessment references. Module numbers, lesson locators and reading recommendations are scoped to the recorded revision.
 
-- [SEF1 draft resource mapping](mappings/SEF/SEF1.json)
-- [Book catalog](catalog/books/) and [online resources](catalog/online/)
-- [Resource schema](schemas/resource.schema.json) and [mapping schema](schemas/course-map.schema.json)
+The replacement SEF1 mapping requires independent editorial review under WS-I02. Until then, learner workspaces can be created **without a reading plan**; this is not an OEE completion gap.
 
-Resource identifiers **B1, B7, B46, R89 and R90** are preserved from the private legacy catalogue. Define each resource once and reference its ID from any number of course maps. A course mapping follows the *current OEE module order*, not a textbook's chapter order.
+## Editorial principles
 
-This pilot uses JSON rather than YAML so that Python 3's standard library can validate and consume resources offline without additional dependencies.
+- No legacy schema reader, converter, or automatic remapping. Historical data is not current guidance.
+- Every map must reference one canonical OEE revision and carry a draft or reviewed mapping status. Valid JSON is not certification of educational meaning.
+- Coverage is mapped, partial, or unmapped. Partial/unmapped require explicit gap explanations. Verified mapping claims need independent edition, section, or authoritative website checks.
+- Catalogue IDs are stable and reusable, with optional resource-specific lesson, outcome and assessment references. References must exist in the exact selected OEE Toolkit export.
+- Paid resources are always optional; no public OEE requirement depends on paid books, private 0xNAND content or proprietary services.
 
-## Editorial status
+## Validation
 
-Each module has a `coverage` value:
+Run catalogue checks and tests without a private service:
 
-- `mapped`: reviewed anchor material exists, but not necessarily every lesson is independently covered.
-- `partial`: known gaps or important references remain unverified.
-- `unmapped`: no usable material has yet been identified.
+~~~sh
+python3 scripts/check-resources.py
+python3 -m unittest discover -s tests -p 'test_*.py' -v
+python3 scripts/render-resource-guides.py --check
+~~~
 
-Every mapping entry has a separate `verification` value of `verified` or `review-needed`. A title or range inherited from private Content is **not verified** merely because it was previously mapped. Never invent chapter/page numbers or source URLs, and record edition differences.
+For a newly reviewed v2 map and an independently generated pinned OEE Toolkit export, use:
 
-`reference`, `practice`, and `optional` are resource recommendation roles; none imposes a paid-book requirement. The goal is adequate, freely accessible study and hands-on material for independent learners.
+~~~sh
+python3 scripts/check-resources.py --course SEF1 --export /path/to/pinned-SEF1-export.json
+python3 scripts/render-resource-guides.py --course SEF1 --export /path/to/pinned-SEF1-export.json --stdout
+~~~
 
-## Validate
-
-With a sibling OEE checkout:
-
-```bash
-python3 scripts/check-resources.py --oee ../open-engineering-education
-```
-
-The validator will check catalogue identities, all resource pointers and mapping correspondence to the actual OEE module and lesson titles. The OEE source revision is recorded for provenance, not used to reject unrelated curriculum changes; structural drift fails validation.
-
-## Generated course guides
-
-- [Browse the SEF1 study guide](guides/SEF/SEF1.md).
-- Regenerate public guides with `python3 scripts/render-resource-guides.py --write`.
-- Check committed guides with `python3 scripts/render-resource-guides.py --check`.
-- Print a course with `python3 scripts/render-resource-guides.py --course SEF1 --stdout`.
-
-These public guides are deterministic snapshots derived from the catalogue and mappings. Do not edit generated guides directly; change the source records and regenerate. The course generator creates a `notes/SEF/SEF1/reading-plan.md` snapshot when a map exists, while the personal `resources.md` reading log remains separate. Existing learner directories are never overwritten. Courses without mappings can still be created, but receive no reading plan yet.
+The export consumer checks source identity, module/lesson locators and outcome/assessment references. The caller must independently prove that the export was derived from the named Git commit; a JSON claim alone is not cryptographic provenance. Source lookup and end-to-end binding remain WS-I01; editorial resource review is WS-I02; safe final publishing and regeneration are WS-I04. A map presented without its pinned export **fails closed as source_missing**. No new course guide has yet been accepted.
