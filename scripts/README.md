@@ -38,8 +38,8 @@ Do not use a standalone, externally provided export as proof of source provenanc
 
 ## Prerequisites
 
-- Bash.
-- Python 3 (for resource validation and mapped-course study guides).
+- Bash and Git.
+- Python 3.11+ (for the OEE Toolkit, resource validation, and study guides).
 - A local clone of [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education).
 - A workspace directory that already exists.
 - The templates included in this repository.
@@ -70,7 +70,7 @@ Both scripts accept an optional destination directory:
 
 ```bash
 ./scripts/new-course-workspace SEF SEF1 /path/to/workspace
-./scripts/new-project-workspace ledgerlab /path/to/workspace
+./scripts/new-project-workspace SEF10 /path/to/workspace
 ```
 
 When the destination is omitted, the scripts use `OEE_WORKSPACE` if set, or the current directory otherwise.
@@ -89,7 +89,7 @@ The expected format is a base URL that precedes paths such as `curriculum/SEF/<c
 
 ## Current compatibility
 
-The generators recognize the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) but scaffold only course definitions that explicitly declare OEE `v0.2.0`; historical formats fail as `unsupported_format`. Each requested course is checked against the local OEE checkout. Course codes are the program code plus a number. The project generator reads each project's canonical brief from the local OEE checkout and fails until that brief exists. When OEE changes its course identifiers or project definitions, update the relevant script mappings and validate them against the new canonical files.
+The generators recognize the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) but scaffold only course definitions that explicitly declare OEE `v0.2.0`; historical formats fail as `unsupported_format`. Each requested course is checked against the local OEE checkout. Course codes are the program code plus a number. The project generator uses the OEE Toolkit at the checkout's selected full Git commit to require an actual `Type: project` course; it does not maintain an alias table or assume separate project-ladder/capstone documents. Generated briefs link to that immutable course source. Non-project/unknown/unsupported courses fail without writing learner files. No arbitrary project code becomes a new OEE requirement.
 
 Do not invent new identifiers in a generator just to make a command pass.
 
@@ -99,6 +99,7 @@ The generators:
 
 - Validate the requested course or project.
 - Confirm that the required templates exist.
+- Reject invented project aliases and non-project course types; validate real project courses using the Toolkit export pinned to the selected Git commit.
 - Require an existing destination.
 - Refuse to overwrite an existing generated destination.
 - Avoid generating learner files inside the canonical OEE repository.
