@@ -149,6 +149,12 @@ The [public resource library](resources/README.md) contains optional book and on
 
 Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Generation uses same-filesystem renames for each staged destination. Because labs, exercises and notes are separate directories, unexpected filesystem failures can leave a partially published workspace; existing work is preserved for inspection rather than deleted. Public resources stay independent of private 0xNAND content.
 
+## Learner assessment evidence (WS-I06)
+
+The [learner evidence record format](evidence/README.md) provides a strict, learner-owned JSON Schema v1 for OEE v0.2.0 assessment attempts. Records identify the exact OEE source commit, required assessment and outcome IDs, optional artifacts and observations, and explicitly declared evaluations.
+
+The schema and [synthetic SEF1/SEF10 fixtures](tests/fixtures/evidence/) are published for interoperability; **the local validator, status view and export command are not yet implemented** (WS-I07/WS-I08). A structurally valid record, automated test observation, self-assessment or claimed human-review label does **not** prove mastery or verify reviewer identity. No account, online service or paid resource is required.
+
 ## Evidence and reproducibility
 
 For work involving code or executable systems:

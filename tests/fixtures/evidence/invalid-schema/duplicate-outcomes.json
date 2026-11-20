@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "attemptId": "68e5f624-bfb1-4c1e-8c87-486668f4884e",
+  "recordedAt": "2026-11-20T09:00:00Z",
+  "course": {
+    "repository": "0xbuffdev/open-engineering-education",
+    "revision": "67416343f3eab17ada5d3c79ae6cc782524c29ff",
+    "specification": "v0.2.0",
+    "path": "curriculum/SEF/SEF1.md",
+    "code": "SEF1"
+  },
+  "assessmentId": "SEF1-AS1",
+  "outcomeIds": [
+    "SEF1-O1",
+    "SEF1-O1"
+  ],
+  "artifacts": [],
+  "observations": [
+    {
+      "kind": "self-note",
+      "summary": "Synthetic example: describe byte representation and a NAND gate truth table; this is not actual assessed learner work."
+    }
+  ],
+  "evaluation": null,
+  "assistance": {
+    "declaredMode": "not-recorded",
+    "summary": ""
+  }
+}
