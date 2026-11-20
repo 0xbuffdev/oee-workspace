@@ -1,0 +1,18 @@
+{
+  "id": "R91",
+  "kind": "course-material",
+  "title": "Computer Science Field Guide — Data Representation",
+  "authors": [
+    "Computer Science Education Research Group, University of Canterbury"
+  ],
+  "access": {
+    "mode": "free",
+    "url": "https://www.csfieldguide.org.nz/en/chapters/data-representation/",
+    "notes": "Free interactive guide; the Numbers and Text sections cover bit patterns, byte values, bases and character encodings. Supplemental reading, not a required OEE assessment tool."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Official University of Canterbury Computer Science Field Guide Data Representation chapter, Numbers and Text sections inspected for byte representations, binary bases, ASCII/Unicode and UTF-8. Their content does not verify OEE's address/value or physical-signal model.",
+    "checkedOn": "2026-11-20"
+  }
+}

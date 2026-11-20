@@ -86,7 +86,7 @@ You can also set a default destination:
 OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace SEF SEF1
 ```
 
-The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`. When a public resource mapping exists, a generated `reading-plan.md` snapshot is also placed in the course notes directory. The separate `resources.md` file remains a learner-owned reading log.
+The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`. When a validated public resource mapping exists, a generated `reading-plan.md` snapshot is also placed in the course notes directory. The SEF1 resource map is **reviewed**, but partial-coverage gaps remain and no external resource replaces OEE assessments. The separate `resources.md` file remains a learner-owned reading log.
 
 Course codes are the program code plus a positive number, such as `SEF1` or `SYS1`. The generator validates the code against the local OEE checkout and fails until the matching course file exists.
 
@@ -145,9 +145,9 @@ A completion claim should be supported by inspectable evidence, not by a checked
 
 ## Public study resources
 
-The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. Its historical SEF1 mapping and guide have been retired because they describe a different curriculum. No reviewed v2 course mapping or guide is currently published.
+The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. The historical SEF1 v1 map and guide were retired because they describe a different curriculum. A [reviewed SEF1 v2 resource map](resources/mappings/SEF/SEF1.json) and [generated guide](resources/guides/SEF/SEF1.md) are available for independent study. The review confirms the recorded references and explicit partial-coverage gaps; it does not certify OEE educational readiness or completion.
 
-Courses currently initialize **without a reading-plan snapshot** while the new v2 map undergoes pinned-source and human editorial review. Once a map exists, its validator resolves the exact OEE Git commit recorded in that map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Public resources stay independent of private 0xNAND content.
+Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Public resources stay independent of private 0xNAND content.
 
 ## Evidence and reproducibility
 

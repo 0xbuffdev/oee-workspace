@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -89,6 +90,16 @@ class RealPinnedToolkitTests(unittest.TestCase):
         validated = checker.check_pinned_map(self.map, OEE)
         self.assertEqual(validated["source"]["revision"], PIN)
         self.assertEqual(validated["course"], "SEF1")
+
+    def test_review_candidate_map_matches_finalized_source(self):
+        path = ROOT / "resources/mappings/SEF/SEF1.json"
+        mapping = json.loads(path.read_text(encoding="utf-8"))
+        revision = "67416343f3eab17ada5d3c79ae6cc782524c29ff"
+        self.assertEqual(mapping["curriculum"]["revision"], revision)
+        validated = checker.check_pinned_map(mapping, OEE)
+        self.assertEqual(validated["source"]["revision"], revision)
+        self.assertEqual(validated["course"], "SEF1")
+        self.assertEqual(len(validated["modules"]), len(mapping["modules"]))
 
     def test_selected_commit_missing_does_not_fall_back_to_head(self):
         altered = copy.deepcopy(self.map)

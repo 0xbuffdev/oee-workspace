@@ -82,18 +82,25 @@ jobs:
           temp="$(mktemp -d)"
           trap 'rm -rf "$temp"' EXIT
           mkdir -p "$temp/learner" "$temp/other"
-          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$temp/learner"
-          plan="$temp/learner/notes/SEF/SEF1/reading-plan.md"
-          log="$temp/learner/notes/SEF/SEF1/resources.md"
+          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/learner"
+          plan="$temp/learner/notes/SEF/SEF2/reading-plan.md"
+          log="$temp/learner/notes/SEF/SEF2/resources.md"
           test ! -e "$plan"
           printf '\nLearner-owned entry\n' >> "$log"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$temp/learner"; then
+          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/learner"; then
             echo "ERROR: existing learner directories were overwritten" >&2
             exit 1
           fi
           grep -q "Learner-owned entry" "$log"
-          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/other"
-          test ! -e "$temp/other/notes/SEF/SEF2/reading-plan.md"
+          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF3 "$temp/other"
+          test ! -e "$temp/other/notes/SEF/SEF3/reading-plan.md"
+          mkdir -p "$temp/mapped"
+          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$temp/mapped"
+          mapped_guide="$temp/mapped/notes/SEF/SEF1/reading-plan.md"
+          test -s "$mapped_guide"
+          cmp "$mapped_guide" resources/guides/SEF/SEF1.md
+          grep -Fq "67416343f3eab17ada5d3c79ae6cc782524c29ff" "$mapped_guide"
+          test -f "$temp/mapped/notes/SEF/SEF1/resources.md"
           # Legacy source formats are not supported, even without a resource map.
           mkdir -p "$temp/legacy-oee/curriculum/SEF" "$temp/legacy-learner"
           printf '**Specification:** `v0.1.0`\n' > "$temp/legacy-oee/curriculum/SEF/SEF1.md"
