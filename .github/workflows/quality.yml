@@ -24,3 +24,4 @@ jobs:
         run: |
           bash -n scripts/new-course-workspace
           bash -n scripts/new-project-workspace
+          python3 -m py_compile scripts/publish-workspace.py scripts/render-resource-guides.py

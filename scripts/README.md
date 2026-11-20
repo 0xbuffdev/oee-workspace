@@ -9,7 +9,8 @@ The scripts in this directory create workspace structures for OEE courses and pr
 | `new-course-workspace` | Creates the lab, exercise, and notes directories for a course |
 | `new-project-workspace` | Creates the documentation structure for a project |
 | `check-resources.py` | Validates public catalogue records and canonical course mappings |
-| `render-resource-guides.py` | Produces deterministic, portable Markdown guides |
+| `render-resource-guides.py` | Validates and atomically updates repository-owned guides for reviewed maps |
+| `publish-workspace.py` | Publishes fully staged learner directories without replacing existing work |
 
 ## Pinned OEE Toolkit consumer contract (WS-I11 groundwork)
 
@@ -75,21 +76,15 @@ Both scripts accept an optional destination directory:
 
 When the destination is omitted, the scripts use `OEE_WORKSPACE` if set, or the current directory otherwise.
 
-The destination directory must already exist. The scripts refuse to overwrite existing generated destinations.
+The destination directory must already exist. Generators validate the source and required templates before staging complete files under that directory, and publish each directory by a same-filesystem rename. Existing files and symlinked destination components fail closed. Three course subtrees cannot be renamed as one filesystem transaction: if an unexpected later rename fails, successfully published learner data are retained for inspection rather than silently rolled back.
 
 ## Curriculum links
 
-Generated files link to the canonical definitions in the public OEE repository. If you work from a fork or another published source, set `OEE_CURRICULUM_URL` to the appropriate base URL:
+Generated files link to the canonical OEE course at an **exact full Git commit**, not a moving branch. A mapped course uses the reviewed map's recorded revision; an unmapped course uses the selected checkout commit. The Toolkit reads those Git objects, not dirty worktree files. Resource-map checks do not authenticate an untrusted local clone.
 
-```bash
-OEE_CURRICULUM_URL=https://github.com/example/oee-fork/blob/main ./scripts/new-course-workspace SEF SEF1
-```
+## Current OEE contract
 
-The expected format is a base URL that precedes paths such as `curriculum/SEF/<course-file>.md`.
-
-## Current compatibility
-
-The generators recognize the five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) but scaffold only course definitions that explicitly declare OEE `v0.2.0`; historical formats fail as `unsupported_format`. Each requested course is checked against the local OEE checkout. Course codes are the program code plus a number. The project generator uses the OEE Toolkit at the checkout's selected full Git commit to require an actual `Type: project` course; it does not maintain an alias table or assume separate project-ladder/capstone documents. Generated briefs link to that immutable course source. Non-project/unknown/unsupported courses fail without writing learner files. No arbitrary project code becomes a new OEE requirement.
+The generators recognize five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and use the public Toolkit to validate **v0.2.0 only**. Unsupported source formats fail; no compatibility reader or migration path is provided. Each requested course is checked at a full Git commit. Course codes are the program code plus a number. The project generator uses the OEE Toolkit at the checkout's selected full Git commit to require an actual `Type: project` course; it does not maintain an alias table or assume separate project-ladder/capstone documents. Generated briefs link to that immutable course source. Non-project/unknown/unsupported courses fail without writing learner files. No arbitrary project code becomes a new OEE requirement.
 
 Do not invent new identifiers in a generator just to make a command pass.
 
@@ -101,8 +96,10 @@ The generators:
 - Confirm that the required templates exist.
 - Reject invented project aliases and non-project course types; validate real project courses using the Toolkit export pinned to the selected Git commit.
 - Require an existing destination.
-- Refuse to overwrite an existing generated destination.
-- Avoid generating learner files inside the canonical OEE repository.
+- Stage all outputs before publication and refuse to replace existing generated destinations.
+- Reject symlinked destination paths and unexpected project/course identities.
+- Publish from staged directories on the same filesystem; preserve existing work on failure.
+- Avoid generating learner files inside either canonical source repository.
 
 Generated files are starting points. Review and customize them to reflect your actual implementation, experiments, and evidence.
 
@@ -113,6 +110,7 @@ From the workspace repository root, run:
 ```bash
 bash -n scripts/new-course-workspace
 bash -n scripts/new-project-workspace
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 npx --yes markdownlint-cli2@0.24.0
 ```
 
@@ -143,5 +141,6 @@ When no active maps exist, the command checks the public catalogue only. A
 passing source check never implies learner certification.
 
 WS-I02's SEF1 source/section resource map is reviewed, with seven documented
-partial-coverage gaps. WS-I04 owns publication-safe guide writes, and WS-I11
-owns remaining upstream drift notifications.
+partial-coverage gaps. WS-I04 stages and validates learner directories and
+atomically publishes only reviewed repository-owned guides. WS-I11 owns
+remaining upstream drift notifications.

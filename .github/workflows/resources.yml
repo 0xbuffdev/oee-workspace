@@ -8,6 +8,7 @@ on:
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
+      - "scripts/publish-workspace.py"
       - "scripts/new-course-workspace"
       - "scripts/new-project-workspace"
       - ".github/workflows/resources.yml"
@@ -18,6 +19,7 @@ on:
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
+      - "scripts/publish-workspace.py"
       - "scripts/new-course-workspace"
       - "scripts/new-project-workspace"
       - ".github/workflows/resources.yml"
@@ -101,7 +103,24 @@ jobs:
           cmp "$mapped_guide" resources/guides/SEF/SEF1.md
           grep -Fq "67416343f3eab17ada5d3c79ae6cc782524c29ff" "$mapped_guide"
           test -f "$temp/mapped/notes/SEF/SEF1/resources.md"
-          # Legacy source formats are not supported, even without a resource map.
+          test -f "$temp/mapped/notes/SEF/SEF1/summary.md"
+          grep -Fq "Reviewed resource guidance" "$mapped_guide"
+          mkdir -p "$temp/existing/notes/SEF/SEF1" "$temp/symlink" "$temp/outside"
+          printf 'Learner evidence\n' > "$temp/existing/notes/SEF/SEF1/summary.md"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$temp/existing"; then
+            echo "ERROR: existing learner note was replaced" >&2
+            exit 1
+          fi
+          grep -Fxq 'Learner evidence' "$temp/existing/notes/SEF/SEF1/summary.md"
+          test ! -e "$temp/existing/labs/SEF/SEF1"
+          ln -s "$temp/outside" "$temp/symlink/labs"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/symlink"; then
+            echo "ERROR: symlinked learner path accepted" >&2
+            exit 1
+          fi
+          test ! -e "$temp/outside/SEF"
+          test ! -e "$temp/symlink/notes/SEF/SEF2"
+          # Unsupported course formats must not be accepted.
           mkdir -p "$temp/legacy-oee/curriculum/SEF" "$temp/legacy-learner"
           printf '**Specification:** `v0.1.0`\n' > "$temp/legacy-oee/curriculum/SEF/SEF1.md"
           if OEE_REPO="$temp/legacy-oee" bash scripts/new-course-workspace SEF SEF1 "$temp/legacy-learner"; then
