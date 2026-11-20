@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "attemptId": "ca52b2a7-a4aa-4eab-a1e3-040b8aa17c7d",
+  "recordedAt": "2026-11-20T09:00:00Z",
+  "course": {
+    "repository": "0xbuffdev/open-engineering-education",
+    "revision": "67416343f3eab17ada5d3c79ae6cc782524c29ff",
+    "specification": "v0.2.0",
+    "path": "curriculum/SEF/SEF10.md",
+    "code": "SEF10"
+  },
+  "assessmentId": "SEF10-AS3",
+  "outcomeIds": [
+    "SEF10-O7",
+    "SEF10-O8",
+    "SEF10-O3",
+    "SEF10-O5",
+    "SEF10-O6"
+  ],
+  "artifacts": [
+    {
+      "kind": "relative-path",
+      "value": "projects/SEF10/docs/evaluation.md"
+    }
+  ],
+  "observations": [
+    {
+      "kind": "self-note",
+      "summary": "Fictional demonstration of defense evidence references."
+    }
+  ],
+  "evaluation": {
+    "decision": "insufficient",
+    "evaluatorKind": "human",
+    "reviewerLabel": "Example reviewer (identity not verified)",
+    "reviewedAt": "2026-11-20T09:40:00Z",
+    "criteriaSummary": "Fictional reviewer says more reproducibility evidence is required.",
+    "limitations": "Unverified reviewer identity. Test fixture; not a real human decision."
+  }
+}

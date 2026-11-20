@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/0xbuffdev/oee-workspace/main/evidence/schemas/attempt-v1.schema.json",
+  "title": "OEE Workspace learner-owned assessment attempt v1 (OEE v0.2.0)",
+  "description": "Structural, mutable learner record only; validation does not establish assessment completion, verify a reviewer, or assert OEE course readiness. Cross-document source, filesystem, UUID filename and hash checks belong to the Workspace evidence validator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "attemptId",
+    "recordedAt",
+    "course",
+    "assessmentId",
+    "outcomeIds",
+    "artifacts",
+    "observations",
+    "evaluation"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "attemptId": {
+      "$ref": "#/$defs/attemptId"
+    },
+    "recordedAt": {
+      "$ref": "#/$defs/utcTimestamp"
+    },
+    "course": {
+      "$ref": "#/$defs/course"
+    },
+    "assessmentId": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,6}[1-9][0-9]*-AS[1-9][0-9]*$"
+    },
+    "outcomeIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{2,6}[1-9][0-9]*-O[1-9][0-9]*$"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observation"
+      }
+    },
+    "assistance": {
+      "$ref": "#/$defs/assistance"
+    },
+    "evaluation": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/evaluation"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "attemptId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z$"
+    },
+    "course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision",
+        "specification",
+        "path",
+        "code"
+      ],
+      "properties": {
+        "repository": {
+          "const": "0xbuffdev/open-engineering-education"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "specification": {
+          "const": "v0.2.0"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^curriculum/(?:SEF|APP|SYS|AI|SEC)/(?:SEF|APP|SYS|AI|SEC)[1-9][0-9]*\\.md$"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,6}[1-9][0-9]*$"
+        }
+      }
+    },
+    "relativeArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "const": "relative-path"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))(?!.*//)(?!.*\\/$)[^\\u0000-\\u001F]+$"
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          ]
+        }
+      }
+    },
+    "externalArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "const": "external-url"
+        },
+        "value": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://[^\\s]+$"
+        }
+      }
+    },
+    "artifact": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/relativeArtifact"
+        },
+        {
+          "$ref": "#/$defs/externalArtifact"
+        }
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "summary"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "self-note",
+            "automated-check"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "assistance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declaredMode",
+        "summary"
+      ],
+      "properties": {
+        "declaredMode": {
+          "enum": [
+            "not-recorded",
+            "independent",
+            "collaborative",
+            "delegated"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "evaluatorKind",
+        "reviewerLabel",
+        "reviewedAt",
+        "criteriaSummary",
+        "limitations"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "met",
+            "not-met",
+            "insufficient"
+          ]
+        },
+        "evaluatorKind": {
+          "enum": [
+            "self",
+            "human"
+          ]
+        },
+        "reviewerLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewedAt": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "criteriaSummary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "limitations": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

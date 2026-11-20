@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "resources/**"
+      - "evidence/**"
       - "tests/**"
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - "resources/**"
+      - "evidence/**"
       - "tests/**"
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
@@ -41,7 +43,13 @@ jobs:
         run: python3 scripts/check-resources.py --oee _oee
       - name: Reject stale generated reading guides
         run: python3 scripts/render-resource-guides.py --oee _oee --check
-      - name: Strict v2 and pinned source export regression suite
+      - name: Set up Python for evidence contract verification
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test-only JSON Schema validator
+        run: python3 -m pip install --disable-pip-version-check "jsonschema==4.23.0"
+      - name: Strict v2, evidence schema, and pinned-source regression suite
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Verify canonical project scaffolding and safe failures (WS-I12)
         shell: bash
