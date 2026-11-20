@@ -105,6 +105,24 @@ invalid recorded pins fail. The scheduled/manual workflow preserves a
 separate advisory artifact and job summary. No automatically generated
 resource remap or backward-compatibility reader is provided.
 
+## Independent release smoke
+
+Use the [release-readiness guide](../docs/RELEASE-READINESS.md) to verify an
+entire learner flow from clean Git clones, without relying on private 0xNAND
+content, paid resources or credentials:
+
+```sh
+python scripts/verify-external-workspace.py \
+  --workspace-source . --oee-source /path/to/open-engineering-education \
+  --report ../workspace-readiness.json
+```
+
+The script clones both selected source commits to a temporary directory,
+runs their supported CLI with a separate local learner destination, and
+records a JSON report. The CI release matrix runs it on Linux, macOS and
+Windows, preserving platform artifacts. It does not release/tag software,
+fetch remote sources, or rewrite either source checkout.
+
 ## Development checks
 
 ```sh

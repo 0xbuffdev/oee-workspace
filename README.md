@@ -188,6 +188,15 @@ definitions and affected references without modifying reviewed maps or
 learner guides. A changed upstream revision **never** automatically changes
 your selected course source.
 
+## Independent release verification
+
+The [Workspace release-readiness guide](docs/RELEASE-READINESS.md) traces the
+existing WS-T01–WS-T24 acceptance matrix to executable checks and required
+human review. A separate, clean-clone smoke runs on Linux, macOS and Windows
+using public OEE/Workspace source only. It tests CLI scaffolding, pinned
+resources, local evidence integrity and explicit exports without publishing
+a release, uploading learner data or requiring an AI provider.
+
 ## Learner assessment evidence
 
 The [learner evidence record format](evidence/README.md) provides a strict, learner-owned JSON Schema v1 for OEE v0.2.0 assessment attempts. Records identify the exact OEE source commit, required assessment and outcome IDs, optional artifacts and observations, and explicitly declared evaluations.

@@ -98,11 +98,27 @@ def study_guide(code: str, revision: str, oee: Path) -> tuple[str | None, str]:
     if canon.get("revision") != revision:
         return None, "Reviewed resource map belongs to another source commit; no reading plan was generated."
 
+    # Perform the authoritative v2 and exact-OEE-commit validation once.
+    # Reuse the repository-owned guide renderer in-process instead of parsing
+    # output from a second subprocess. On Windows, a successful nested
+    # subprocess can expose stdout=None even when the direct renderer works;
+    # rendering from the same validated map avoids that failure mode and
+    # remains byte-identical to scripts/render-resource-guides.py.
     execute("check-resources.py", ["--oee", str(oee), "--course", code])
-    guide = execute("render-resource-guides.py", [
-        "--oee", str(oee), "--course", code, "--stdout",
-    ])
-    if not guide.startswith(f"# {code}"):
+    name = "oee_workspace_current_guide_renderer"
+    spec = importlib.util.spec_from_file_location(
+        name, ROOT / "scripts" / "render-resource-guides.py"
+    )
+    if spec is None or spec.loader is None:
+        invalid("canonical guide renderer is unavailable", "WSC005")
+    renderer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(renderer)
+    try:
+        guide = renderer.render(data, renderer.load_catalog())
+    except (KeyError, ValueError, UnicodeError, OSError) as exc:
+        invalid("canonical guide renderer rejected the validated map: "
+                + str(exc)[:350], "WSC005")
+    if not isinstance(guide, str) or not guide.startswith(f"# {code}"):
         invalid("renderer did not produce the expected canonical guide", "WSC005")
     return guide, "Reviewed, pinned optional study guide generated."
 
