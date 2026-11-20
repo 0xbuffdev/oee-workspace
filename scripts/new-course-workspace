@@ -157,7 +157,7 @@ done
 # The study guide is generated from public resource data, never from a paid
 # content source. Keep it separate from the learner-owned resources.md log.
 if [[ -f "$mapping_file" ]]; then
-  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --stdout > "$notes_dir/reading-plan.md"
+  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --oee "$oee_repo" --stdout > "$notes_dir/reading-plan.md"
 fi
 
 echo "Created workspace for $course in $workspace:"

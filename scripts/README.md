@@ -32,7 +32,7 @@ version, wrong SHA, unknown assessment, missing outcome coverage or changed
 module/lesson locator **fails explicitly**. There is no v1 reader,
 conversion process or fallback to the checkout's moving HEAD.
 
-This standalone export consumer is a narrow interface check, not proof of source provenance or an editorial review. WS-I01 now invokes the public OEE Toolkit on each v2 map's exact locally available Git commit, then checks the freshly derived export with this consumer. Old schema v1 is rejected. WS-I02 will author a reviewed map and WS-I04 will harden guide publishing. No active reviewed map has been published yet.
+This standalone export consumer is a narrow interface check, not proof of source provenance or an editorial review. WS-I01 invokes the public OEE Toolkit on each v2 map's exact locally available Git commit, then checks the freshly derived export with this consumer. Old schema v1 is rejected. WS-I02 has a reviewed SEF1 v2 mapping with explicit partial-coverage gaps; WS-I04 will harden guide publishing. Mapping review does not confer OEE course readiness.
 
 Do not use a standalone, externally provided export as proof of source provenance. The Workspace resource validator runs the public OEE Toolkit against the selected local Git commit, then checks the export. Its SHA identifies local bytes but does not authenticate the origin of an untrusted checkout. These checks establish structural consistency, **not** educational conformance, resource verification or learner achievement.
 
@@ -120,9 +120,10 @@ Test generation in a disposable directory before relying on a changed script in 
 
 ## Public reading plans
 
-There is currently no reviewed active v2 course mapping. Unmapped course scaffolding
-creates independent learner notes and resources logs without a reading plan.
-The old SEF1 v1 map is a negative regression fixture, never current study advice.
+SEF1 has a reviewed source-pinned v2 course map and generated guide with documented
+partial-coverage gaps. Its supplemental resources do not replace OEE assessment criteria.
+Unmapped courses scaffold independent learner notes and resources logs without a
+reading plan. The old SEF1 v1 map is a negative fixture, never current study advice.
 
 For mapped courses, validation now invokes the **single OEE Toolkit parser** on
 the map's full Git SHA from a local OEE checkout. Neither the worktree nor HEAD
@@ -138,8 +139,9 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 The resource-check exit codes are `0` for structurally passed, `1` for
 invalid references and `3` for missing or unsupported pinned sources.
-With no active maps, the command checks the public catalogue only. This
-does not imply a reviewed curriculum mapping or learner certification.
+When no active maps exist, the command checks the public catalogue only. A
+passing source check never implies learner certification.
 
-WS-I02 owns SEF1 human resource remapping, WS-I04 owns publication-safe
-guide writes, and WS-I11 owns remaining upstream drift notifications.
+WS-I02's SEF1 source/section resource map is reviewed, with seven documented
+partial-coverage gaps. WS-I04 owns publication-safe guide writes, and WS-I11
+owns remaining upstream drift notifications.
