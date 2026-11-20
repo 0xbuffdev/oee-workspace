@@ -5,7 +5,7 @@
 
 A reusable workspace for individuals and groups studying the [Open Engineering Education (OEE)](https://github.com/0xbuffdev/open-engineering-education) curriculum.
 
-OEE Workspace supports the practical side of studying OEE. It provides templates and generation scripts for organizing practical work, while giving learners a consistent structure for their actual implementations, labs, exercises, notes, projects, and evidence records.
+OEE Workspace supports the practical side of studying OEE. It provides templates and a local Python CLI for organizing practical work, while giving learners a consistent structure for their actual implementations, labs, exercises, notes, projects, and evidence records.
 
 The OEE repository remains the canonical source for the specification and curriculum. This workspace links to those definitions rather than maintaining independent copies of them.
 
@@ -14,7 +14,7 @@ The OEE repository remains the canonical source for the specification and curric
 | Repository | Responsibility |
 | --- | --- |
 | [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education) | Canonical specification, curriculum, course requirements, assessments, and project briefs |
-| [OEE Workspace](https://github.com/0xbuffdev/oee-workspace) | Workspace structure, templates, generation scripts, and conventions for learning and evidence |
+| [OEE Workspace](https://github.com/0xbuffdev/oee-workspace) | Workspace structure, local CLI, templates, and conventions for learning and evidence |
 | Personal or group workspace derived from OEE Workspace | Actual implementations, labs, exercises, notes, project work, and progress/evidence records |
 
 Use OEE Workspace as the baseline for your own learning environment. You may adapt its structure to your workflow, provided you preserve the references needed to identify the relevant OEE course or project.
@@ -54,7 +54,7 @@ Do not commit personal work to the upstream starter repository. All content comm
 
 ### 2. Clone the OEE repository
 
-The generation scripts validate course and project identifiers against a local OEE checkout before creating any files. The checkout also lets you read the canonical course definitions and project briefs next to your work, and it keeps validation working offline.
+The Python CLI validates canonical course and project identifiers against a local OEE Toolkit checkout at an explicit immutable Git commit before creating any files. The checkout also lets you read the canonical course definitions and project briefs next to your work, and it keeps validation working offline.
 
 Stay in the parent directory from step 1 and clone OEE as a sibling of your fork:
 
@@ -64,47 +64,74 @@ cd ~/projects
 git clone https://github.com/0xbuffdev/open-engineering-education.git
 ```
 
-If you use a fork or a different local location for OEE, set `OEE_REPO` to the path of that checkout. The default is a sibling directory named `open-engineering-education`.
+Use the explicit `--oee` argument to select that trusted local checkout and `--revision` to select a full 40-character commit SHA. No command selects the moving `HEAD`, downloads a source or requires an account.
 
-### 3. Generate a course workspace
+### 3. Check the local OEE source
 
-Run the course generator from the root of your workspace copy:
-
-```bash
-./scripts/new-course-workspace SEF SEF1
-```
-
-To write into another directory:
+From the root of your Workspace fork or template copy, run the offline CLI using Python 3.11 or later. This example uses one known immutable OEE v0.2.0 commit; choose the exact published source revision for the course you intend to study.
 
 ```bash
-./scripts/new-course-workspace SEF SEF1 /path/to/workspace
+python -m oee_workspace doctor --oee ../open-engineering-education \
+  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff
 ```
 
-You can also set a default destination:
+### 4. Generate a course workspace
+
+The supported entry point is **`python -m oee_workspace`**. Both the source checkout and learner destination are explicit:
 
 ```bash
-OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace SEF SEF1
+python -m oee_workspace course add SEF1 \
+  --oee ../open-engineering-education \
+  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
+  --dest .
 ```
 
-The generator uses the first-party OEE Toolkit to validate one exact Git commit, renders every template in a temporary staging directory, and then publishes new directories under `labs/`, `exercises/`, and `notes/` without replacing existing learner files. A `reading-plan.md` is included only when its public resource-map v2 is **reviewed** and validates against the pinned course. The SEF1 resource map is **reviewed**, but partial-coverage gaps remain and no external resource replaces OEE assessments. The separate `resources.md` file remains a learner-owned reading log.
+The CLI validates one Toolkit export from that commit, stages templates off-path, and creates `labs/`, `exercises/` and `notes/` only when no corresponding learner directories already exist. A `reading-plan.md` is included only when a **reviewed** public resource map matches the **same** source revision. An unmatched or unreviewed map is clearly omitted, not silently attached to newer course requirements. `resources.md` and `summary.md` remain learner-owned.
 
-Course codes are the program code plus a positive number, such as `SEF1` or `SYS1`. The generator validates the code against the local OEE checkout and fails until the matching course file exists.
-
-### 4. Generate a project workspace
-
-Use the project generator for a project defined by the OEE curriculum:
+If the Toolkit identifies the course as `Type: project`, the same command also generates `projects/<COURSE_CODE>/` with its design and review templates. For example:
 
 ```bash
-./scripts/new-project-workspace SEF10
+python -m oee_workspace course add SEF10 \
+  --oee ../open-engineering-education \
+  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
+  --dest .
 ```
 
-To choose a destination:
+There is no project-alias table or second Bash generator. A project brief is a link to the exact canonical OEE commit. Course status and requirements are not invented by Workspace.
+
+### 5. Record and check evidence
+
+A new assessment attempt receives a fresh UUID, includes its real pinned assessment/outcome identifiers and starts with **no evaluation**:
 
 ```bash
-./scripts/new-project-workspace SEF10 /path/to/workspace
+python -m oee_workspace evidence init \
+  --oee ../open-engineering-education \
+  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
+  --course SEF1 --assessment SEF1-AS1 --dest .
 ```
 
-The project generator accepts an OEE **course code**, not a project alias. It uses the public Toolkit to validate that the selected Git commit contains a structurally valid `v0.2.0` course with `Type: project`. It stages all templates before creating `projects/<course-code>/` and links to the exact source commit. Non-project courses and missing/unsupported sources are rejected before any learner files are created. The project templates are organizational aids, not competing assessment briefs. If a course requires an authorization record, use the available `templates/project-workspace/authorization.md` as appropriate to its actual requirements.
+The command prints the resulting `evidence/SEF/SEF1/SEF1-AS1/<UUID>.json` path. Add your actual artifact links, observations and deliberately recorded evaluation as appropriate, then check the specific record:
+
+```bash
+python -m oee_workspace evidence check \
+  --oee ../open-engineering-education \
+  --path evidence/SEF/SEF1/SEF1-AS1/<UUID>.json --dest .
+
+python -m oee_workspace status \
+  --oee ../open-engineering-education --dest .
+```
+
+For a local, **explicitly selected** evidence-only export:
+
+```bash
+python -m oee_workspace export \
+  --oee ../open-engineering-education --dest . \
+  --attempt <UUID> --output exports/selected.json
+```
+
+The export command creates a new JSON file and refuses to overwrite an existing one. It includes neither unselected records nor artifact file bytes, and never uploads data. Review learner-authored text for private information before sharing. The tool cannot authenticate reviewer claims, certify mastery or change OEE course readiness.
+
+On Windows, use the equivalent `python -m oee_workspace` command from PowerShell, with your own `--oee` and `--dest` paths. The CLI, Toolkit and Git must be available locally; no Bash runtime is required.
 
 ## Workspace structure
 
@@ -120,9 +147,12 @@ oee-workspace/
 │   └── <program>/<COURSE_CODE>/
 ├── projects/
 │   └── <project-course-code>/
-├── scripts/
-│   ├── new-course-workspace
-│   └── new-project-workspace
+├── evidence/
+│   └── <program>/<COURSE_CODE>/<ASSESSMENT_ID>/<UUID>.json
+├── oee_workspace/
+│   ├── __main__.py
+│   ├── evidence.py
+│   └── local.py
 └── templates/
     ├── course-workspace/
     ├── project-workspace/
@@ -145,15 +175,15 @@ A completion claim should be supported by inspectable evidence, not by a checked
 
 ## Public study resources
 
-The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. The historical SEF1 v1 map and guide were retired because they describe a different curriculum. A [reviewed SEF1 v2 resource map](resources/mappings/SEF/SEF1.json) and [generated guide](resources/guides/SEF/SEF1.md) are available for independent study. The review confirms the recorded references and explicit partial-coverage gaps; it does not certify OEE educational readiness or completion.
+The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. A [reviewed SEF1 v2 resource map](resources/mappings/SEF/SEF1.json) and [generated guide](resources/guides/SEF/SEF1.md) are available for independent study. The review confirms the recorded references and explicit partial-coverage gaps; it does not certify OEE educational readiness or completion.
 
-Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Generation uses same-filesystem renames for each staged destination. Because labs, exercises and notes are separate directories, unexpected filesystem failures can leave a partially published workspace; existing work is preserved for inspection rather than deleted. Public resources stay independent of private 0xNAND content.
+Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Generation stages complete directories before installation. Expected publication failures roll back only unchanged, newly created directories and preserve pre-existing files; a process crash or concurrent external modification can still leave partial new output requiring inspection. Evidence files and exports are published using exclusive, no-clobber filesystem operations. Public resources stay independent of private 0xNAND content.
 
-## Learner assessment evidence (WS-I06)
+## Learner assessment evidence
 
 The [learner evidence record format](evidence/README.md) provides a strict, learner-owned JSON Schema v1 for OEE v0.2.0 assessment attempts. Records identify the exact OEE source commit, required assessment and outcome IDs, optional artifacts and observations, and explicitly declared evaluations.
 
-The schema and [synthetic SEF1/SEF10 fixtures](tests/fixtures/evidence/) are published for interoperability. **WS-I07 now provides local Python evidence validation, read-only status projections and selective metadata export**; the supported cross-platform command-line entry points remain part of WS-I08. A structurally valid record, automated test observation, self-assessment or claimed human-review label does **not** prove mastery or verify reviewer identity. No account, online service or paid resource is required.
+The schema and [synthetic SEF1/SEF10 fixtures](tests/fixtures/evidence/) are published for interoperability. The supported Python CLI now exposes evidence initialization, pinned validation, read-only status and explicitly selected, local JSON export. A structurally valid record, automated test observation, self-assessment or claimed human-review label does **not** prove mastery or verify reviewer identity. No account, online service or paid resource is required.
 
 ## Evidence and reproducibility
 
@@ -176,7 +206,7 @@ For security work, use only systems you own or are explicitly authorized to test
 
 Do not commit sensitive logs, private datasets, model weights, or other large generated artifacts unnecessarily. Prefer synthetic fixtures and documented steps for reproducing results.
 
-## Updating templates and scripts
+## Updating templates and the CLI
 
 Generated workspaces are snapshots. Updating a source template does not automatically rewrite files already generated in a learner's workspace.
 

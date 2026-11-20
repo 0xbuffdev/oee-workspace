@@ -4,7 +4,7 @@ This library supports independent study of [Open Engineering Education](https://
 
 ## Current mapping status
 
-**The SEF1 v2 mapping is reviewed.** Its [source-pinned map](mappings/SEF/SEF1.json) and [generated Markdown](guides/SEF/SEF1.md) make verified external references available alongside explicit gaps. The former SEF1 schema-v1 mapping describes a different curriculum. It remains a deliberately rejected [negative test fixture](../tests/fixtures/resource-map-v1-SEF1.json) and in Git history; its chapter assignments were not transferred by module number.
+**The SEF1 v2 mapping is reviewed.** Its [source-pinned map](mappings/SEF/SEF1.json) and [generated Markdown](guides/SEF/SEF1.md) make verified external references available alongside explicit gaps. The active resource-map format is v2 only; unsupported inputs are exercised in rejection tests rather than accepted or automatically remapped.
 
 The public catalogue remains available: [books](catalog/books/) and [online resources](catalog/online/). The single [active mapping schema](schemas/course-map.schema.json) is **v2 only**, with an explicit OEE specification v0.2.0, exact 40-character lowercase source commit, canonical path, and optional outcome/assessment references. Module numbers, lesson locators and reading recommendations are scoped to the recorded revision.
 
@@ -18,21 +18,36 @@ The reviewed SEF1 map covers eight modules to independently checked public sourc
 - Catalogue IDs are stable and reusable, with optional resource-specific lesson, outcome and assessment references. References must exist in the exact selected OEE Toolkit export.
 - Paid resources are always optional; no public OEE requirement depends on paid books, private 0xNAND content or proprietary services.
 
+## Learner CLI
+
+The supported cross-platform command is `python -m oee_workspace`, with an
+explicit local OEE Toolkit checkout and exact immutable source revision. To
+check a mapping's structural and source-reference validity:
+
+```sh
+python -m oee_workspace resources check --oee /path/to/open-engineering-education --map resources/mappings/SEF/SEF1.json
+```
+
+This check does not imply editorial approval; only a **reviewed** resource map
+for the *exact selected source commit* may be attached to a generated learner
+workspace. Other valid courses can still be initialized without a guide.
+No purchased resource, Content repository or 0xNAND account is required.
+
 ## Validation
 
 Run catalogue checks and tests without a private service:
 
-~~~sh
+```sh
 python3 scripts/check-resources.py
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 scripts/render-resource-guides.py --check
-~~~
+```
 
 Validate the reviewed v2 map against its **exact local OEE Git commit**:
 
-~~~sh
+```sh
 python3 scripts/check-resources.py --course SEF1 --oee /path/to/open-engineering-education --json
 python3 scripts/render-resource-guides.py --course SEF1 --oee /path/to/open-engineering-education --stdout
-~~~
+```
 
 The resource validator now invokes the public OEE Toolkit directly on the map's recorded full Git commit and checks the derived export's exact source identity, modules, lessons, outcomes and assessments. When the commit is missing or unsupported, it returns **incomplete** (exit `3`) rather than using `HEAD`. The selected local checkout must be trusted; Git object IDs do not independently authenticate repository origin. The maintainer reviewed the SEF1 source/edition references, mapping choices and explicitly declared gaps under WS-I02. This does not assert full resource coverage, promote the OEE course status, or certify learner achievement. Only reviewed maps can publish a guide. Repository-owned generated guides are written through temporary files and atomic replacement; learner-owned reading logs and existing course workspaces are never overwritten.

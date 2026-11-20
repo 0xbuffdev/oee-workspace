@@ -206,12 +206,33 @@ def safe_file(root: Path, location: Path) -> tuple[Path, Path]:
     """
     if root.is_symlink() or not root.is_dir():
         invalid("workspace must be an existing real directory", "WSE004")
-    root = root.resolve(strict=True)
-    path = location if location.is_absolute() else root / location
-    try:
-        rel = path.relative_to(root)
-    except ValueError:
-        invalid("path escapes selected workspace", "WSE004")
+    # Keep the caller's lexical root as well as its canonical resolved path.
+    # macOS commonly aliases /var through /private/var. A caller may supply
+    # an absolute filename under either spelling of that *same* root, without
+    # granting access to paths outside the selected learner workspace.
+    lexical_root = root.expanduser().absolute()
+    canonical_root = lexical_root.resolve(strict=True)
+    if location.is_absolute():
+        try:
+            rel = location.relative_to(lexical_root)
+        except ValueError:
+            try:
+                rel = location.relative_to(canonical_root)
+            except ValueError:
+                # The incoming absolute path may use another spelling of the
+                # selected *root* (e.g. /var versus /private/var on macOS).
+                # Find the ancestor that points precisely to that root, then
+                # inspect every remaining relative component for symlinks.
+                alias = next(
+                    (parent for parent in location.parents
+                     if parent.resolve(strict=False) == canonical_root), None,
+                )
+                if alias is None:
+                    invalid("path escapes selected workspace", "WSE004")
+                rel = location.relative_to(alias)
+    else:
+        rel = location
+    root = canonical_root
     if not rel.parts or any(part in (".", "..") for part in rel.parts):
         invalid("unsafe workspace path", "WSE004")
     candidate = root
@@ -281,6 +302,9 @@ class EvidenceService:
             try:
                 raw = reader.read_pinned_export(self.oee, revision, code)
                 checked = reader.load_consumer().check_export(raw, revision)
+                # This type came from the already validated Toolkit export,
+                # never from a second Markdown parser or the moving worktree.
+                checked["courseType"] = raw["course"]["type"]
             except reader.PinnedSourceError as exc:
                 if exc.category in ("source_missing", "unsupported_format"):
                     incomplete("pinned OEE course source unavailable: " + exc.category, "WSE003")
