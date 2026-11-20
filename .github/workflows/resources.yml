@@ -10,6 +10,7 @@ on:
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
+      - "scripts/report-oee-drift.py"
       - ".github/workflows/resources.yml"
   pull_request:
     paths:
@@ -20,6 +21,7 @@ on:
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
+      - "scripts/report-oee-drift.py"
       - ".github/workflows/resources.yml"
 
 permissions:
@@ -51,6 +53,12 @@ jobs:
         run: python -m pip install --disable-pip-version-check "jsonschema==4.23.0"
       - name: Verify schemas, exact Toolkit exports, safe publishers and Python CLI
         run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Keep recorded SEF1 pin reproducible independently of upstream HEAD
+        run: |
+          python scripts/report-oee-drift.py --oee _oee \
+            --target-revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
+            --course SEF1 > pinned-sef1-contract.json
+          python -c "import json; r=json.load(open('pinned-sef1-contract.json', encoding='utf-8')); assert r['results'][0]['state'] == 'unchanged' and r['pinnedValidation'] == 'passed'"
 
   cli-portability:
     name: Python CLI (${{ matrix.os }})
@@ -77,3 +85,5 @@ jobs:
         run: python -m unittest discover -s tests -p "test_cli.py" -v
       - name: Enforce negative AI and agent safety tests
         run: python -m unittest discover -s tests -p "test_ai_safety.py" -v
+      - name: Verify pinned and advisory Toolkit drift contracts
+        run: python -m unittest discover -s tests -p "test_upstream_drift.py" -v

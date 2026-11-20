@@ -33,6 +33,16 @@ for the *exact selected source commit* may be attached to a generated learner
 workspace. Other valid courses can still be initialized without a guide.
 No purchased resource, Content repository or 0xNAND account is required.
 
+## Source changes and mapping review
+
+The [upstream OEE drift guide](../docs/OEE-UPSTREAM-DRIFT.md) describes how
+to compare each immutable reviewed map with a **separately chosen** full
+OEE source commit. Advisory differences to outcomes, assessment coverage,
+module/lesson positions and resource associations require deliberate
+human review. An upstream change never updates a learner guide or map
+silently; structurally valid v2 mappings stay pinned until a reviewed
+change is explicitly merged.
+
 ## Validation
 
 Run catalogue checks and tests without a private service:

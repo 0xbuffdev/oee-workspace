@@ -10,6 +10,7 @@ trusted local OEE Toolkit checkout. No Bash or remote service is required.
 | `check-resources.py` | Validate the resource catalogue and resource-map v2 against its exact OEE source |
 | `render-resource-guides.py` | Render or check deterministic, repository-owned guides from reviewed v2 maps |
 | `verify-oee-export.py` | Validate the canonical Toolkit export contract and optional consumer references without parsing OEE Markdown |
+| `report-oee-drift.py` | Compare exact pinned maps with a separately selected upstream OEE commit; report review risks without remapping |
 
 ## Learner CLI
 
@@ -80,6 +81,29 @@ python scripts/verify-oee-export.py \
 A full, locally available source SHA and matching course, outcomes, assessments,
 modules and lessons are mandatory. Missing revisions are incomplete;
 unsupported formats and invalid source references fail explicitly.
+
+## Advisory upstream OEE changes
+
+Pinned maps and published guides are validated against the **recorded**
+revision, not a moving branch. The separate
+[upstream drift workflow](../docs/OEE-UPSTREAM-DRIFT.md) detects meaningful
+changes in a chosen, explicit target revision. Its results never overwrite
+resource maps or infer module/assessment equivalence.
+
+```sh
+# Supply a full OEE Git SHA for the target you wish to inspect.
+python scripts/report-oee-drift.py \
+  --oee /path/to/open-engineering-education \
+  --target-revision TARGET_FULL_SHA \
+  --course SEF1
+```
+
+Drift reports are deterministic JSON. Exit `0` means both revisions were
+structurally comparable, **not** necessarily drift-free; consult
+`results[].state`. Exit `3` means target revision data is incomplete, while
+invalid recorded pins fail. The scheduled/manual workflow preserves a
+separate advisory artifact and job summary. No automatically generated
+resource remap or backward-compatibility reader is provided.
 
 ## Development checks
 
