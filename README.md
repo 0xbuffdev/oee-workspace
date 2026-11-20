@@ -179,6 +179,15 @@ The [public resource library](resources/README.md) contains optional book and on
 
 Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Generation stages complete directories before installation. Expected publication failures roll back only unchanged, newly created directories and preserve pre-existing files; a process crash or concurrent external modification can still leave partial new output requiring inspection. Evidence files and exports are published using exclusive, no-clobber filesystem operations. Public resources stay independent of private 0xNAND content.
 
+### Upstream OEE updates are advisory
+
+Workspace maps are pinned to an exact OEE commit. When OEE `main` changes,
+the [upstream drift guide](docs/OEE-UPSTREAM-DRIFT.md) explains how the separate
+read-only CI report identifies moved modules, revised assessments, outcome
+definitions and affected references without modifying reviewed maps or
+learner guides. A changed upstream revision **never** automatically changes
+your selected course source.
+
 ## Learner assessment evidence
 
 The [learner evidence record format](evidence/README.md) provides a strict, learner-owned JSON Schema v1 for OEE v0.2.0 assessment attempts. Records identify the exact OEE source commit, required assessment and outcome IDs, optional artifacts and observations, and explicitly declared evaluations.

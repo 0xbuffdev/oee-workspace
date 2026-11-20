@@ -73,6 +73,16 @@ Contributors retain their copyright. Submitting a contribution does not transfer
 
 For contributions that use the Developer Certificate of Origin, follow the instructions in [`DCO.md`](DCO.md) and sign commits with `git commit -s`.
 
+## Resource-map source changes
+
+A changed OEE upstream `main` is not authorization to update a reviewed
+resource map. Read the [upstream drift and pinned source guide](docs/OEE-UPSTREAM-DRIFT.md)
+and inspect the reported canonical outcome, assessment and module changes
+before proposing a new exact source revision. Keep partial-coverage gaps,
+verify cited editions and accessible alternatives, regenerate guides
+deterministically and seek maintainer approval. Do not add a version adapter
+or use the moving OEE `HEAD` for a pinned source check.
+
 ## Pull requests
 
 A pull request should explain:
