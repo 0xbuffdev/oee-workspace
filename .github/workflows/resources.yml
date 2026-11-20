@@ -75,3 +75,5 @@ jobs:
           python-version: "3.11"
       - name: Exercise offline doctor, scaffolding, evidence, status and export
         run: python -m unittest discover -s tests -p "test_cli.py" -v
+      - name: Enforce negative AI and agent safety tests
+        run: python -m unittest discover -s tests -p "test_ai_safety.py" -v

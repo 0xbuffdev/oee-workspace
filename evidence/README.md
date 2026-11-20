@@ -41,6 +41,13 @@ OEE_REPO=/path/to/open-engineering-education \
 
 `jsonschema` is a **test-only dependency** to exercise the published Draft 2020-12 contract. It is not required to create or study in a Workspace; ordinary runtime tools remain offline and standard-library-based. CI independently checks the real fixed-commit OEE Toolkit exports for SEF1 and SEF10.
 
+For assistance and agent execution boundaries, see the
+[AI and agent safety guide](../docs/AI-SAFETY.md). The optional
+`assistance.declaredMode` is **self-reported metadata**. Neither its absence
+nor any selected value establishes whether an external assistant was used,
+that an assessment's restrictions were enforced, or that a reviewer is
+authenticated.
+
 ## Privacy and status boundaries
 
 Records live locally and require no login, remote upload, model or paid book. Do not write credentials, private datasets, personal logs, raw agent transcripts or assessment secrets to public evidence directories. External URL entries are display references, not fetched content or trustworthy independent evidence.
