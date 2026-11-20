@@ -1,0 +1,72 @@
+name: Independent Workspace release readiness
+
+# WS-I05 is an engineering smoke and readiness gate, NOT a release publisher.
+# PR runs use the actual PR checkout; no private token/service or paid content.
+on:
+  pull_request:
+    paths:
+      - "oee_workspace/**"
+      - "resources/**"
+      - "evidence/**"
+      - "scripts/**"
+      - "templates/**"
+      - "tests/**"
+      - "docs/RELEASE-READINESS.md"
+      - ".github/workflows/release-readiness.yml"
+  push:
+    branches: [main]
+    paths:
+      - "oee_workspace/**"
+      - "resources/**"
+      - "evidence/**"
+      - "scripts/**"
+      - "templates/**"
+      - "tests/**"
+      - "docs/RELEASE-READINESS.md"
+      - ".github/workflows/release-readiness.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  independent-external-smoke:
+    name: External clone and offline CLI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout this exact Workspace change without persistent credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Checkout public OEE source and all pinned Git history
+        uses: actions/checkout@v4
+        with:
+          repository: 0xbuffdev/open-engineering-education
+          path: _oee
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up supported Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Independently clone and exercise the released command surface
+        shell: bash
+        env:
+          SMOKE_REPORT: ${{ runner.temp }}/oee-workspace-external-smoke.json
+        run: |
+          python scripts/verify-external-workspace.py \
+            --workspace-source . --oee-source _oee \
+            --report "$SMOKE_REPORT"
+      - name: Preserve platform-specific release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-readiness-${{ matrix.os }}
+          path: ${{ runner.temp }}/oee-workspace-external-smoke.json
+          if-no-files-found: warn
+          retention-days: 30
