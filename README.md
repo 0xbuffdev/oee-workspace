@@ -198,6 +198,19 @@ For work involving code or executable systems:
 
 See the [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md) for the canonical requirements.
 
+## AI and agent boundaries
+
+The supported Workspace CLI has **no embedded AI provider, agent runner,
+shell executor, grading assistant or automatic network access**. A learner may
+use an external assistant independently, but its suggestions and reported
+assistance never change the pinned OEE assessment requirements or prove mastery.
+
+Read the [AI and agent safety guide](docs/AI-SAFETY.md) for the enforced
+local-file and command boundaries, untrusted prompt/repository text, optional
+evidence assistance disclosures, private file handling and what the CLI
+**does not** enforce. In particular, the guide is not a sandbox and does not
+authorize a future model or execution adapter.
+
 ## Security and privacy
 
 Never commit credentials, API keys, private learner data, or unrelated personal material.

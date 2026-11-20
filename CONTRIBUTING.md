@@ -8,7 +8,7 @@ The workspace is both a reusable starting point and a structure for learner work
 
 - Improvements to the workspace README and directory guides.
 - Better templates for labs, exercises, project documentation, or evidence.
-- Bug fixes and validation improvements in the generation scripts.
+- Bug fixes and validation improvements in the Python CLI and local publication operations.
 - Improvements to privacy, reproducibility, and safe workspace practices.
 - Documentation and configuration fixes.
 - Reproducible examples that demonstrate a useful improvement.
@@ -36,19 +36,32 @@ When changing a template:
 - Confirm that the generator does not overwrite an existing destination.
 - Update the relevant documentation if the generated structure changes.
 
-## Script changes
+## CLI, templates and safety changes
 
-Changes to workspace-generation scripts should include appropriate validation and error handling.
+Changes to the Workspace Python CLI must keep the canonical OEE Toolkit as
+the only source parser, validate explicit immutable revisions and preserve
+existing learner files. No compatibility shell wrappers or prior-format
+adapters are accepted.
 
-Before submitting a script change, run:
+From the source repository root, run:
 
-```bash
-bash -n scripts/new-course-workspace
-bash -n scripts/new-project-workspace
+```sh
+python -m unittest discover -s tests -p 'test_*.py' -v
+python -m oee_workspace --help
 npx --yes markdownlint-cli2@0.24.0
 ```
 
-Where practical, test the script against a disposable workspace and a local OEE checkout. Record any validation that could not be completed.
+The pinned OEE integration fixtures additionally require a trusted local OEE
+checkout. CI provides the checkout and runs CLI and safety tests on Linux,
+macOS and Windows.
+
+For security changes, consult the
+[AI and agent safety boundaries](docs/AI-SAFETY.md). No pull request may add
+a model-provider dependency, execution entry point, network client, credential
+reader or automatic assessment decision without a **separate reviewed threat
+model, permission design and tests**. Repository content, imported prompts
+and model output are always untrusted data. A text instruction is not a
+technical sandbox or authorization.
 
 ## Contributions and licensing
 

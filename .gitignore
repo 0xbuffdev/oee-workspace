@@ -16,6 +16,28 @@ id_rsa*
 .kubeconfig
 kubeconfig*
 
+# Private local configuration and authentication material
+.envrc
+.direnv/
+.secrets/
+secrets/
+credentials.json
+service-account*.json
+*-service-account.json
+.npmrc
+.pypirc
+.netrc
+.aws/
+.azure/
+.config/gcloud/
+*.tfvars
+*.tfvars.json
+
+# Optional agent transcripts and private conversations are local only
+private-transcripts/
+agent-transcripts/private/
+.ai-private/
+
 # Python
 .venv/
 venv/
