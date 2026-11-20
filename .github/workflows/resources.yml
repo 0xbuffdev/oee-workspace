@@ -5,6 +5,7 @@ on:
     paths:
       - "resources/**"
       - "evidence/**"
+      - "oee_workspace/**"
       - "tests/**"
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
@@ -17,6 +18,7 @@ on:
     paths:
       - "resources/**"
       - "evidence/**"
+      - "oee_workspace/**"
       - "tests/**"
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
