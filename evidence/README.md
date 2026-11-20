@@ -27,7 +27,7 @@ For example `evidence/SEF/SEF1/SEF1-AS1/68e5f624-bfb1-4c1e-8c87-486668f4884e.jso
 
 Every source revision must exist in a **trusted local OEE checkout**. Path/assessment/outcome relationships must match the Toolkit export produced from that exact Git commit, not `HEAD`. `artifacts[].value` with `kind: relative-path` is resolved under the selected learner workspace. An absent artifact/source is incomplete; a mismatched hash is an integrity failure. Symlink traversal and containment must be checked on the real filesystem, not inferred from the string alone.
 
-These are **runtime validation obligations for WS-I07**. WS-I06 supplies the schema, synthetic fixtures and independent tests of the source-reference contract. It intentionally does not ship a learner evidence validator, CLI, status engine or export tool yet. JSON Schema cannot verify a file exists, whether a hash matches, an outcome's assessed adequacy, or whether a reviewer is genuine.
+The **WS-I07 evidence operations are implemented** in [`oee_workspace/evidence.py`](../oee_workspace/evidence.py). They use Python's standard library plus the existing pinned Toolkit export consumer; they validate the real local filesystem and source/assessment relationships, produce read-only status projections, and assemble only explicitly selected attempt metadata for a future local export. They never run student code or fetch external URLs. **WS-I08 will provide the supported cross-platform CLI and safe file publication.** The schema alone still cannot establish an outcome's substantive adequacy or verify a reviewer's identity.
 
 ## Example fixture and testing
 
@@ -45,4 +45,39 @@ OEE_REPO=/path/to/open-engineering-education \
 
 Records live locally and require no login, remote upload, model or paid book. Do not write credentials, private datasets, personal logs, raw agent transcripts or assessment secrets to public evidence directories. External URL entries are display references, not fetched content or trustworthy independent evidence.
 
-The future WS-I07 status view may report *attempt recorded*, *self-assessed*, or *human-review reported* (reviewer unverified). It must consider every required assessment individually; two required assessments that cover one outcome cannot be collapsed into one success. Only explicitly selected attempts may enter a future portable export. No default telemetry, hidden upload, automatic execution or grading is authorized here.
+WS-I07 reports *attempt recorded*, *self-assessed*, *human-review reported* (identity unverified), and *no evidence* when a specific pinned course is requested without attempts. Each required assessment is considered separately, including outcomes evaluated by more than one required assessment. Even when all assessment decisions are present, Workspace does not automatically mark a course completed. Only explicitly selected attempt JSON enters a local export; no artifact file bytes, unrelated records, default telemetry, hidden upload, automatic execution or grading are included.
+
+## Read-only Python operations
+
+From a learner workspace's parent/source environment (or after adding this repository to `PYTHONPATH`):
+
+```python
+from pathlib import Path
+from oee_workspace import EvidenceService
+
+service = EvidenceService(
+    workspace=Path("/path/to/learner"),
+    oee=Path("/path/to/open-engineering-education"),
+)
+
+# Path is under the selected learner workspace; source revisions are
+# taken from each attempt record, never from the current OEE HEAD.
+result = service.check(Path("evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json"))
+status = service.status()
+
+# Optional explicitly pinned empty-course projection.
+empty = service.status(
+    "SEF1", "67416343f3eab17ada5d3c79ae6cc782524c29ff"
+)
+
+# Pure metadata operation. The caller must deliberately handle publication.
+selected = service.export_selected([
+    Path("evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json"),
+])
+```
+
+`check` returns `valid`, `invalid`, or `incomplete` for **record integrity and structural references only**. Invalid local paths, mismatched artifact hashes, unsupported formats and unknown required assessments are rejected. Missing source commits or missing local artifacts are reported `incomplete`. Source failures never fall back to OEE `HEAD`. The `review` status is a description of a learner-supplied field, not a verified educational decision.
+
+`status` scans local attempt records, flags duplicate IDs, displays the separate required assessments and their reported review decisions, and never rewrites `progress.md`. `export_selected` rejects missing/invalid/incomplete selections and returns only explicitly chosen record metadata, without copying artifact file content; it does **not** save a file or upload anywhere. A future CLI will provide intentional, atomic local file creation.
+
+These filesystem checks are for a trusted learner-owned directory, **not a security sandbox against malicious concurrent filesystem mutation**. Check exports and any chosen optional external URL before sharing; the tool cannot promise that user-authored free-text fields contain no secrets.

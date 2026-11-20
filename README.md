@@ -153,7 +153,7 @@ Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; 
 
 The [learner evidence record format](evidence/README.md) provides a strict, learner-owned JSON Schema v1 for OEE v0.2.0 assessment attempts. Records identify the exact OEE source commit, required assessment and outcome IDs, optional artifacts and observations, and explicitly declared evaluations.
 
-The schema and [synthetic SEF1/SEF10 fixtures](tests/fixtures/evidence/) are published for interoperability; **the local validator, status view and export command are not yet implemented** (WS-I07/WS-I08). A structurally valid record, automated test observation, self-assessment or claimed human-review label does **not** prove mastery or verify reviewer identity. No account, online service or paid resource is required.
+The schema and [synthetic SEF1/SEF10 fixtures](tests/fixtures/evidence/) are published for interoperability. **WS-I07 now provides local Python evidence validation, read-only status projections and selective metadata export**; the supported cross-platform command-line entry points remain part of WS-I08. A structurally valid record, automated test observation, self-assessment or claimed human-review label does **not** prove mastery or verify reviewer identity. No account, online service or paid resource is required.
 
 ## Evidence and reproducibility
 
