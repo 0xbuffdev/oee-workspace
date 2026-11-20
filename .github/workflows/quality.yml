@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   quality:
-    name: Markdown and shell checks
+    name: Markdown and Python syntax
     runs-on: ubuntu-latest
 
     steps:
@@ -20,8 +20,8 @@ jobs:
       - name: Lint Markdown
         run: npx --yes markdownlint-cli2@0.24.0
 
-      - name: Validate generation scripts
+      - name: Validate current Python commands and library syntax
         run: |
-          bash -n scripts/new-course-workspace
-          bash -n scripts/new-project-workspace
-          python3 -m py_compile scripts/publish-workspace.py scripts/render-resource-guides.py oee_workspace/evidence.py
+          python3 -m py_compile oee_workspace/__main__.py oee_workspace/local.py oee_workspace/evidence.py
+          python3 -m py_compile scripts/check-resources.py scripts/render-resource-guides.py scripts/verify-oee-export.py
+          python3 -m oee_workspace --help

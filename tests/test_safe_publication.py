@@ -23,7 +23,7 @@ def load_script(filename: str, module_name: str):
     return module
 
 
-publisher = load_script("publish-workspace.py", "oee_safe_publish")
+from oee_workspace import local as publisher
 guides = load_script("render-resource-guides.py", "oee_safe_guides")
 
 
@@ -54,7 +54,7 @@ class PublisherTests(unittest.TestCase):
         target = self.root / self.course_paths[0]
         target.mkdir(parents=True)
         (target / "README.md").write_text("My work", encoding="utf-8")
-        with self.assertRaisesRegex(publisher.PublishError, "already exists"):
+        with self.assertRaisesRegex(publisher.PublicationError, "already exists"):
             publisher.publish(self.root, self.stage, self.course_paths)
         self.assertEqual((target / "README.md").read_text(), "My work")
         self.assertFalse((self.root / self.course_paths[1]).exists())
@@ -64,7 +64,7 @@ class PublisherTests(unittest.TestCase):
         outside = Path(self.temp.name) / "outside"
         outside.mkdir()
         (self.root / "labs").symlink_to(outside, target_is_directory=True)
-        with self.assertRaisesRegex(publisher.PublishError, "real directory"):
+        with self.assertRaisesRegex(publisher.PublicationError, "real directory"):
             publisher.publish(self.root, self.stage, self.course_paths)
         self.assertEqual(list(outside.iterdir()), [])
 
@@ -75,25 +75,25 @@ class PublisherTests(unittest.TestCase):
         directory = self.root / "labs" / "SEF"
         directory.mkdir(parents=True)
         (directory / "SEF1").symlink_to(outside, target_is_directory=True)
-        with self.assertRaisesRegex(publisher.PublishError, "already exists"):
+        with self.assertRaisesRegex(publisher.PublicationError, "already exists"):
             publisher.publish(self.root, self.stage, self.course_paths)
         self.assertEqual((outside / "evidence.txt").read_text(), "mine")
 
     def test_missing_stage_aborts_before_any_publish(self):
         (self.stage / self.course_paths[2] / "README.md").unlink()
         (self.stage / self.course_paths[2]).rmdir()
-        with self.assertRaisesRegex(publisher.PublishError, "staged output"):
+        with self.assertRaisesRegex(publisher.PublicationError, "staged output"):
             publisher.publish(self.root, self.stage, self.course_paths)
         self.assertFalse((self.root / self.course_paths[0]).exists())
 
     def test_failed_first_rename_preserves_stage(self):
         with patch.object(publisher.os, "rename", side_effect=OSError("injected")):
-            with self.assertRaisesRegex(publisher.PublishError, "publishing stopped"):
+            with self.assertRaisesRegex(publisher.PublicationError, "new files rolled back"):
                 publisher.publish(self.root, self.stage, self.course_paths)
         self.assertFalse((self.root / self.course_paths[0]).exists())
         self.assertTrue((self.stage / self.course_paths[0] / "README.md").exists())
 
-    def test_partial_publish_does_not_delete_learner_files(self):
+    def test_partial_publish_rolls_back_only_newly_owned_files(self):
         real_rename = os.rename
         calls = []
 
@@ -104,20 +104,22 @@ class PublisherTests(unittest.TestCase):
             real_rename(src, target)
 
         with patch.object(publisher.os, "rename", side_effect=fail_second):
-            with self.assertRaisesRegex(publisher.PublishError, "after 1 directories"):
+            with self.assertRaisesRegex(publisher.PublicationError, "new files rolled back"):
                 publisher.publish(self.root, self.stage, self.course_paths)
-        self.assertTrue((self.root / self.course_paths[0] / "README.md").exists())
+        self.assertFalse((self.root / self.course_paths[0]).exists())
         self.assertFalse((self.root / self.course_paths[1]).exists())
+        self.assertTrue((self.stage / self.course_paths[1] / "README.md").exists())
 
     def test_reject_outside_stage_and_invalid_project(self):
         other = Path(self.temp.name) / ".oee-stage-elsewhere"
         other.mkdir()
-        with self.assertRaisesRegex(publisher.PublishError, "directly inside"):
+        with self.assertRaisesRegex(publisher.PublicationError, "directly inside"):
             publisher.publish(self.root, other, self.course_paths)
-        self.assertEqual(publisher.main([
-            "--workspace", str(self.root), "--stage", str(self.stage),
-            "--project", "ledgerlab",
-        ]), 1)
+        # Invalid project aliases are rejected by the current-only CLI.
+        # The publisher itself accepts only validated relative destinations.
+        with self.assertRaisesRegex(publisher.PublicationError,
+                                    "invalid relative destination"):
+            publisher.publish(self.root, self.stage, [Path("../ledgerlab")])
 
     def test_project_install(self):
         rel = Path("projects") / "SEF10"

@@ -27,7 +27,7 @@ For example `evidence/SEF/SEF1/SEF1-AS1/68e5f624-bfb1-4c1e-8c87-486668f4884e.jso
 
 Every source revision must exist in a **trusted local OEE checkout**. Path/assessment/outcome relationships must match the Toolkit export produced from that exact Git commit, not `HEAD`. `artifacts[].value` with `kind: relative-path` is resolved under the selected learner workspace. An absent artifact/source is incomplete; a mismatched hash is an integrity failure. Symlink traversal and containment must be checked on the real filesystem, not inferred from the string alone.
 
-The **WS-I07 evidence operations are implemented** in [`oee_workspace/evidence.py`](../oee_workspace/evidence.py). They use Python's standard library plus the existing pinned Toolkit export consumer; they validate the real local filesystem and source/assessment relationships, produce read-only status projections, and assemble only explicitly selected attempt metadata for a future local export. They never run student code or fetch external URLs. **WS-I08 will provide the supported cross-platform CLI and safe file publication.** The schema alone still cannot establish an outcome's substantive adequacy or verify a reviewer's identity.
+The **WS-I07 evidence operations are implemented** in [`oee_workspace/evidence.py`](../oee_workspace/evidence.py). They use Python's standard library plus the existing pinned Toolkit export consumer; they validate the real local filesystem and source/assessment relationships, produce read-only status projections, and assemble only explicitly selected attempt metadata for a future local export. They never run student code or fetch external URLs. **WS-I08 now supplies the cross-platform Python CLI and exclusive, no-clobber local attempt/export publication.** The schema alone still cannot establish an outcome's substantive adequacy or verify a reviewer's identity.
 
 ## Example fixture and testing
 
@@ -46,6 +46,33 @@ OEE_REPO=/path/to/open-engineering-education \
 Records live locally and require no login, remote upload, model or paid book. Do not write credentials, private datasets, personal logs, raw agent transcripts or assessment secrets to public evidence directories. External URL entries are display references, not fetched content or trustworthy independent evidence.
 
 WS-I07 reports *attempt recorded*, *self-assessed*, *human-review reported* (identity unverified), and *no evidence* when a specific pinned course is requested without attempts. Each required assessment is considered separately, including outcomes evaluated by more than one required assessment. Even when all assessment decisions are present, Workspace does not automatically mark a course completed. Only explicitly selected attempt JSON enters a local export; no artifact file bytes, unrelated records, default telemetry, hidden upload, automatic execution or grading are included.
+
+## Supported command-line operations
+
+From the root of your learner Workspace with Python 3.11+, a trusted OEE
+checkout and a full 40-character OEE source SHA:
+
+```sh
+python -m oee_workspace evidence init --oee ../open-engineering-education --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff --course SEF1 --assessment SEF1-AS1 --dest .
+python -m oee_workspace evidence check --oee ../open-engineering-education --path evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json --dest .
+python -m oee_workspace status --oee ../open-engineering-education --dest .
+python -m oee_workspace export --oee ../open-engineering-education --dest . --attempt ATTEMPT-UUID --output exports/selected.json
+```
+
+`evidence init` records a **fresh** UUID with all of the selected required
+assessment's published outcome IDs and `evaluation: null`. It does not
+fabricate observations, artifacts or a passing score. A previously created
+attempt is never changed by the CLI. `status` reports the available records
+and any missing review decisions; `export` includes only explicitly selected,
+validated JSON metadata and never artifact bytes or unrelated workspace files.
+Repeated export into an existing filename fails instead of replacing it.
+
+The CLI uses exit codes 0 (success), 1 (invalid), 2 (bad arguments),
+3 (missing/unsupported source or incomplete check) and 4 (unexpected fault).
+No automatic assessment execution, AI-provider integration or hosted sync is
+included. Local export performs a narrow common-credential check, **not**
+general detection of all personal data: review free-text fields yourself before
+sharing outside your workspace.
 
 ## Read-only Python operations
 
@@ -78,6 +105,6 @@ selected = service.export_selected([
 
 `check` returns `valid`, `invalid`, or `incomplete` for **record integrity and structural references only**. Invalid local paths, mismatched artifact hashes, unsupported formats and unknown required assessments are rejected. Missing source commits or missing local artifacts are reported `incomplete`. Source failures never fall back to OEE `HEAD`. The `review` status is a description of a learner-supplied field, not a verified educational decision.
 
-`status` scans local attempt records, flags duplicate IDs, displays the separate required assessments and their reported review decisions, and never rewrites `progress.md`. `export_selected` rejects missing/invalid/incomplete selections and returns only explicitly chosen record metadata, without copying artifact file content; it does **not** save a file or upload anywhere. A future CLI will provide intentional, atomic local file creation.
+`status` scans local attempt records, flags duplicate IDs, displays the separate required assessments and their reported review decisions, and never rewrites `progress.md`. `export_selected` rejects missing/invalid/incomplete selections and returns only explicitly chosen record metadata, without copying artifact file content; it does **not** save a file or upload anywhere. The current CLI creates new attempts and exports only, using staged, exclusive file publication with no overwrite.
 
 These filesystem checks are for a trusted learner-owned directory, **not a security sandbox against malicious concurrent filesystem mutation**. Check exports and any chosen optional external URL before sharing; the tool cannot promise that user-authored free-text fields contain no secrets.

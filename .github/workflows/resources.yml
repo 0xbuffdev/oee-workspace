@@ -1,4 +1,4 @@
-name: Validate resource mappings
+name: Validate OEE Workspace contracts
 
 on:
   push:
@@ -10,9 +10,6 @@ on:
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
-      - "scripts/publish-workspace.py"
-      - "scripts/new-course-workspace"
-      - "scripts/new-project-workspace"
       - ".github/workflows/resources.yml"
   pull_request:
     paths:
@@ -23,118 +20,58 @@ on:
       - "scripts/check-resources.py"
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
-      - "scripts/publish-workspace.py"
-      - "scripts/new-course-workspace"
-      - "scripts/new-project-workspace"
       - ".github/workflows/resources.yml"
 
+permissions:
+  contents: read
+
 jobs:
-  resource-check:
+  pinned-contracts:
+    name: Pinned resource and evidence contracts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Workspace
         uses: actions/checkout@v4
-      - name: Checkout OEE for unmapped course scaffolding
+      - name: Checkout complete canonical OEE history
         uses: actions/checkout@v4
         with:
           repository: 0xbuffdev/open-engineering-education
           path: _oee
           persist-credentials: false
           fetch-depth: 0
-      - name: Validate all maps against exact source commits
-        run: python3 scripts/check-resources.py --oee _oee
-      - name: Reject stale generated reading guides
-        run: python3 scripts/render-resource-guides.py --oee _oee --check
-      - name: Set up Python for evidence contract verification
+      - name: Set up supported Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Validate all reviewed resource maps against exact source commits
+        run: python scripts/check-resources.py --oee _oee
+      - name: Reject stale generated reading guides
+        run: python scripts/render-resource-guides.py --oee _oee --check
       - name: Install test-only JSON Schema validator
-        run: python3 -m pip install --disable-pip-version-check "jsonschema==4.23.0"
-      - name: Strict v2, evidence schema, and pinned-source regression suite
-        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
-      - name: Verify canonical project scaffolding and safe failures (WS-I12)
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash -n scripts/new-project-workspace
-          temp="$(mktemp -d)"
-          trap 'rm -rf "$temp"' EXIT
-          mkdir -p "$temp/learner" "$temp/ordinary" "$temp/unknown" "$temp/alias"
-          OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF10 "$temp/learner"
-          test -f "$temp/learner/projects/SEF10/BRIEF.md"
-          test -f "$temp/learner/projects/SEF10/docs/evaluation.md"
-          grep -Fq 'curriculum/SEF/SEF10.md' "$temp/learner/projects/SEF10/BRIEF.md"
-          printf '\nLearner work must remain\n' >> "$temp/learner/projects/SEF10/README.md"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF10 "$temp/learner"; then
-            echo "ERROR: existing project workspace overwritten" >&2
-            exit 1
-          fi
-          grep -Fq 'Learner work must remain' "$temp/learner/projects/SEF10/README.md"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF1 "$temp/ordinary"; then
-            echo "ERROR: non-project course accepted" >&2
-            exit 1
-          fi
-          test ! -e "$temp/ordinary/projects/SEF1"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF999 "$temp/unknown"; then
-            echo "ERROR: nonexistent course accepted" >&2
-            exit 1
-          fi
-          test ! -e "$temp/unknown/projects/SEF999"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace ledgerlab "$temp/alias"; then
-            echo "ERROR: obsolete project alias accepted" >&2
-            exit 1
-          fi
-          test ! -e "$temp/alias/projects/ledgerlab"
-      - name: Verify unmapped scaffolding and preserve learner files
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash -n scripts/new-course-workspace
-          temp="$(mktemp -d)"
-          trap 'rm -rf "$temp"' EXIT
-          mkdir -p "$temp/learner" "$temp/other"
-          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/learner"
-          plan="$temp/learner/notes/SEF/SEF2/reading-plan.md"
-          log="$temp/learner/notes/SEF/SEF2/resources.md"
-          test ! -e "$plan"
-          printf '\nLearner-owned entry\n' >> "$log"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/learner"; then
-            echo "ERROR: existing learner directories were overwritten" >&2
-            exit 1
-          fi
-          grep -q "Learner-owned entry" "$log"
-          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF3 "$temp/other"
-          test ! -e "$temp/other/notes/SEF/SEF3/reading-plan.md"
-          mkdir -p "$temp/mapped"
-          OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$temp/mapped"
-          mapped_guide="$temp/mapped/notes/SEF/SEF1/reading-plan.md"
-          test -s "$mapped_guide"
-          cmp "$mapped_guide" resources/guides/SEF/SEF1.md
-          grep -Fq "67416343f3eab17ada5d3c79ae6cc782524c29ff" "$mapped_guide"
-          test -f "$temp/mapped/notes/SEF/SEF1/resources.md"
-          test -f "$temp/mapped/notes/SEF/SEF1/summary.md"
-          grep -Fq "Reviewed resource guidance" "$mapped_guide"
-          mkdir -p "$temp/existing/notes/SEF/SEF1" "$temp/symlink" "$temp/outside"
-          printf 'Learner evidence\n' > "$temp/existing/notes/SEF/SEF1/summary.md"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF1 "$temp/existing"; then
-            echo "ERROR: existing learner note was replaced" >&2
-            exit 1
-          fi
-          grep -Fxq 'Learner evidence' "$temp/existing/notes/SEF/SEF1/summary.md"
-          test ! -e "$temp/existing/labs/SEF/SEF1"
-          ln -s "$temp/outside" "$temp/symlink/labs"
-          if OEE_REPO="$PWD/_oee" bash scripts/new-course-workspace SEF SEF2 "$temp/symlink"; then
-            echo "ERROR: symlinked learner path accepted" >&2
-            exit 1
-          fi
-          test ! -e "$temp/outside/SEF"
-          test ! -e "$temp/symlink/notes/SEF/SEF2"
-          # Unsupported course formats must not be accepted.
-          mkdir -p "$temp/legacy-oee/curriculum/SEF" "$temp/legacy-learner"
-          printf '**Specification:** `v0.1.0`\n' > "$temp/legacy-oee/curriculum/SEF/SEF1.md"
-          if OEE_REPO="$temp/legacy-oee" bash scripts/new-course-workspace SEF SEF1 "$temp/legacy-learner"; then
-            echo "ERROR: legacy OEE format was accepted" >&2
-            exit 1
-          fi
-          test ! -e "$temp/legacy-learner/notes/SEF/SEF1"
+        run: python -m pip install --disable-pip-version-check "jsonschema==4.23.0"
+      - name: Verify schemas, exact Toolkit exports, safe publishers and Python CLI
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+  cli-portability:
+    name: Python CLI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout Workspace
+        uses: actions/checkout@v4
+      - name: Checkout complete canonical OEE history
+        uses: actions/checkout@v4
+        with:
+          repository: 0xbuffdev/open-engineering-education
+          path: _oee
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up supported Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Exercise offline doctor, scaffolding, evidence, status and export
+        run: python -m unittest discover -s tests -p "test_cli.py" -v

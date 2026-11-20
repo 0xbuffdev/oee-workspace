@@ -1,146 +1,99 @@
-# Workspace generation scripts
+# Internal validation and resource tools
 
-The scripts in this directory create workspace structures for OEE courses and projects. They use templates maintained in this repository and validate identifiers against a local checkout of the canonical OEE curriculum.
+The supported learner command is [`python -m oee_workspace`](../README.md). The
+`scripts/` directory contains **repository-maintenance tools**, not a second
+course or project generator. All CLI commands use Python 3.11+, Git and a
+trusted local OEE Toolkit checkout. No Bash or remote service is required.
 
-## Scripts
-
-| Script | Purpose |
+| Tool | Purpose |
 | --- | --- |
-| `new-course-workspace` | Creates the lab, exercise, and notes directories for a course |
-| `new-project-workspace` | Creates the documentation structure for a project |
-| `check-resources.py` | Validates public catalogue records and canonical course mappings |
-| `render-resource-guides.py` | Validates and atomically updates repository-owned guides for reviewed maps |
-| `publish-workspace.py` | Publishes fully staged learner directories without replacing existing work |
+| `check-resources.py` | Validate the resource catalogue and resource-map v2 against its exact OEE source |
+| `render-resource-guides.py` | Render or check deterministic, repository-owned guides from reviewed v2 maps |
+| `verify-oee-export.py` | Validate the canonical Toolkit export contract and optional consumer references without parsing OEE Markdown |
 
-## Pinned OEE Toolkit consumer contract (WS-I11 groundwork)
+## Learner CLI
 
-The independent `verify-oee-export.py` command checks an already
-generated, source-pinned OEE **export format 1** against an explicitly
-selected full OEE commit SHA. It accepts an optional **resource-map v2**
-document, checking canonical source identity, module/lesson locators,
-outcome IDs and assessment IDs without parsing the OEE Markdown again.
+The current module provides the following operations without maintaining
+deprecated Bash commands or project-name aliases:
+
+```text
+python -m oee_workspace doctor --oee OEE_REPO --revision FULL_SHA
+python -m oee_workspace course add SEF1 --oee OEE_REPO --revision FULL_SHA --dest LEARNER_DIR
+python -m oee_workspace resources check --oee OEE_REPO --map MAP_FILE
+python -m oee_workspace evidence init --oee OEE_REPO --revision FULL_SHA --course SEF1 --assessment SEF1-AS1 --dest LEARNER_DIR
+python -m oee_workspace evidence check --oee OEE_REPO --path RECORD_FILE --dest LEARNER_DIR
+python -m oee_workspace status --oee OEE_REPO --dest LEARNER_DIR
+python -m oee_workspace export --oee OEE_REPO --dest LEARNER_DIR --output FILE --attempt UUID
+```
+
+The `--oee` checkout and `--revision` are explicit where source selection
+is needed. A moving `HEAD`, branch or abbreviated SHA cannot replace an exact
+canonical course commit. The CLI refuses unsupported OEE formats: only
+`v0.2.0` and Workspace resource-map v2 are current.
+
+Course generation stages all new files under the learner destination before
+publication. The validated Toolkit course type controls project scaffolding;
+there is no separate arbitrary project generator. An existing course or
+project destination is never merged or overwritten. Expected failed staged
+publication rolls back only newly owned, unchanged directories. Power failure
+or external concurrent mutations can require manual inspection.
+
+Fresh evidence attempts and explicit local exports use a same-directory
+temporary file and an exclusive hard-link installation to prevent
+overwriting existing records. If hard links are unsupported by a selected
+filesystem, publication fails rather than silently replacing a file.
+`--output` for local exports must stay inside the selected learner workspace,
+and exported files contain no artifact bytes. Workspace performs no hidden
+upload, telemetry, automated grading or execution of learner code.
+
+## Resource validation
+
+The resource checker executes the **first-party OEE Toolkit** against the
+map's recorded immutable local Git commit, then checks v2 source references.
+No independent curriculum Markdown parser or schema converter is included.
 
 ```sh
-python3 scripts/verify-oee-export.py \
-  --export /path/to/SEF1.json \
+python scripts/check-resources.py --oee /path/to/open-engineering-education
+python scripts/render-resource-guides.py --oee /path/to/open-engineering-education --check
+python -m oee_workspace resources check --oee /path/to/open-engineering-education --map resources/mappings/SEF/SEF1.json
+```
+
+SEF1 has a reviewed, source-pinned map with seven documented partial-coverage
+gaps. Optional resources never replace OEE assessments or require a purchase.
+A course without a matching **reviewed** map still scaffolds without a
+reading plan and explicitly reports why guidance was omitted.
+
+### Export-consumer interface
+
+`verify-oee-export.py` is a narrow structural interface check for the
+first-party Toolkit's `exportVersion: 1` JSON contract, not proof that
+caller-supplied JSON is trustworthy. Normal Workspace operations obtain
+exports directly from the first-party Toolkit.
+
+```sh
+python scripts/verify-oee-export.py \
+  --export /path/to/pinned-course-export.json \
   --revision FULL_OEE_SOURCE_COMMIT_SHA \
   --json
 ```
 
-Pass `--map /path/to/reviewed-v2-map.json` to inspect a resource map's
-consumer references. An unsupported schema v1, incompatible export
-version, wrong SHA, unknown assessment, missing outcome coverage or changed
-module/lesson locator **fails explicitly**. There is no v1 reader,
-conversion process or fallback to the checkout's moving HEAD.
+A full, locally available source SHA and matching course, outcomes, assessments,
+modules and lessons are mandatory. Missing revisions are incomplete;
+unsupported formats and invalid source references fail explicitly.
 
-This standalone export consumer is a narrow interface check, not proof of source provenance or an editorial review. WS-I01 invokes the public OEE Toolkit on each v2 map's exact locally available Git commit, then checks the freshly derived export with this consumer. Old schema v1 is rejected. WS-I02 has a reviewed SEF1 v2 mapping with explicit partial-coverage gaps; WS-I04 will harden guide publishing. Mapping review does not confer OEE course readiness.
+## Development checks
 
-Do not use a standalone, externally provided export as proof of source provenance. The Workspace resource validator runs the public OEE Toolkit against the selected local Git commit, then checks the export. Its SHA identifies local bytes but does not authenticate the origin of an untrusted checkout. These checks establish structural consistency, **not** educational conformance, resource verification or learner achievement.
-
-## Prerequisites
-
-- Bash and Git.
-- Python 3.11+ (for the OEE Toolkit, resource validation, and study guides).
-- A local clone of [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education).
-- A workspace directory that already exists.
-- The templates included in this repository.
-
-The scripts do not download or rewrite the curriculum. They read the local OEE checkout to validate the requested course or project.
-
-## Repository discovery
-
-By default, the scripts look for an OEE checkout in a sibling directory named `open-engineering-education`:
-
-```text
-projects/
-  open-engineering-education/
-  oee-workspace/
-```
-
-If your directories differ, set `OEE_REPO` to the OEE repository's root:
-
-```bash
-OEE_REPO=/path/to/open-engineering-education ./scripts/new-course-workspace SEF SEF1
-```
-
-`OEE_REPO` must point to the local checkout containing the `curriculum/` directory.
-
-## Destination directory
-
-Both scripts accept an optional destination directory:
-
-```bash
-./scripts/new-course-workspace SEF SEF1 /path/to/workspace
-./scripts/new-project-workspace SEF10 /path/to/workspace
-```
-
-When the destination is omitted, the scripts use `OEE_WORKSPACE` if set, or the current directory otherwise.
-
-The destination directory must already exist. Generators validate the source and required templates before staging complete files under that directory, and publish each directory by a same-filesystem rename. Existing files and symlinked destination components fail closed. Three course subtrees cannot be renamed as one filesystem transaction: if an unexpected later rename fails, successfully published learner data are retained for inspection rather than silently rolled back.
-
-## Curriculum links
-
-Generated files link to the canonical OEE course at an **exact full Git commit**, not a moving branch. A mapped course uses the reviewed map's recorded revision; an unmapped course uses the selected checkout commit. The Toolkit reads those Git objects, not dirty worktree files. Resource-map checks do not authenticate an untrusted local clone.
-
-## Current OEE contract
-
-The generators recognize five canonical programs (`SEF`, `APP`, `SYS`, `AI`, `SEC`) and use the public Toolkit to validate **v0.2.0 only**. Unsupported source formats fail; no compatibility reader or migration path is provided. Each requested course is checked at a full Git commit. Course codes are the program code plus a number. The project generator uses the OEE Toolkit at the checkout's selected full Git commit to require an actual `Type: project` course; it does not maintain an alias table or assume separate project-ladder/capstone documents. Generated briefs link to that immutable course source. Non-project/unknown/unsupported courses fail without writing learner files. No arbitrary project code becomes a new OEE requirement.
-
-Do not invent new identifiers in a generator just to make a command pass.
-
-## Safe operation
-
-The generators:
-
-- Validate the requested course or project.
-- Confirm that the required templates exist.
-- Reject invented project aliases and non-project course types; validate real project courses using the Toolkit export pinned to the selected Git commit.
-- Require an existing destination.
-- Stage all outputs before publication and refuse to replace existing generated destinations.
-- Reject symlinked destination paths and unexpected project/course identities.
-- Publish from staged directories on the same filesystem; preserve existing work on failure.
-- Avoid generating learner files inside either canonical source repository.
-
-Generated files are starting points. Review and customize them to reflect your actual implementation, experiments, and evidence.
-
-## Validation
-
-From the workspace repository root, run:
-
-```bash
-bash -n scripts/new-course-workspace
-bash -n scripts/new-project-workspace
-python3 -m unittest discover -s tests -p 'test_*.py' -v
+```sh
+python -m unittest discover -s tests -p 'test_*.py' -v
+python -m oee_workspace --help
 npx --yes markdownlint-cli2@0.24.0
 ```
 
-Test generation in a disposable directory before relying on a changed script in a real workspace.
+The repository contract CI additionally installs `jsonschema==4.23.0`
+**for schema tests only** and exercises pinned SEF1/SEF10 OEE exports.
+A separate CI matrix runs the public CLI smoke tests on Linux, macOS and
+Windows. Only source repositories you trust should be selected with
+`--oee`: a local Git object ID does not authenticate a repository origin.
 
-## Public reading plans
-
-SEF1 has a reviewed source-pinned v2 course map and generated guide with documented
-partial-coverage gaps. Its supplemental resources do not replace OEE assessment criteria.
-Unmapped courses scaffold independent learner notes and resources logs without a
-reading plan. The old SEF1 v1 map is a negative fixture, never current study advice.
-
-For mapped courses, validation now invokes the **single OEE Toolkit parser** on
-the map's full Git SHA from a local OEE checkout. Neither the worktree nor HEAD
-is a fallback. No v1 reader, automatic remapping or arbitrary supplied export
-is accepted by the full resource validator.
-
-```sh
-python3 scripts/check-resources.py --oee /path/to/open-engineering-education
-python3 scripts/check-resources.py --oee /path/to/open-engineering-education --course SEF1 --json
-python3 scripts/render-resource-guides.py --oee /path/to/open-engineering-education --course SEF1 --stdout
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-```
-
-The resource-check exit codes are `0` for structurally passed, `1` for
-invalid references and `3` for missing or unsupported pinned sources.
-When no active maps exist, the command checks the public catalogue only. A
-passing source check never implies learner certification.
-
-WS-I02's SEF1 source/section resource map is reviewed, with seven documented
-partial-coverage gaps. WS-I04 stages and validates learner directories and
-atomically publishes only reviewed repository-owned guides. WS-I11 owns
-remaining upstream drift notifications.
+For evidence record semantics, privacy boundaries and review claims, see
+[the evidence record guide](../evidence/README.md).

@@ -1,6 +1,6 @@
 # Workspace templates
 
-This directory holds the templates used by the workspace generation scripts. Generated files are starting points for your own work; they are not canonical course definitions.
+This directory holds the templates used by the Workspace Python CLI. Generated files are starting points for your own work; they are not canonical course definitions.
 
 ## Template directories
 
@@ -10,7 +10,7 @@ This directory holds the templates used by the workspace generation scripts. Gen
 | `project-workspace/` | Files created for a project: design, evaluation, retrospective, and (where required) authorization |
 | `progress.md` | A general progress and evidence-log template |
 
-The generation scripts in [`../scripts/`](../scripts/) use these files to create a consistent workspace structure.
+The current [`python -m oee_workspace` CLI](../README.md) uses these files to create a consistent workspace structure.
 
 ## Relationship to OEE
 
