@@ -71,12 +71,12 @@ if [[ "$source_type" != project ]]; then
 fi
 
 workspace="${2:-${OEE_WORKSPACE:-.}}"
-if [[ ! -d "$workspace" ]]; then
+if [[ -L "$workspace" || ! -d "$workspace" ]]; then
   echo "Workspace directory does not exist: $workspace" >&2
   exit 1
 fi
 workspace="$(cd "$workspace" && pwd)"
-if [[ "$workspace" == "$oee_repo" ]]; then
+if [[ "$workspace" == "$oee_repo" || "$workspace" == "$workspace_repo_root" ]]; then
   echo "Refusing to create learner work inside the OEE repository." >&2
   exit 1
 fi
@@ -89,44 +89,29 @@ for template in README.md design.md evaluation.md retrospective.md; do
   fi
 done
 
-projects_dir="$workspace/projects"
-project_dir="$projects_dir/$course"
-if [[ -L "$projects_dir" ]]; then
-  echo "Refusing a symlinked project destination: $projects_dir" >&2
-  exit 1
-fi
-if [[ -e "$project_dir" || -L "$project_dir" ]]; then
-  echo "Project workspace already exists: $project_dir" >&2
-  echo "Nothing has been overwritten." >&2
-  exit 1
-fi
-if [[ -e "$projects_dir" && ! -d "$projects_dir" ]]; then
-  echo "Projects destination is not a directory: $projects_dir" >&2
-  exit 1
-fi
-
+# Build the complete project tree before any learner destination is visible.
 source_path="curriculum/$program/$course.md"
 source_link="https://github.com/0xbuffdev/open-engineering-education/blob/$revision/$source_path"
-mkdir -p "$projects_dir"
-staging="$(mktemp -d "$projects_dir/.${course}.XXXXXXXX")"
+staging="$(mktemp -d "$workspace/.oee-stage-$course.XXXXXXXX")"
 cleanup() {
   if [[ -n "${staging:-}" && -d "$staging" ]]; then
     rm -rf -- "$staging"
   fi
 }
 trap cleanup EXIT
-mkdir "$staging/docs"
+project_dir="$staging/projects/$course"
+mkdir -p "$project_dir/docs"
 
 sed -e "s|<project_title>|$course|g" \
     -e "s|<brief_link>|$source_link|g" \
-    "$template_dir/README.md" > "$staging/README.md"
+    "$template_dir/README.md" > "$project_dir/README.md"
 for template in design.md evaluation.md retrospective.md; do
   sed -e "s|<project_title>|$course|g" \
       -e "s|<brief_link>|$source_link|g" \
-      "$template_dir/$template" > "$staging/docs/$template"
+      "$template_dir/$template" > "$project_dir/docs/$template"
 done
 
-cat > "$staging/BRIEF.md" <<EOF
+cat > "$project_dir/BRIEF.md" <<EOF
 # $course project workspace
 
 **Canonical OEE course:** [$course]($source_link)
@@ -139,13 +124,9 @@ project. Read the canonical source and its assessment requirements before work.
 Track actual evidence and review decisions in [progress.md](../../progress.md).
 EOF
 
-if [[ -e "$project_dir" || -L "$project_dir" ]]; then
-  echo "Project workspace appeared before installation: $project_dir" >&2
-  exit 1
-fi
-mv -- "$staging" "$project_dir"
-staging=""
+python3 "$workspace_repo_root/scripts/publish-workspace.py" \
+  --workspace "$workspace" --stage "$staging" --project "$course"
 
-echo "Created $course project workspace: $project_dir"
+echo "Created $course project workspace: $workspace/projects/$course"
 echo "Canonical source: $source_link"
 echo "Check the actual course's assessment and authorization requirements."

@@ -86,7 +86,7 @@ You can also set a default destination:
 OEE_WORKSPACE=/path/to/workspace ./scripts/new-course-workspace SEF SEF1
 ```
 
-The generator validates the requested course against the local OEE curriculum and creates the corresponding directories under `labs/`, `exercises/`, and `notes/`. When a validated public resource mapping exists, a generated `reading-plan.md` snapshot is also placed in the course notes directory. The SEF1 resource map is **reviewed**, but partial-coverage gaps remain and no external resource replaces OEE assessments. The separate `resources.md` file remains a learner-owned reading log.
+The generator uses the first-party OEE Toolkit to validate one exact Git commit, renders every template in a temporary staging directory, and then publishes new directories under `labs/`, `exercises/`, and `notes/` without replacing existing learner files. A `reading-plan.md` is included only when its public resource-map v2 is **reviewed** and validates against the pinned course. The SEF1 resource map is **reviewed**, but partial-coverage gaps remain and no external resource replaces OEE assessments. The separate `resources.md` file remains a learner-owned reading log.
 
 Course codes are the program code plus a positive number, such as `SEF1` or `SYS1`. The generator validates the code against the local OEE checkout and fails until the matching course file exists.
 
@@ -101,10 +101,10 @@ Use the project generator for a project defined by the OEE curriculum:
 To choose a destination:
 
 ```bash
-./scripts/new-project-workspace ledgerlab /path/to/workspace
+./scripts/new-project-workspace SEF10 /path/to/workspace
 ```
 
-The project generator accepts an OEE **course code**, not a project alias. It uses the public Toolkit to validate that the selected Git commit contains a structurally valid `v0.2.0` course with `Type: project`. It creates `projects/<course-code>/` and links to the exact source commit. Non-project courses and missing/unsupported sources are rejected before any learner files are created. The project templates are organizational aids, not competing assessment briefs. If a course requires an authorization record, use the available `templates/project-workspace/authorization.md` as appropriate to its actual requirements.
+The project generator accepts an OEE **course code**, not a project alias. It uses the public Toolkit to validate that the selected Git commit contains a structurally valid `v0.2.0` course with `Type: project`. It stages all templates before creating `projects/<course-code>/` and links to the exact source commit. Non-project courses and missing/unsupported sources are rejected before any learner files are created. The project templates are organizational aids, not competing assessment briefs. If a course requires an authorization record, use the available `templates/project-workspace/authorization.md` as appropriate to its actual requirements.
 
 ## Workspace structure
 
@@ -147,7 +147,7 @@ A completion claim should be supported by inspectable evidence, not by a checked
 
 The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. The historical SEF1 v1 map and guide were retired because they describe a different curriculum. A [reviewed SEF1 v2 resource map](resources/mappings/SEF/SEF1.json) and [generated guide](resources/guides/SEF/SEF1.md) are available for independent study. The review confirms the recorded references and explicit partial-coverage gaps; it does not certify OEE educational readiness or completion.
 
-Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Public resources stay independent of private 0xNAND content.
+Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Generation uses same-filesystem renames for each staged destination. Because labs, exercises and notes are separate directories, unexpected filesystem failures can leave a partially published workspace; existing work is preserved for inspection rather than deleted. Public resources stay independent of private 0xNAND content.
 
 ## Evidence and reproducibility
 

@@ -1,173 +1,136 @@
 #!/usr/bin/env bash
-
+# WS-I04: validate, stage and publish without overwriting learner work.
 set -euo pipefail
 
 usage() {
   cat >&2 <<'EOF'
 Usage: new-course-workspace <program> <course-code> [workspace-dir]
 
-Creates a course workspace using templates from oee-workspace and validates
-the course against a local Open Engineering Education checkout.
-
-Arguments:
-  program        SEF | APP | SYS | AI | SEC
-  course-code    e.g. SEF1, SYS1, AI1, SEC1
-  workspace-dir  destination; defaults to $OEE_WORKSPACE, then current dir
+Create a learner workspace for a canonical OEE v0.2.0 course.
+Only source-pinned, reviewed v2 resource maps generate reading plans.
 
 Environment:
-  OEE_REPO                Path to the local OEE repository.
-  OEE_WORKSPACE           Default destination for generated files.
-  OEE_CURRICULUM_URL      Base URL for OEE course links.
+  OEE_REPO       Local OEE checkout (default: sibling directory).
+  OEE_WORKSPACE  Existing learner destination (default: current directory).
 
-By default, OEE_REPO is ../open-engineering-education relative to this
-workspace repository.
+Requires Git and Python 3.11+ with the first-party OEE Toolkit.
 EOF
 }
-
-if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
-  usage
-  exit 64
-fi
-
+if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then usage; exit 64; fi
 program="$1"
 course="$2"
-
-# Course codes are the canonical program code plus a number, so the
-# course-code prefix always equals the program code.
 case "$program" in
-  SEF|APP|SYS|AI|SEC) prefix="$program" ;;
-  *)
-    echo "Unknown program: $program" >&2
-    echo "Choose one of: SEF, APP, SYS, AI, SEC" >&2
-    exit 64
-    ;;
+  SEF|APP|SYS|AI|SEC) ;;
+  *) echo "Unknown OEE program: $program" >&2; exit 64 ;;
 esac
-
-if ! [[ "$course" =~ ^${prefix}[1-9][0-9]*$ ]]; then
-  echo "Invalid course code '$course' for program '$program'." >&2
-  echo "Expected the program code followed by a number, e.g. ${prefix}1." >&2
+if ! [[ "$course" =~ ^${program}[1-9][0-9]*$ ]]; then
+  echo "Invalid course code '$course' for $program." >&2
   exit 64
 fi
 
-workspace_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-default_oee_repo="$(dirname "$workspace_repo_root")/open-engineering-education"
-oee_repo="${OEE_REPO:-$default_oee_repo}"
-
-if [[ ! -d "$oee_repo/curriculum/$program" ]]; then
-  echo "OEE curriculum directory not found:" >&2
-  echo "  $oee_repo/curriculum/$program" >&2
-  echo "Set OEE_REPO to the root of your local OEE checkout." >&2
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+oee_repo="${OEE_REPO:-$(dirname "$repo_root")/open-engineering-education}"
+if [[ ! -f "$oee_repo/tooling/oee_toolkit/__main__.py" ]]; then
+  echo "OEE Toolkit checkout missing: $oee_repo" >&2
   exit 1
 fi
-
 oee_repo="$(cd "$oee_repo" && pwd)"
-
-course_dir="$oee_repo/curriculum/$program"
-
-# Canonical course files are named exactly CODE.md (for example, SEF1.md).
-course_file="$course_dir/$course.md"
-if [[ ! -f "$course_file" ]]; then
-  echo "Course '$course' was not found in $course_dir." >&2
-  echo "Expected the canonical OEE file '$course.md'." >&2
-  exit 64
-fi
-
-# Scaffold only explicitly supported OEE v0.2.0 courses, even when unmapped.
-if ! grep -Fqx '**Specification:** `v0.2.0`' "$course_file"; then
-  echo "unsupported_format: OEE course $course must declare Specification v0.2.0." >&2
-  exit 64
-fi
-
-course_name="$course.md"
-
-oee_url="${OEE_CURRICULUM_URL:-https://github.com/0xbuffdev/open-engineering-education/blob/main}"
-course_link="$oee_url/curriculum/$program/$course_name"
-
 workspace="${3:-${OEE_WORKSPACE:-.}}"
-
-if [[ ! -d "$workspace" ]]; then
-  echo "Workspace directory does not exist: $workspace" >&2
+if [[ -L "$workspace" || ! -d "$workspace" ]]; then
+  echo "Learner workspace must be a real existing directory: $workspace" >&2
   exit 1
 fi
-
 workspace="$(cd "$workspace" && pwd)"
-
-if [[ "$workspace" == "$oee_repo" ]]; then
-  echo "Refusing to create learner files inside the canonical OEE repository." >&2
-  echo "Run this from your own workspace or supply its directory." >&2
+if [[ "$workspace" == "$oee_repo" || "$workspace" == "$repo_root" ]]; then
+  echo "Refusing to generate learner work inside a canonical source repository." >&2
   exit 1
 fi
 
-template_dir="$workspace_repo_root/templates/course-workspace"
-
-required_templates=(
-  "lab-README.md"
-  "exercises-README.md"
-  "resources.md"
-  "summary.md"
-)
-
-for template in "${required_templates[@]}"; do
-  if [[ ! -f "$template_dir/$template" ]]; then
-    echo "Required template not found: $template_dir/$template" >&2
+templates="$repo_root/templates/course-workspace"
+for name in lab-README.md exercises-README.md resources.md summary.md; do
+  if [[ ! -f "$templates/$name" ]]; then
+    echo "Required template missing: $templates/$name" >&2
     exit 1
   fi
 done
 
-lab_dir="$workspace/labs/$program/$course"
-exercise_dir="$workspace/exercises/$program/$course"
-notes_dir="$workspace/notes/$program/$course"
-
-for destination in "$lab_dir" "$exercise_dir" "$notes_dir"; do
-  if [[ -e "$destination" ]]; then
-    echo "Workspace destination already exists: $destination" >&2
-    echo "Nothing has been overwritten." >&2
-    exit 1
-  fi
-done
-
-# Validate public mappings before creating files in a learner workspace.
-mapping_file="$workspace_repo_root/resources/mappings/$program/$course.json"
-if [[ -f "$mapping_file" ]]; then
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "Python 3 is required for public resource mapping." >&2
-    exit 1
-  fi
-  python3 "$workspace_repo_root/scripts/check-resources.py" --oee "$oee_repo" --course "$course"
-  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --oee "$oee_repo" --course "$course" --stdout >/dev/null
+mapping="$repo_root/resources/mappings/$program/$course.json"
+if [[ -L "$mapping" ]]; then
+  echo "Refusing symlinked map: $mapping" >&2
+  exit 1
 fi
-
-mkdir -p "$lab_dir" "$exercise_dir" "$notes_dir"
-
-for template_and_destination in \
-  "lab-README.md:$lab_dir/README.md" \
-  "exercises-README.md:$exercise_dir/README.md" \
-  "resources.md:$notes_dir/resources.md" \
-  "summary.md:$notes_dir/summary.md"; do
-
-  template="${template_and_destination%%:*}"
-  destination="${template_and_destination#*:}"
-
-  sed \
-    -e "s|<course>|$course|g" \
-    -e "s|<course_link>|$course_link|g" \
-    "$template_dir/$template" > "$destination"
-done
-
-# The study guide is generated from public resource data, never from a paid
-# content source. Keep it separate from the learner-owned resources.md log.
-if [[ -f "$mapping_file" ]]; then
-  python3 "$workspace_repo_root/scripts/render-resource-guides.py" --course "$course" --oee "$oee_repo" --stdout > "$notes_dir/reading-plan.md"
-fi
-
-echo "Created workspace for $course in $workspace:"
-echo "  labs/$program/$course/"
-echo "  exercises/$program/$course/"
-echo "  notes/$program/$course/"
-echo "Course definition: $course_link"
-
-if [[ -f "$mapping_file" ]]; then
-  echo "  notes/$program/$course/reading-plan.md (public resource snapshot)"
+mapped=0
+if [[ -f "$mapping" ]]; then
+  mapped=1
+  if ! revision="$(python3 - "$mapping" "$course" <<'PY'
+import json, re, sys
+from pathlib import Path
+item = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+source = item["curriculum"]
+if item.get("schemaVersion") != 2 or item.get("status") != "reviewed":
+    raise SystemExit("unreviewed_map: only reviewed v2 maps may be published")
+if source.get("course") != sys.argv[2] or source.get("specification") != "v0.2.0":
+    raise SystemExit("invalid mapped course or specification")
+revision = source.get("revision")
+if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+    raise SystemExit("invalid full commit SHA")
+print(revision)
+PY
+)"; then
+    echo "Refusing unreviewed or unsupported mapped source." >&2
+    exit 1
+  fi
+  python3 "$repo_root/scripts/check-resources.py" \
+    --oee "$oee_repo" --course "$course"
 else
-  echo "No public resource guide has been mapped for $course yet."
+  if ! revision="$(git -C "$oee_repo" rev-parse --verify 'HEAD^{commit}' 2>/dev/null)"; then
+    echo "Cannot resolve an OEE source commit." >&2
+    exit 1
+  fi
+fi
+if ! [[ "$revision" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Source revision must be a full lowercase commit SHA." >&2
+  exit 1
+fi
+if ! (
+  cd "$oee_repo"
+  python3 -m tooling.oee_toolkit export --repo . \
+    --revision "$revision" --course "$course" --output - >/dev/null
+); then
+  echo "OEE Toolkit rejected $course at $revision" >&2
+  exit 1
+fi
+course_link="https://github.com/0xbuffdev/open-engineering-education/blob/$revision/curriculum/$program/$course.md"
+
+# Every file is rendered under a private staging directory first.
+stage="$(mktemp -d "$workspace/.oee-stage-$program-$course.XXXXXXXX")"
+cleanup() {
+  if [[ -n "${stage:-}" && -d "$stage" ]]; then rm -rf -- "$stage"; fi
+}
+trap cleanup EXIT
+mkdir -p "$stage/labs/$program/$course" "$stage/exercises/$program/$course" "$stage/notes/$program/$course"
+for pair in \
+  "lab-README.md:$stage/labs/$program/$course/README.md" \
+  "exercises-README.md:$stage/exercises/$program/$course/README.md" \
+  "resources.md:$stage/notes/$program/$course/resources.md" \
+  "summary.md:$stage/notes/$program/$course/summary.md"; do
+  source="${pair%%:*}"
+  destination="${pair#*:}"
+  sed -e "s|<course>|$course|g" -e "s|<course_link>|$course_link|g" \
+    "$templates/$source" > "$destination"
+done
+if [[ "$mapped" -eq 1 ]]; then
+  python3 "$repo_root/scripts/render-resource-guides.py" \
+    --oee "$oee_repo" --course "$course" --stdout \
+    > "$stage/notes/$program/$course/reading-plan.md"
+fi
+
+python3 "$repo_root/scripts/publish-workspace.py" \
+  --workspace "$workspace" --stage "$stage" --course "$program" "$course"
+echo "Created course workspace for $course in $workspace"
+echo "Canonical OEE source: $course_link"
+if [[ "$mapped" -eq 1 ]]; then
+  echo "Reviewed pinned reading plan: notes/$program/$course/reading-plan.md"
+else
+  echo "No reviewed public resource guide mapped for $course."
 fi

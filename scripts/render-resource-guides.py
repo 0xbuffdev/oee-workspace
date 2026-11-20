@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import re
+import tempfile
 import subprocess
 import sys
 from pathlib import Path
@@ -122,6 +123,11 @@ def outputs(course_filter, oee_repo):
         if course_filter and code != course_filter:
             continue
         found = True
+        if mapping.get("status") != "reviewed":
+            raise ValueError(
+                f"unreviewed_map: {code} resource map must be reviewed before "
+                "publishing a study guide"
+            )
         checked = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "check-resources.py"),
              "--course", code, "--oee", str(oee_repo)],
@@ -132,6 +138,49 @@ def outputs(course_filter, oee_repo):
         yield GUIDES / program / (code + ".md"), render(mapping, catalog)
     if course_filter and not found:
         raise ValueError("No public resource map exists for " + course_filter)
+
+
+def verified_guide_path(path: Path, *, create: bool = False) -> None:
+    """Reject symlink redirection for repository-owned generated guides."""
+    if GUIDES.is_symlink():
+        raise ValueError("unsafe guide root: symlink")
+    if create and not GUIDES.exists():
+        GUIDES.mkdir()
+    if GUIDES.exists() and not GUIDES.is_dir():
+        raise ValueError("guide root is not a directory")
+    parent = path.parent
+    if parent.parent != GUIDES or not re.fullmatch(r"[A-Z]{2,4}", parent.name):
+        raise ValueError("guide output must use its canonical program directory")
+    if parent.is_symlink():
+        raise ValueError("unsafe guide directory: symlink")
+    if create and not parent.exists():
+        parent.mkdir()
+    if parent.exists() and not parent.is_dir():
+        raise ValueError("guide destination parent is not a directory")
+    if path.is_symlink():
+        raise ValueError("unsafe guide output: symlink")
+
+
+def atomic_write_guide(path: Path, content: str) -> None:
+    """Atomically update a repository-owned generated guide, never a learner log."""
+    verified_guide_path(path, create=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", dir=path.parent,
+            prefix=f".{path.name}.", suffix=".tmp", delete=False,
+        ) as stream:
+            temporary = Path(stream.name)
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Recheck before the commit step; os.replace does not follow a target symlink.
+        verified_guide_path(path)
+        os.replace(temporary, path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def main():
@@ -161,16 +210,20 @@ def main():
         expected = set()
         errors = []
         for path, content in results:
-            expected.add(path.resolve())
+            expected.add(path)
+            verified_guide_path(path, create=args.write)
             if args.write:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(content, encoding="utf-8")
+                atomic_write_guide(path, content)
                 print("Generated " + str(path.relative_to(ROOT)))
             elif not path.is_file() or path.read_text(encoding="utf-8") != content:
                 errors.append("Guide missing or stale: " + str(path.relative_to(ROOT)))
         if args.check:
+            if GUIDES.is_symlink():
+                raise ValueError("unsafe guide root: symlink")
             for path in sorted(GUIDES.rglob("*.md")):
-                if path.resolve() not in expected:
+                if path.is_symlink():
+                    errors.append("Unsafe symlinked guide: " + str(path.relative_to(ROOT)))
+                elif path not in expected:
                     errors.append("Unmapped guide: " + str(path.relative_to(ROOT)))
             for error in errors:
                 print("ERROR: " + error, file=sys.stderr)
