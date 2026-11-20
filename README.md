@@ -95,7 +95,7 @@ Course codes are the program code plus a positive number, such as `SEF1` or `SYS
 Use the project generator for a project defined by the OEE curriculum:
 
 ```bash
-./scripts/new-project-workspace ledgerlab
+./scripts/new-project-workspace SEF10
 ```
 
 To choose a destination:
@@ -104,7 +104,7 @@ To choose a destination:
 ./scripts/new-project-workspace ledgerlab /path/to/workspace
 ```
 
-The generator creates the project's documentation structure and links back to its canonical OEE brief. It does not copy the canonical brief into the workspace as an independent source of truth. The generator validates the project brief against the local OEE checkout and fails until that brief exists in the checkout.
+The project generator accepts an OEE **course code**, not a project alias. It uses the public Toolkit to validate that the selected Git commit contains a structurally valid `v0.2.0` course with `Type: project`. It creates `projects/<course-code>/` and links to the exact source commit. Non-project courses and missing/unsupported sources are rejected before any learner files are created. The project templates are organizational aids, not competing assessment briefs. If a course requires an authorization record, use the available `templates/project-workspace/authorization.md` as appropriate to its actual requirements.
 
 ## Workspace structure
 
@@ -119,7 +119,7 @@ oee-workspace/
 ├── notes/
 │   └── <program>/<COURSE_CODE>/
 ├── projects/
-│   └── <project-slug>/
+│   └── <project-course-code>/
 ├── scripts/
 │   ├── new-course-workspace
 │   └── new-project-workspace

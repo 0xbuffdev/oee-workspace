@@ -9,6 +9,7 @@ on:
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
       - "scripts/new-course-workspace"
+      - "scripts/new-project-workspace"
       - ".github/workflows/resources.yml"
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - "scripts/verify-oee-export.py"
       - "scripts/render-resource-guides.py"
       - "scripts/new-course-workspace"
+      - "scripts/new-project-workspace"
       - ".github/workflows/resources.yml"
 
 jobs:
@@ -39,6 +41,39 @@ jobs:
         run: python3 scripts/render-resource-guides.py --oee _oee --check
       - name: Strict v2 and pinned source export regression suite
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Verify canonical project scaffolding and safe failures (WS-I12)
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/new-project-workspace
+          temp="$(mktemp -d)"
+          trap 'rm -rf "$temp"' EXIT
+          mkdir -p "$temp/learner" "$temp/ordinary" "$temp/unknown" "$temp/alias"
+          OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF10 "$temp/learner"
+          test -f "$temp/learner/projects/SEF10/BRIEF.md"
+          test -f "$temp/learner/projects/SEF10/docs/evaluation.md"
+          grep -Fq 'curriculum/SEF/SEF10.md' "$temp/learner/projects/SEF10/BRIEF.md"
+          printf '\nLearner work must remain\n' >> "$temp/learner/projects/SEF10/README.md"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF10 "$temp/learner"; then
+            echo "ERROR: existing project workspace overwritten" >&2
+            exit 1
+          fi
+          grep -Fq 'Learner work must remain' "$temp/learner/projects/SEF10/README.md"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF1 "$temp/ordinary"; then
+            echo "ERROR: non-project course accepted" >&2
+            exit 1
+          fi
+          test ! -e "$temp/ordinary/projects/SEF1"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace SEF999 "$temp/unknown"; then
+            echo "ERROR: nonexistent course accepted" >&2
+            exit 1
+          fi
+          test ! -e "$temp/unknown/projects/SEF999"
+          if OEE_REPO="$PWD/_oee" bash scripts/new-project-workspace ledgerlab "$temp/alias"; then
+            echo "ERROR: obsolete project alias accepted" >&2
+            exit 1
+          fi
+          test ! -e "$temp/alias/projects/ledgerlab"
       - name: Verify unmapped scaffolding and preserve learner files
         shell: bash
         run: |
