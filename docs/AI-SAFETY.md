@@ -3,7 +3,7 @@
 OEE Workspace is a **local-first learning workspace**, not a coding agent,
 hosted tutor, execution sandbox or automated examiner. The supported
 `python -m oee_workspace` commands work with Python 3.11+, Git and a
-**trusted local OEE Toolkit checkout** without an AI provider, account,
+**independently installed verified OEE Toolkit release** without an AI provider, account,
 token, model, subscription, network connection or learner-code execution.
 
 This guide records the present implementation boundaries for
@@ -18,13 +18,13 @@ on behalf of an OEE course reviewer.
 
 | Operation | Current technical boundary |
 | --- | --- |
-| Explain course or resource references | Read the locally selected, pinned OEE Toolkit export; optional public resource URLs are displayed as references, not fetched |
+| Explain course or resource references | Read the reviewed, offline release-locked OEE Toolkit export; optional public resource URLs are displayed as references, not fetched |
 | Generate course and project templates | Create new files only in an explicitly selected learner directory; validate local destinations, refuse symlink traversal and existing targets |
-| Validate resource maps | Check local JSON and exact-commit Toolkit exports; a reviewed mapping can supply an optional reading plan |
+| Validate resource maps | Check local JSON and release-locked Toolkit v2 exports; a reviewed mapping can supply an optional reading plan |
 | Create learner evidence | Generate a new UUID attempt with `evaluation: null`; no assessment decision is made |
 | Validate evidence and show status | Read the selected learner directory; check local artifacts and hash references; do not execute learner code |
 | Export selected attempts | Write a new local JSON file containing only explicitly selected attempt records, without artifact bytes or implicit upload |
-| Invoke internal subprocesses | Run **known, first-party** Python Toolkit/export and resource-validation entry points against a trusted checkout; never run commands extracted from a learner file, prompt, assessment or resource page |
+| Invoke internal subprocesses | Run **known, first-party** Python Toolkit/export and resource-validation entry points against a trusted installed release; never run commands extracted from a learner file, prompt, assessment or resource page |
 
 The baseline has **no** `ai`, `agent`, `run`, `execute`, `shell`,
 `tutor`, `provider`, `connect` or `grade` command. It does not
@@ -32,12 +32,9 @@ provide a model API client, runtime memory service, agent plugin loader,
 automatic network request, credential manager, system shell launcher,
 container sandbox or autonomous assessment grader.
 
-`--oee`, `--revision`, `--dest`, `--path`, `--map` and
+`--lock`, `--store`, `--dest`, `--path`, `--map` and
 `--output` are **explicit CLI inputs**, not authorizations for arbitrary
-work. For course operations, the source SHA is a complete, immutable
-Git commit. A Git SHA proves identity of local content, **not the
-trustworthiness of the local checkout's origin**. Validate your OEE
-checkout before relying on it.
+work. For course operations, the full manifest SHA-256 and release ID must match a separately approved, already verified local curriculum release. A checksum alone does not authenticate the publisher; the offline installer separately verifies detached steward signatures against a pre-approved public key.
 
 ## Threat model and trust boundaries
 
@@ -46,7 +43,7 @@ checkout before relying on it.
 | Course or resource text, imported README, template, model output | Prompt injection instructing an assistant to disregard boundaries, read secrets or invoke a shell | Treated as local data or Markdown. **No assistant or agent is invoked.** Displayed instructions cannot grant a capability |
 | JSON resource mapping, optional website address | Malicious URL, exfiltration or misleading recommendations | Validated as a map or displayed as a reference. The CLI does **not** fetch a resource URL, open a browser or infer academic approval from passing structural checks |
 | Learner-supplied artifact paths and evidence | Directory traversal, symlink escape, reading or overwriting private files | Paths must remain under the learner-owned root; existing records are not overwritten. These checks **do not create a secure sandbox against hostile concurrent local processes** |
-| Source repository or local executable | Modified OEE Toolkit or compromised source clone | Source must be explicitly selected and locally available, then checked against the exact commit; **caller must trust the checkout and Python runtime**. Pinned content is not code-signature verification |
+| Source repository or local executable | Modified OEE Toolkit or compromised source clone | Source is explicitly selected by reviewed lock; the first-party Toolkit verifies the installed manifest and all bytes, after independently approved signing-key verification at install time. The Python runtime and trusted release store remain within the caller's trust boundary |
 | Learner-authored free text exported to a file | Unintentional exposure of tokens, private data, proprietary work | Only chosen attempts are exported. A limited common-credential pattern check rejects some obvious secrets; **this is not a complete secrets or PII scanner**. Review exports manually |
 | Claimed human review, automated observation or AI-generated answer | False assertion that assessment criteria or learning outcomes were met | Observations do not become evaluations. Reviewer identity is not authenticated. The CLI never certifies mastery or changes OEE course status |
 | External AI tools or an editor the learner starts independently | Arbitrary file access, network requests or commands by another program | **Out of Workspace's control.** This CLI does not sandbox, monitor, audit or constrain an unrelated external assistant |
@@ -61,7 +58,7 @@ injection defense.
 A normal CLI invocation does use the local Python interpreter and may
 start first-party Toolkit processes. This is **not** equivalent to
 running arbitrary learner build commands, but it still executes code
-installed in the selected local checkout. Do not run the CLI against
+installed in the selected local Python environment. Do not run the CLI against
 source or Python installations you do not trust.
 
 ## Capability policy for future integrations
@@ -96,10 +93,10 @@ target platform, **do not ship it on that platform**.
 
 Learners may choose external AI assistants independently. Their use for
 learning does not by itself make an attempt valid or invalid. The **exact
-OEE course revision and its assessment criteria** are the authority for
+OEE immutable curriculum release and its authored assessment criteria** are the authority for
 whether a particular level of assistance is permissible in an assessment.
 
-Evidence schema v1 permits an optional **self-declared** `assistance`
+Evidence schema v2 permits an optional **self-declared** `assistance`
 object with `declaredMode` values `not-recorded`, `independent`,
 `collaborative` and `delegated`. This field is descriptive and
 **does not prove** a model was present or absent, that requested
