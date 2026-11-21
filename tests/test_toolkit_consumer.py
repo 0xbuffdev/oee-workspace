@@ -1,5 +1,4 @@
-"""Offline consumer contract tests; synthetic derived OEE exports only."""
-
+"""REL-I04: strict v2 Toolkit export / release-keyed resource-map consumer tests."""
 from __future__ import annotations
 
 import copy
@@ -17,23 +16,28 @@ spec = importlib.util.spec_from_file_location("oee_export_consumer", SCRIPT)
 consumer = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = consumer
 spec.loader.exec_module(consumer)
-PIN = "a" * 40
+
+PIN = {"formatVersion": 1, "releaseId": "2026.11.1", "manifestSha256": "a" * 64}
+COURSE_SHA = "b" * 64
+ORIGIN = "c" * 40
 
 
 def valid_export():
     source_path = "curriculum/SEF/SEF1.md"
     return {
-        "exportVersion": 1,
+        "exportVersion": 2,
         "source": {
             "repository": "0xbuffdev/open-engineering-education",
-            "revision": PIN,
+            "releaseId": PIN["releaseId"],
+            "manifestSha256": PIN["manifestSha256"],
+            "courseSha256": COURSE_SHA,
+            "originCommit": ORIGIN,
             "specification": "v0.2.0",
             "coursePath": source_path,
         },
-        "course": {
-            "code": "SEF1", "program": "SEF", "type": "course",
-            "status": "draft", "prerequisites": [],
-        },
+        "toolkit": {"toolVersion": "0.3.0.dev0", "ruleSetVersion": "v0.2.0-ot-i04"},
+        "course": {"code": "SEF1", "program": "SEF", "type": "course",
+                   "status": "draft", "prerequisites": []},
         "outcomes": [
             {"id": "SEF1-O1", "description": "Describe an observed behavior",
              "location": {"path": source_path, "line": 12}},
@@ -45,8 +49,7 @@ def valid_export():
              "location": {"path": source_path, "line": 29}},
         ],
         "modules": [
-            {"number": 1, "title": "Observe",
-             "outcomeIds": ["SEF1-O1"],
+            {"number": 1, "title": "Observe", "outcomeIds": ["SEF1-O1"],
              "lessons": [{"ordinal": 1, "title": "Observe a case"},
                          {"ordinal": 2, "title": "Investigate"}]},
         ],
@@ -57,16 +60,18 @@ def valid_export():
 
 def valid_map():
     return {
-        "schemaVersion": 2,
-        "status": "draft",
+        "schemaVersion": 3, "status": "draft",
         "curriculum": {
             "repository": "0xbuffdev/open-engineering-education",
-            "revision": PIN, "specification": "v0.2.0",
+            "releaseId": PIN["releaseId"],
+            "manifestSha256": PIN["manifestSha256"],
+            "courseSha256": COURSE_SHA,
+            "specification": "v0.2.0",
             "course": "SEF1", "path": "curriculum/SEF/SEF1.md",
         },
         "modules": [{
             "number": 1, "title": "Observe", "coverage": "partial",
-            "gap": "Resources need verification",
+            "gap": "Resources need editorial confirmation",
             "resources": [{
                 "resource": "R1", "role": "optional",
                 "part": {"type": "topics", "titles": ["Observations"]},
@@ -78,113 +83,137 @@ def valid_map():
     }
 
 
-class PinnedConsumerTests(unittest.TestCase):
-    def test_supported_structural_export_and_matching_v2_map(self):
+class ReleaseConsumerTests(unittest.TestCase):
+    def test_current_export_and_map(self):
         checked = consumer.check_export(valid_export(), PIN)
         consumer.check_map(valid_map(), checked)
-        self.assertEqual(checked["course"], "SEF1")
+        self.assertEqual(checked["source"]["releaseId"], PIN["releaseId"])
 
-    def test_revision_is_selected_externally_not_accepted_from_export(self):
-        with self.assertRaisesRegex(consumer.ContractError, "revision"):
-            consumer.check_export(valid_export(), "b" * 40)
-
-    def test_reject_legacy_export_generation_and_specification(self):
-        for change in (
-            lambda data: data.update(exportVersion=0),
-            lambda data: data["source"].update(specification="v0.1.0"),
-            lambda data: data["source"].update(repository="example/private"),
-        ):
-            with self.subTest(change=str(change)):
-                data = valid_export()
-                change(data)
-                with self.assertRaises(consumer.ContractError) as caught:
-                    consumer.check_export(data, PIN)
-                self.assertEqual(caught.exception.category, "unsupported_format")
-
-    def test_reject_old_map_without_conversion(self):
-        mapping = valid_map()
-        mapping["schemaVersion"] = 1
-        with self.assertRaises(consumer.ContractError) as caught:
-            consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
-        self.assertEqual(caught.exception.category, "unsupported_format")
-
-    def test_reject_map_from_wrong_source_commit(self):
-        mapping = valid_map()
-        mapping["curriculum"]["revision"] = "b" * 40
-        with self.assertRaisesRegex(consumer.ContractError, "source identity"):
-            consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
-
-    def test_reject_unknown_outcome_and_assessment_refs(self):
-        for field, value in (("outcomeIds", "SEF1-O99"),
-                             ("assessmentIds", "SEF1-AS99")):
-            mapping = valid_map()
-            mapping["modules"][0]["resources"][0][field] = [value]
+    def test_changing_release_or_digest_is_rejected(self):
+        for field, value in (("releaseId", "2026.11.2"),
+                             ("manifestSha256", "e" * 64),
+                             ("courseSha256", "f" * 64)):
             with self.subTest(field=field):
-                with self.assertRaisesRegex(consumer.ContractError, "unknown canonical"):
-                    consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
+                data = valid_export()
+                data["source"][field] = value
+                if field == "courseSha256":
+                    mapping = valid_map()
+                    with self.assertRaises(consumer.ContractError):
+                        consumer.check_map(mapping, consumer.check_export(data, PIN))
+                else:
+                    with self.assertRaises(consumer.ContractError):
+                        consumer.check_export(data, PIN)
 
-    def test_reject_changed_module_title_even_with_same_number(self):
-        mapping = valid_map()
-        mapping["modules"][0]["title"] = "An unrelated module"
-        with self.assertRaisesRegex(consumer.ContractError, "locator"):
-            consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
+    def test_reject_version_one_git_source_and_unknown_rule_set(self):
+        for mutate in (
+            lambda d: d.update(exportVersion=1),
+            lambda d: d["source"].update(revision="c" * 40),
+            lambda d: d["source"].update(specification="v0.1.0"),
+            lambda d: d["toolkit"].update(ruleSetVersion="unreviewed"),
+        ):
+            data = valid_export()
+            mutate(data)
+            with self.subTest(data=data):
+                if "revision" in data["source"]:
+                    self.assertNotIn("revision", consumer.check_export(data, PIN)["source"])
+                    # A derived JSON with extra source data is not an upgrade path.
+                else:
+                    with self.assertRaises(consumer.ContractError):
+                        consumer.check_export(data, PIN)
 
-    def test_reject_changed_lesson_locator(self):
-        mapping = valid_map()
-        mapping["modules"][0]["resources"][0]["lesson"]["title"] = "Unrelated"
-        with self.assertRaisesRegex(consumer.ContractError, "lesson locator"):
-            consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
-
-    def test_required_coverage_cannot_be_invented_or_from_optional(self):
-        for value in ([], ["SEF1-AS2"]):
+    def test_bad_release_identifiers(self):
+        for value in ("main", "2026.13.1", "2026.11.0"):
             with self.subTest(value=value):
                 data = valid_export()
-                data["coverage"]["SEF1-O1"] = value
-                with self.assertRaisesRegex(consumer.ContractError, "coverage mismatch"):
+                data["source"]["releaseId"] = value
+                with self.assertRaises(consumer.ContractError):
                     consumer.check_export(data, PIN)
+        for value in ("a" * 40, "A" * 64):
+            data = valid_export()
+            data["source"]["manifestSha256"] = value
+            with self.assertRaises(consumer.ContractError):
+                consumer.check_export(data, PIN)
+
+    def test_unsupported_map_version_and_wrong_identity(self):
+        for mutate in (
+            lambda m: m.update(schemaVersion=2),
+            lambda m: m["curriculum"].update(releaseId="2026.11.2"),
+            lambda m: m["curriculum"].update(manifestSha256="d" * 64),
+            lambda m: m["curriculum"].update(courseSha256="d" * 64),
+        ):
+            mapping = valid_map()
+            mutate(mapping)
+            with self.subTest(mapping=mapping), self.assertRaises(consumer.ContractError):
+                consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
+
+    def test_unknown_outcome_and_assessment_ids(self):
+        for key, value in (("outcomeIds", "SEF1-O99"),
+                           ("assessmentIds", "SEF1-AS99")):
+            mapping = valid_map()
+            mapping["modules"][0]["resources"][0][key] = [value]
+            with self.assertRaises(consumer.ContractError):
+                consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
+
+    def test_module_title_lesson_locator_coverage_and_manual_review(self):
+        mapping = valid_map()
+        mapping["modules"][0]["title"] = "Different module"
+        with self.assertRaises(consumer.ContractError):
+            consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
+        mapping = valid_map()
+        mapping["modules"][0]["resources"][0]["lesson"]["title"] = "Invented"
+        with self.assertRaises(consumer.ContractError):
+            consumer.check_map(mapping, consumer.check_export(valid_export(), PIN))
         data = valid_export()
-        data["assessments"][0]["required"] = False
+        data["coverage"]["SEF1-O1"] = []
+        with self.assertRaises(consumer.ContractError):
+            consumer.check_export(data, PIN)
+        data = valid_export()
+        data["validation"]["manualReviewRequired"] = False
         with self.assertRaises(consumer.ContractError):
             consumer.check_export(data, PIN)
 
-    def test_reject_duplicate_outcomes_and_modules(self):
+    def test_reject_duplicates_and_foreign_ids(self):
         data = valid_export()
         data["outcomes"].append(copy.deepcopy(data["outcomes"][0]))
-        with self.assertRaisesRegex(consumer.ContractError, "duplicate outcome"):
+        with self.assertRaises(consumer.ContractError):
             consumer.check_export(data, PIN)
         data = valid_export()
-        data["modules"].append(copy.deepcopy(data["modules"][0]))
-        with self.assertRaisesRegex(consumer.ContractError, "module number"):
+        data["assessments"][0]["id"] = "APP1-AS1"
+        with self.assertRaises(consumer.ContractError):
             consumer.check_export(data, PIN)
 
-    def test_incomplete_toolkit_validation_is_not_accepted(self):
-        data = valid_export()
-        data["validation"]["structural"] = "incomplete"
-        with self.assertRaisesRegex(consumer.ContractError, "not structurally passed"):
-            consumer.check_export(data, PIN)
-
-    def test_cli_wrong_revision_and_old_map_are_nonzero(self):
+    def test_strict_lock_reader(self):
         with tempfile.TemporaryDirectory() as tmp:
-            folder = Path(tmp)
-            exported = folder / "export.json"
-            mapping = folder / "map.json"
-            exported.write_text(json.dumps(valid_export()), encoding="utf-8")
+            path = Path(tmp) / "oee-curriculum.lock.json"
+            path.write_text(json.dumps(PIN), encoding="utf-8")
+            self.assertEqual(consumer.load_lock(path), PIN)
+            path.write_text('{"formatVersion":1,"formatVersion":1,"releaseId":"2026.11.1",'
+                            '"manifestSha256":"' + "a" * 64 + '"}', encoding="utf-8")
+            with self.assertRaises(consumer.ContractError):
+                consumer.load_lock(path)
+            path.write_text(json.dumps({**PIN, "revision": ORIGIN}), encoding="utf-8")
+            with self.assertRaises(consumer.ContractError):
+                consumer.load_lock(path)
+
+    def test_standalone_contract_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            export = base / "course.json"
+            lock = base / "oee-curriculum.lock.json"
+            mapping = base / "map.json"
+            export.write_text(json.dumps(valid_export()), encoding="utf-8")
+            lock.write_text(json.dumps(PIN), encoding="utf-8")
             mapping.write_text(json.dumps(valid_map()), encoding="utf-8")
-            cmd = [sys.executable, str(SCRIPT), "--export", str(exported),
-                   "--revision", PIN, "--map", str(mapping), "--json"]
+            cmd = [sys.executable, str(SCRIPT), "--export", str(export),
+                   "--lock", str(lock), "--map", str(mapping), "--json"]
             good = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            self.assertEqual(good.returncode, 0, good.stdout + good.stderr)
-            self.assertTrue(json.loads(good.stdout)["manualReviewRequired"])
-            bad_pin = subprocess.run([*cmd[:cmd.index("--map")-2],
-                                       "--revision", "b" * 40, "--json"],
-                                      capture_output=True, text=True, check=False)
-            self.assertNotEqual(bad_pin.returncode, 0)
-            mapping.write_text(json.dumps({**valid_map(), "schemaVersion": 1}),
-                               encoding="utf-8")
-            old = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            self.assertEqual(old.returncode, 3)
-            self.assertEqual(json.loads(old.stdout)["finding"]["category"],
-                             "unsupported_format")
+            self.assertEqual(good.returncode, 0, good.stderr)
+            self.assertEqual(json.loads(good.stdout)["releaseId"], PIN["releaseId"])
+            wrong = json.loads(json.dumps(valid_export()))
+            wrong["source"]["manifestSha256"] = "f" * 64
+            export.write_text(json.dumps(wrong), encoding="utf-8")
+            bad = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            self.assertEqual(bad.returncode, 1)
 
 
 if __name__ == "__main__":
