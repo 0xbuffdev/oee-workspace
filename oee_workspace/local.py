@@ -21,14 +21,11 @@ def real_directory(path: Path, label: str) -> None:
     if path.is_symlink() or not path.is_dir():
         raise PublicationError(f"{label} is not a real directory: {path}")
 
-def workspace_root(directory: Path, oee: Path) -> Path:
+def workspace_root(directory: Path) -> Path:
     directory = Path(directory).expanduser()
     if directory.is_symlink() or not directory.is_dir():
         raise PublicationError(f"learner destination must exist and not be a symlink: {directory}")
     root = directory.resolve(strict=True)
-    upstream = Path(oee).expanduser().resolve()
-    if root == upstream or upstream in root.parents:
-        raise PublicationError("refusing to write learner files into the canonical OEE source checkout")
     return root
 
 def safe_parents(root: Path, relative: Path) -> None:
