@@ -110,16 +110,12 @@ class ReleaseConsumerTests(unittest.TestCase):
             lambda d: d["source"].update(revision="c" * 40),
             lambda d: d["source"].update(specification="v0.1.0"),
             lambda d: d["toolkit"].update(ruleSetVersion="unreviewed"),
+            lambda d: d["toolkit"].update(legacyCompatibility=True),
         ):
             data = valid_export()
             mutate(data)
-            with self.subTest(data=data):
-                if "revision" in data["source"]:
-                    self.assertNotIn("revision", consumer.check_export(data, PIN)["source"])
-                    # A derived JSON with extra source data is not an upgrade path.
-                else:
-                    with self.assertRaises(consumer.ContractError):
-                        consumer.check_export(data, PIN)
+            with self.subTest(data=data), self.assertRaises(consumer.ContractError):
+                consumer.check_export(data, PIN)
 
     def test_bad_release_identifiers(self):
         for value in ("main", "2026.13.1", "2026.11.0"):

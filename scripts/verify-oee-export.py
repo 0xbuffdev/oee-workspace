@@ -81,10 +81,16 @@ def check_export(data: dict, expected: dict) -> dict:
     A structural-consumer success is not proof of curriculum conformance.
     """
     obj(data, "export")
+    require(set(data) == {"exportVersion", "source", "toolkit", "course",
+                         "outcomes", "assessments", "modules", "coverage", "validation"},
+            "WSX004", "unsupported Toolkit export properties")
     if type(data.get("exportVersion")) is not int or data["exportVersion"] != 2:
         raise ContractError("WSX004", "unsupported_format",
                             "requires exactly OEE Toolkit exportVersion 2")
     source = obj(data.get("source"), "source")
+    require(set(source) == {"repository", "releaseId", "manifestSha256",
+                            "specification", "coursePath", "courseSha256", "originCommit"},
+            "WSX004", "unsupported Toolkit v2 source properties")
     if source.get("repository") != SOURCE or source.get("specification") != "v0.2.0":
         raise ContractError("WSX004", "unsupported_format",
                             "unsupported source repository/specification")
@@ -107,6 +113,8 @@ def check_export(data: dict, expected: dict) -> dict:
             source["manifestSha256"] == expected["manifestSha256"],
             "WSX005", "export identity does not match independently selected release lock")
     toolkit = obj(data.get("toolkit"), "toolkit")
+    require(set(toolkit) == {"toolVersion", "ruleSetVersion"},
+            "WSX004", "unsupported Toolkit software identity properties")
     string(toolkit.get("toolVersion"), "toolkit.toolVersion")
     require(toolkit.get("ruleSetVersion") == "v0.2.0-ot-i04",
             "WSX004", "unsupported OEE Toolkit rule set")

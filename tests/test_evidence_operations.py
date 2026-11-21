@@ -17,7 +17,7 @@ from test_evidence_schema import valid_attempt, COURSE_SHA
 class FakeReader:
     @staticmethod
     def load_consumer():
-        return ev.load_reader_real_contract if False else _consumer()
+        return _consumer()
 
     @staticmethod
     def read_pinned_export(lock, store, code):
