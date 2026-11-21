@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "OEE Workspace course resource mapping v2 (OEE v0.2.0 only)",
+  "title": "OEE Workspace course resource mapping v3 (immutable release-keyed)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,7 +11,7 @@
   ],
   "properties": {
     "schemaVersion": {
-      "const": 2
+      "const": 3
     },
     "status": {
       "enum": [
@@ -27,7 +27,9 @@
       "additionalProperties": false,
       "required": [
         "repository",
-        "revision",
+        "releaseId",
+        "manifestSha256",
+        "courseSha256",
         "specification",
         "course",
         "path"
@@ -36,9 +38,20 @@
         "repository": {
           "const": "0xbuffdev/open-engineering-education"
         },
-        "revision": {
+        "releaseId": {
           "type": "string",
-          "pattern": "^[a-f0-9]{40}$"
+          "pattern": "^[0-9]{4}\\.(0[1-9]|1[0-2])\\.[1-9][0-9]*$"
+        },
+        "manifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "courseSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "specification": {
+          "const": "v0.2.0"
         },
         "course": {
           "type": "string",
@@ -47,9 +60,6 @@
         "path": {
           "type": "string",
           "pattern": "^curriculum/[A-Z]{2,4}/[A-Z]{2,4}[1-9][0-9]*\\.md$"
-        },
-        "specification": {
-          "const": "v0.2.0"
         }
       }
     },

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/0xbuffdev/oee-workspace/main/evidence/schemas/attempt-v1.schema.json",
-  "title": "OEE Workspace learner-owned assessment attempt v1 (OEE v0.2.0)",
+  "title": "OEE Workspace learner-owned assessment attempt v2 (immutable release-keyed OEE v0.2.0)",
   "description": "Structural, mutable learner record only; validation does not establish assessment completion, verify a reviewer, or assert OEE course readiness. Cross-document source, filesystem, UUID filename and hash checks belong to the Workspace evidence validator.",
   "type": "object",
   "additionalProperties": false,
@@ -18,7 +18,7 @@
   ],
   "properties": {
     "schemaVersion": {
-      "const": 1
+      "const": 2
     },
     "attemptId": {
       "$ref": "#/$defs/attemptId"
@@ -83,7 +83,9 @@
       "additionalProperties": false,
       "required": [
         "repository",
-        "revision",
+        "releaseId",
+        "manifestSha256",
+        "courseSha256",
         "specification",
         "path",
         "code"
@@ -92,9 +94,17 @@
         "repository": {
           "const": "0xbuffdev/open-engineering-education"
         },
-        "revision": {
+        "releaseId": {
           "type": "string",
-          "pattern": "^[0-9a-f]{40}$"
+          "pattern": "^[0-9]{4}\\.(0[1-9]|1[0-2])\\.[1-9][0-9]*$"
+        },
+        "manifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "courseSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         },
         "specification": {
           "const": "v0.2.0"
