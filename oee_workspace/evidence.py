@@ -20,7 +20,7 @@ from uuid import UUID
 SOURCE = "0xbuffdev/open-engineering-education"
 SPECIFICATION = "v0.2.0"
 COURSE = re.compile(r"(SEF|APP|SYS|AI|SEC)[1-9][0-9]*\Z")
-RELEASE = re.compile(r"[0-9]{4}\\.(?:0[1-9]|1[0-2])\\.[1-9][0-9]*\\Z")
+RELEASE = re.compile(r"[0-9]{4}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*\Z")
 HASH = re.compile(r"[a-f0-9]{64}\Z")
 UTC = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\Z")
 SOURCE_ROOT = Path(__file__).resolve().parents[1]

@@ -17,7 +17,9 @@ import re
 import sys
 
 SOURCE = "0xbuffdev/open-engineering-education"
-SHA = re.compile(r"[0-9a-f]{40}\Z")
+SHA = re.compile(r"[0-9a-f]{64}\Z")
+COMMIT = re.compile(r"[0-9a-f]{40}\Z")
+RELEASE = re.compile(r"[0-9]{4}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*\Z")
 CODE = re.compile(r"[A-Z]{2,6}[1-9][0-9]*\Z")
 OUTCOME = re.compile(r"[A-Z]{2,6}[1-9][0-9]*-O[1-9][0-9]*\Z")
 ASSESSMENT = re.compile(r"[A-Z]{2,6}[1-9][0-9]*-AS[1-9][0-9]*\Z")

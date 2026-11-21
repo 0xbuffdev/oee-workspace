@@ -24,7 +24,8 @@ REVIEW_STATES = {"verified", "review-needed"}
 COVERAGE = {"mapped", "partial", "unmapped"}
 IDENTIFIER = re.compile(r"(?:B|R)[1-9][0-9]*\Z")
 CODE = re.compile(r"([A-Z]{2,4})([1-9][0-9]*)\Z")
-SHA = re.compile(r"[a-f0-9]{40}\Z")
+SHA = re.compile(r"[a-f0-9]{64}\Z")
+RELEASE = re.compile(r"[0-9]{4}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*\Z")
 
 
 class Check:
