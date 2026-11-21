@@ -4,7 +4,7 @@ OEE Workspace provides optional resources for independent study. The [OEE specif
 
 ## Current map status
 
-The [resource catalogue](catalog/) remains browsable: [books](catalog/books/) and [online material](catalog/online/). However, **no active resource-map or generated SEF1 reading guide has yet been approved for an immutable curriculum release**. The previous reviewed Git-source SEF1 map cannot be transferred automatically to a new release. Its references, eight module descriptions and explicit learning gaps survive in the [SEF1 editorial review](editorial/SEF1-REVIEW.md). It documents the 16-bit Hack versus OEE eight-bit teaching-machine differences.
+The [resource catalogue](catalog/) remains browsable: [books](catalog/books/) and [online material](catalog/online/). However, **no active resource-map or generated SEF1 reading guide has yet been approved for an immutable curriculum release**. The previous reviewed Git-source SEF1 map cannot be transferred automatically to a new release. The [current 41-lesson SEF1 resource-alignment study](editorial/SEF1-LESSON-MAP.md) is a non-active editorial artifact, not an approved reading-plan feed. Its references, eight module descriptions and explicit learning gaps survive in the [SEF1 editorial review](editorial/SEF1-REVIEW.md). It documents the 16-bit Hack versus OEE eight-bit teaching-machine differences.
 
 New public maps follow only [resource-map schema v3](schemas/course-map.schema.json). Each map identifies the exact releaseId, manifestSha256, courseSha256, OEE specification, course code/path and repository. Its draft/reviewed status describes independent resource editorial review, not source academic readiness.
 

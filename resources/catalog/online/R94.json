@@ -1,0 +1,15 @@
+{
+  "id": "R94",
+  "kind": "documentation",
+  "title": "Microsoft Learn — Windows startup phases",
+  "access": {
+    "mode": "free",
+    "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/performance/windows-boot-issues-troubleshooting",
+    "notes": "Free PC/Windows-specific example of firmware, boot manager, OS loader and kernel. Not a generic firmware specification; OEE's model does not implement these phases."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Microsoft Learn Windows boot issues documentation inspected 2026-11-21, including PreBoot, Windows Boot Manager, Windows OS Loader, kernel.",
+    "checkedOn": "2026-11-21"
+  }
+}

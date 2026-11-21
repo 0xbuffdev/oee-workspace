@@ -1,0 +1,19 @@
+{
+  "id": "B4",
+  "kind": "book",
+  "title": "Operating Systems: Three Easy Pieces",
+  "authors": [
+    "Remzi H. Arpaci-Dusseau",
+    "Andrea C. Arpaci-Dusseau"
+  ],
+  "access": {
+    "mode": "free",
+    "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/",
+    "notes": "Free author-hosted online chapters (including I/O, files, and directories). Optional context for SEF1 Module 7, not an OEE simulator or mandatory OS study."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Author-hosted OSTEP chapter index and free online editions inspected; ch. 2 Introduction, 36 I/O Devices, 39 Files and Directories, 40 File System Implementation; OEE-specific coverage still partial.",
+    "checkedOn": "2026-11-21"
+  }
+}

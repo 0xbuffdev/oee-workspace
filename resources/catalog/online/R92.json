@@ -1,0 +1,15 @@
+{
+  "id": "R92",
+  "kind": "course-material",
+  "title": "All About Circuits — Digital Circuits textbook",
+  "access": {
+    "mode": "free",
+    "url": "https://www.allaboutcircuits.com/textbook/digital/",
+    "notes": "Free digital electronics chapters. Relevant to binary representation, logic levels, gates, Boolean algebra, flip-flops and memory; detailed transistor design is optional and not required by OEE."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Official All About Circuits digital textbook navigation inspected on 2026-11-21: ch. 1 Numeration Systems; ch. 2 Binary Arithmetic; ch. 3 Logic Gates; ch. 7 Boolean Algebra; ch. 10 Multivibrators; ch. 15 Digital Storage.",
+    "checkedOn": "2026-11-21"
+  }
+}

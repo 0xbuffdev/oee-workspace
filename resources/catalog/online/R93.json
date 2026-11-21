@@ -1,0 +1,15 @@
+{
+  "id": "R93",
+  "kind": "interactive-tool",
+  "title": "Logisim-evolution — digital logic simulator",
+  "access": {
+    "mode": "free",
+    "url": "https://github.com/logisim-evolution/logisim-evolution",
+    "notes": "Free open-source, cross-platform circuit simulator with gates, signal inspection and storage. Official README documents Java 21+ for generic JAR; packaged installers may include a runtime. Not an OEE evaluator."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Maintainer's GitHub README inspected 2026-11-21: open-source simulator, inspectable signals and gates, memory components, Linux/macOS/Windows availability and runtime requirements.",
+    "checkedOn": "2026-11-21"
+  }
+}
