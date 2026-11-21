@@ -5,24 +5,29 @@ name: Independent Workspace release readiness
 on:
   pull_request:
     paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
       - "oee_workspace/**"
       - "resources/**"
       - "evidence/**"
       - "scripts/**"
       - "templates/**"
       - "tests/**"
-      - "docs/RELEASE-READINESS.md"
       - ".github/workflows/release-readiness.yml"
   push:
     branches: [main]
+    tags: ["v*"]
     paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
       - "oee_workspace/**"
       - "resources/**"
       - "evidence/**"
       - "scripts/**"
       - "templates/**"
       - "tests/**"
-      - "docs/RELEASE-READINESS.md"
       - ".github/workflows/release-readiness.yml"
   workflow_dispatch:
 

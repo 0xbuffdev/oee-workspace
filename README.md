@@ -93,6 +93,20 @@ When the official releases are available, follow their published installation an
 
 You will not need to clone the OEE curriculum repository to run the learner commands. Once installed, Toolkit reads the verified curriculum files locally. Workspace uses that same source to identify course outcomes, assessments and lesson positions.
 
+By default, Toolkit looks for an already verified release in the following
+user-local folder:
+
+| Operating system | Default installed-release store |
+| --- | --- |
+| Linux | `$XDG_CACHE_HOME/oee/curriculum-releases` when `XDG_CACHE_HOME` is set; otherwise `~/.cache/oee/curriculum-releases` |
+| macOS | `~/Library/Caches/oee/curriculum-releases` |
+| Windows | `%LOCALAPPDATA%\oee\curriculum-releases` |
+
+If an official installer placed the approved archive elsewhere, use
+`--store /path/to/verified-releases` with the learner commands. This is an
+existing local directory, not a download destination; Workspace never
+creates or populates it automatically.
+
 ### Step 5. Check that your curriculum is ready
 
 With the official Toolkit, installed curriculum release and reviewed lock in place, open a terminal in the root of your personal Workspace and run:
@@ -269,6 +283,6 @@ OEE Workspace has no built-in AI tutor, agent, automatic grader or system for ru
 
 ## Need help or want to improve Workspace?
 
-If a learner command fails, copy the exact error, note your operating system and Python version, and check whether your selected release and lock are available. Avoid posting private learner files or release signing keys in an issue. You can [report a problem](https://github.com/0xbuffdev/oee-workspace/issues) or open a discussion through the repository's existing community channels.
+If a learner command fails, copy the exact error, note your operating system and Python version, and check whether your selected release and lock are available. Avoid posting private learner files or release signing keys in an issue. You can [report a problem in GitHub Issues](https://github.com/0xbuffdev/oee-workspace/issues). The repository does not currently have GitHub Discussions enabled.
 
 If you want to change the templates, CLI, validators, resource catalogue or documentation, read [CONTRIBUTING.md](CONTRIBUTING.md). It contains the maintainer workflow, developer tests and release-check procedures. For academic course changes, contribute directly to the [OEE curriculum repository](https://github.com/0xbuffdev/open-engineering-education).

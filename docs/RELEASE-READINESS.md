@@ -39,8 +39,23 @@ The --oee-source switch belongs **only** to the release-test fixture publisher, 
 - [ ] Independent steward approval of official source closure, license notices, signed archive, its exact digest, steward public signing key and key revocation/trust policy.
 - [ ] Authorized immutable curriculum release and separately approved Toolkit package publication.
 - [ ] Re-review the full SEF1 resource/edition/assessment mapping against the **actual released** course and record a new approved v3 map before publishing any reading plan.
-- [ ] Review Linux/macOS/Windows CI and negative tests at a DCO-signed PR head.
+- [ ] Review Linux/macOS/Windows CI and negative tests at the DCO-signed PR head **and repeat release-readiness on the exact merged final main commit before tagging**. Record the three-platform workflow run URL and final main SHA in [RELEASE-DECISION.md](RELEASE-DECISION.md).
 - [ ] Preserve non-disposable learner files and obtain separate approval before destructive data changes.
 - [ ] Independent Workspace release and deployment approval. REL-I05 Content/0xNAND host replacement remains separately tracked.
 
 No successful test is equivalent to a learner grade, a released curriculum, or production authorization.
+
+## Release workflow triggering
+
+The independent three-platform workflow runs for changes to learner-facing
+`README.md` and `CONTRIBUTING.md`, release docs, CLI, templates, tests,
+source/resource code and its own workflow. It can also be dispatched
+manually and runs on `v*` tags as a post-tag verification. **The tag
+trigger cannot substitute for a green pre-tag test on the final main
+commit.** Documentation-only final merges still trigger the pre-tag
+main-branch run.
+
+Read the run SHA and each Ubuntu/macOS/Windows conclusion. A successful
+run based on a different source commit is insufficient for release
+approval. The [release decision](RELEASE-DECISION.md) records the
+remaining formal publishing steps; the CI signature is always test-only.

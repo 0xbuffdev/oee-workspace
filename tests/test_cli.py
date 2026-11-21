@@ -64,8 +64,9 @@ class ReleaseCliTests(unittest.TestCase):
         self.assertFalse((notes / "reading-plan.md").exists())
         resources = notes / "resources.md"
         resources.write_text("learner notes", encoding="utf-8")
-        code, _, _ = self.run_cli(*args)
+        code, _, err = self.run_cli(*args)
         self.assertEqual(code, 1)
+        self.assertIn("WSC011 [conflict]", err)
         self.assertEqual(resources.read_text(), "learner notes")
 
     def test_unknown_course_code_rejected_before_writes(self):

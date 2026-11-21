@@ -31,6 +31,20 @@ The local publication layer stages new directories and refuses to replace existi
 
 The repository tests run with Python 3.11 or newer. The basic CLI and resource checks do not make an official curriculum release available. Release integration tests create separate, short-lived fixtures; the signed artifacts they generate are not for learner use.
 
+The Toolkit package-verifier portability test is owned by the
+[OEE repository](https://github.com/0xbuffdev/open-engineering-education).
+On Debian/Ubuntu without `ensurepip`, install the matching `python3-venv`
+package or select a Python with `--python` when running the OEE
+`verify_package_install.py` script. OEE's source-only report and
+independently executed wheel/sdist verifier have different scopes.
+
+A Workspace documentation-only change is still release-relevant.
+`release-readiness.yml` now runs for changes to `README.md` and
+`CONTRIBUTING.md` as well as source and maintenance docs. The final
+release decision must cite a passing full Linux/macOS/Windows smoke
+run on the **exact merged main commit**; a PR check on its preceding
+head or a successful build from a different SHA does not suffice.
+
 From the source repository root:
 
 ```sh

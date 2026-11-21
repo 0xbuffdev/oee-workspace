@@ -310,8 +310,10 @@ class EvidenceService:
                 checked = consumer.check_export(raw, expected)
                 checked["courseType"] = raw["course"]["type"]
             except reader.PinnedSourceError as exc:
-                if exc.category in ("source_missing", "unsupported_format"):
-                    incomplete("pinned release unavailable: " + exc.category, "WSE003")
+                if exc.category in ("source_missing", "store_missing",
+                                    "lock_digest_not_found", "unsupported_format"):
+                    incomplete("pinned release unavailable (" + exc.category
+                               + "): " + str(exc), "WSE003")
                 invalid("installed Toolkit export rejected: " + exc.category, "WSE005")
             except consumer.ContractError as exc:
                 if exc.category in ("missing_input", "unsupported_format"):

@@ -153,8 +153,10 @@ def course_add(args) -> None:
     elif course_type != "course":
         invalid("OEE source has unsupported course type", "WSC005")
     if any(exists(root / rel) for rel in destinations):
-        invalid(f"course already exists in learner workspace: {code}; no files replaced",
-                "WSC004")
+        raise EvidenceIssue(
+            "WSC011", "conflict",
+            f"course already exists in learner workspace: {code}; no files replaced",
+        )
 
     guide, notice = study_guide(code, checked, args.lock, args.store)
     values = {"course": code, "course_link": url}
@@ -228,8 +230,10 @@ def resources_check(args) -> None:
     try:
         reader.check_pinned_map(mapping, args.lock or Path.cwd() / "oee-curriculum.lock.json", args.store)
     except reader.PinnedSourceError as exc:
-        if exc.category in ("source_missing", "unsupported_format"):
-            incomplete("pinned source unavailable: " + exc.category, "WSC003")
+        if exc.category in ("source_missing", "store_missing",
+                            "lock_digest_not_found", "unsupported_format"):
+            incomplete("pinned source unavailable (" + exc.category
+                       + "): " + str(exc), "WSC003")
         invalid("pinned source validation rejected: " + exc.category, "WSC005")
     except reader.load_consumer().ContractError as exc:
         if exc.category in ("missing_input", "unsupported_format"):
