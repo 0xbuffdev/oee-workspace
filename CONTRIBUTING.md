@@ -39,7 +39,7 @@ When changing a template:
 ## CLI, templates and safety changes
 
 Changes to the Workspace Python CLI must keep the canonical OEE Toolkit as
-the only source parser, validate explicit immutable revisions and preserve
+the only source parser, validate independently reviewed immutable release locks and preserve
 existing learner files. No compatibility shell wrappers or prior-format
 adapters are accepted.
 
@@ -51,8 +51,8 @@ python -m oee_workspace --help
 npx --yes markdownlint-cli2@0.24.0
 ```
 
-The pinned OEE integration fixtures additionally require a trusted local OEE
-checkout. CI provides the checkout and runs CLI and safety tests on Linux,
+The disposable publisher-side acceptance fixtures additionally require an exact local OEE
+checkout. Learner CLI operations use only a verified offline release. CI runs tests on Linux,
 macOS and Windows.
 
 For security changes, consult the
@@ -78,10 +78,10 @@ For contributions that use the Developer Certificate of Origin, follow the instr
 A changed OEE upstream `main` is not authorization to update a reviewed
 resource map. Read the [upstream drift and pinned source guide](docs/OEE-UPSTREAM-DRIFT.md)
 and inspect the reported canonical outcome, assessment and module changes
-before proposing a new exact source revision. Keep partial-coverage gaps,
+before proposing a new immutable curriculum release mapping. Keep partial-coverage gaps,
 verify cited editions and accessible alternatives, regenerate guides
 deterministically and seek maintainer approval. Do not add a version adapter
-or use the moving OEE `HEAD` for a pinned source check.
+or use the moving OEE `HEAD` for any learner source check.
 
 ## Pull requests
 

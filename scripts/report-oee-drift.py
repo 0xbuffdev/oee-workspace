@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""Compare pinned Workspace v2 resource maps with an explicitly chosen OEE commit.
+"""Advisory-only comparison of two independently installed immutable OEE releases.
 
-This is an ADVISORY, READ-ONLY report, not a resource-map migration command.
-Pinned validation always uses the recorded Git commit. Target validation uses
-only --target-revision, never an inferred HEAD or an untrusted export JSON.
-
-Exit codes: 0 valid report (even when drift is found); 1 invalid pinned map;
-3 unavailable/unsupported target; 4 unexpected tool failure.
+No network, Git checkout or moving source reference. Never changes learner
+records, reviewed maps, a release lock or curriculum identity.
 """
 from __future__ import annotations
 
@@ -19,17 +15,15 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MAPS = ROOT / "resources" / "mappings"
-SHA = re.compile(r"[0-9a-f]{40}\Z")
 CODE = re.compile(r"(SEF|APP|SYS|AI|SEC)[1-9][0-9]*\Z")
 
 
 def load_checker():
-    name = "oee_workspace_pinned_drift_checker"
+    name = "oee_workspace_release_drift_checker"
     if name in sys.modules:
         return sys.modules[name]
     spec = importlib.util.spec_from_file_location(
-        name, ROOT / "scripts" / "check-resources.py",
-    )
+        name, ROOT / "scripts" / "check-resources.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
@@ -44,7 +38,7 @@ def difference(kind: str, locator: str, before, after) -> dict:
 def compare_contracts(pinned: dict, target: dict, mapping: dict) -> tuple[list[dict], list[dict]]:
     """Compare two verified OEE exports, excluding incidental source line numbers.
 
-    Module and lesson ordinals belong to a particular source revision.
+    Module and lesson ordinals belong to a particular curriculum release.
     An identical title at a different ordinal is a *diagnostic hint*, not
     authorization to rewrite a resource locator.
     """
@@ -167,118 +161,127 @@ def compare_contracts(pinned: dict, target: dict, mapping: dict) -> tuple[list[d
     return changes, risks
 
 
-def inspect_map(mapping: dict, oee: Path, target_sha: str, checker) -> dict:
-    """Validate the pinned source first, then compare a separately chosen target."""
-    canon = mapping["curriculum"]
-    code, pin = canon["course"], canon["revision"]
-    base = {
-        "course": code,
-        "pinnedRevision": pin,
-        "targetRevision": target_sha,
+
+def inspect_map(mapping: dict, lock: Path, store: Path | None,
+                target_lock: Path, target_store: Path | None, checker) -> dict:
+    """Validate reviewed pinned map first, then independently inspect target."""
+    course = mapping["curriculum"]["course"]
+    consumer = checker.load_consumer()
+    selected = consumer.load_lock(lock)
+    original = checker.read_pinned_export(lock, store, course)
+    checked = consumer.check_export(original, selected)
+    consumer.check_map(mapping, checked)
+
+    row = {
+        "course": course,
+        "pinnedReleaseId": selected["releaseId"],
+        "pinnedManifestSha256": selected["manifestSha256"],
         "pinnedValidation": "passed",
         "targetValidation": "passed",
         "state": "unchanged",
         "reviewRequired": False,
         "autoRemapped": False,
         "assessmentCompletionDetermined": False,
-        "changes": [],
-        "resourceAssociationRisks": [],
+        "changes": [], "resourceAssociationRisks": [],
     }
-    # Do not mutate mapping, nor pretend that its pinned source is target HEAD.
-    original = checker.read_pinned_export(oee, pin, code)
-    checked = checker.load_consumer().check_export(original, pin)
-    checker.load_consumer().check_map(mapping, checked)
     try:
-        updated = checker.read_pinned_export(oee, target_sha, code)
-        other = checker.load_consumer().check_export(updated, target_sha)
+        target = consumer.load_lock(target_lock)
+        row["targetReleaseId"] = target["releaseId"]
+        row["targetManifestSha256"] = target["manifestSha256"]
+        updated = checker.read_pinned_export(target_lock, target_store, course)
+        consumer.check_export(updated, target)
     except checker.PinnedSourceError as exc:
-        base.update(state="target-unavailable", targetValidation="incomplete",
-                    reviewRequired=True, targetFailure={
-                        "category": exc.category, "message": str(exc),
-                    })
-        return base
-    except checker.load_consumer().ContractError as exc:
-        base.update(state="target-unavailable", targetValidation="incomplete",
-                    reviewRequired=True, targetFailure=exc.as_dict())
-        return base
-
+        row.update(state="target-unavailable", targetValidation="incomplete",
+                   reviewRequired=True,
+                   targetFailure={"category": exc.category, "message": str(exc)})
+        return row
+    except consumer.ContractError as exc:
+        row.update(state="target-unavailable", targetValidation="incomplete",
+                   reviewRequired=True, targetFailure=exc.as_dict())
+        return row
     changes, risks = compare_contracts(original, updated, mapping)
-    base["changes"] = changes
-    base["resourceAssociationRisks"] = risks
+    row["changes"] = changes
+    row["resourceAssociationRisks"] = risks
+    if original["source"]["courseSha256"] != updated["source"]["courseSha256"]:
+        # The source changed even when the current derived shape is unchanged.
+        row["sourceBytesChanged"] = True
+        row["reviewRequired"] = True
     if changes or risks:
-        base.update(state="drift-detected", reviewRequired=True)
-    return base
+        row.update(state="drift-detected", reviewRequired=True)
+    elif row["reviewRequired"]:
+        row["state"] = "source-bytes-changed"
+    return row
 
 
-def report(oee: Path, target_sha: str, maps: list[Path]) -> tuple[dict, int]:
-    """Return one deterministic report with clear, separate validation states."""
+def report(lock: Path, store: Path | None, target_lock: Path,
+           target_store: Path | None, maps: list[Path]) -> tuple[dict, int]:
     checker = load_checker()
-    catalog_findings = checker.Check()
-    catalog = checker.validate_catalog(catalog_findings)
-    if catalog_findings.errors:
-        raise ValueError("resource catalog invalid: " + "; ".join(catalog_findings.errors[:3]))
-    rows = []
-    result_code = 0
+    validation = checker.Check()
+    catalog = checker.validate_catalog(validation)
+    if validation.errors:
+        raise ValueError("invalid catalogue: " + "; ".join(validation.errors[:3]))
+    rows, exit_code = [], 0
     for path in maps:
+        if path.is_symlink() or not path.is_file():
+            raise ValueError("resource map must be an existing regular file")
         try:
             mapping = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, ValueError) as exc:
-            raise ValueError(f"cannot read resource map {path.name}: {type(exc).__name__}") from exc
-        findings = checker.Check()
-        if not checker.validate_map_shape(mapping, catalog, findings, str(path)):
-            raise ValueError("invalid pinned map: " + "; ".join(findings.errors[:3]))
-        canonical = mapping["curriculum"]
-        matches = CODE.fullmatch(canonical["course"])
-        if (not matches or path.parent.name != matches.group(1)
-                or path.stem != canonical["course"]):
-            raise ValueError("map path disagrees with canonical program/course")
+        except (OSError, ValueError, UnicodeError) as exc:
+            raise ValueError("invalid resource map JSON") from exc
+        shape = checker.Check()
+        if not checker.validate_map_shape(mapping, catalog, shape, str(path)):
+            raise ValueError("invalid pinned map: " + "; ".join(shape.errors[:3]))
+        ident = mapping["curriculum"]
+        match = CODE.fullmatch(ident["course"])
+        if not match or path.stem != ident["course"] or path.parent.name != match.group(1):
+            raise ValueError("mapped course path does not match its canonical code")
         try:
-            row = inspect_map(mapping, oee, target_sha, checker)
+            row = inspect_map(mapping, lock, store, target_lock, target_store, checker)
         except checker.PinnedSourceError as exc:
-            raise ValueError("pinned source invalid or missing: " + str(exc)) from exc
+            raise ValueError("selected release unavailable: " + str(exc)) from exc
         except checker.load_consumer().ContractError as exc:
-            raise ValueError("pinned map references invalid: " + exc.code) from exc
+            raise ValueError("selected release/map invalid: " + exc.code) from exc
         rows.append(row)
         if row["targetValidation"] == "incomplete":
-            result_code = 3
+            exit_code = 3
     return {
-        "reportVersion": 1, "mode": "advisory-only",
-        "targetRevision": target_sha, "results": rows,
-        "pinnedValidation": "passed",
-        "upstreamReviewRequired": any(x["reviewRequired"] for x in rows),
+        "reportVersion": 2, "mode": "advisory-only",
+        "results": rows, "pinnedValidation": "passed",
+        "upstreamReviewRequired": any(row["reviewRequired"] for row in rows),
         "autoRemapped": False, "filesChanged": False,
-    }, result_code
+    }, exit_code
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--oee", type=Path, required=True,
-                        help="trusted local OEE Toolkit Git checkout; no fetch")
-    parser.add_argument("--target-revision", required=True,
-                        help="explicit full OEE commit SHA for nonblocking drift comparison")
-    parser.add_argument("--course",
-                        help="optional mapped course code; defaults to all active maps")
+    parser.add_argument("--lock", type=Path, default=None,
+                        help="current reviewed project lock, defaults to ./oee-curriculum.lock.json")
+    parser.add_argument("--store", type=Path, default=None)
+    parser.add_argument("--target-lock", type=Path, required=True,
+                        help="separately reviewed and installed target release lock")
+    parser.add_argument("--target-store", type=Path, default=None)
+    parser.add_argument("--course", help="optional currently mapped course code")
     args = parser.parse_args(argv)
-    if not SHA.fullmatch(args.target_revision):
-        parser.error("--target-revision must be a full lowercase Git commit SHA")
-    if args.course is not None and not CODE.fullmatch(args.course):
-        parser.error("--course must be a canonical OEE course code")
+    if args.course and not CODE.fullmatch(args.course):
+        parser.error("--course must be a canonical course code")
     paths = sorted(MAPS.rglob("*.json"))
     if args.course:
         paths = [p for p in paths if p.stem == args.course]
     if not paths:
-        print("drift_report_error: no active v2 maps selected", file=sys.stderr)
+        print("drift_report_error: no active release-keyed resource maps selected",
+              file=sys.stderr)
         return 1
     try:
-        data, status = report(args.oee, args.target_revision, paths)
+        result, code = report(args.lock or Path.cwd() / "oee-curriculum.lock.json",
+                              args.store, args.target_lock, args.target_store, paths)
     except ValueError as exc:
         print("drift_report_error: " + str(exc), file=sys.stderr)
         return 1
     except Exception as exc:
         print(f"drift_report_tool_error: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 4
-    print(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2))
-    return status
+    print(json.dumps(result, sort_keys=True, ensure_ascii=False, indent=2))
+    return code
 
 
 if __name__ == "__main__":

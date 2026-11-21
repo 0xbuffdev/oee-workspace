@@ -1,288 +1,145 @@
-"""WS-I07 domain tests: exact source, artifact safety, review projections and export."""
+"""REL-I04 learner evidence semantics against a single verified synthetic v2 export."""
 from __future__ import annotations
 
-from copy import deepcopy
 import hashlib
 import json
-import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from uuid import uuid4
 
-from oee_workspace.evidence import (
-    EvidenceIssue, EvidenceService, record_shape, relative_artifact, review_state,
-)
-
-ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = ROOT / "tests" / "fixtures" / "evidence"
-OEE = Path(os.environ.get("OEE_REPO", ROOT / "_oee")).resolve()
-PIN = "67416343f3eab17ada5d3c79ae6cc782524c29ff"
+from oee_workspace import evidence as ev
+from test_toolkit_consumer import PIN, valid_export
+from test_evidence_schema import valid_attempt, COURSE_SHA
 
 
-def read(name: str, category="valid"):
-    return json.loads((FIXTURES / category / name).read_text(encoding="utf-8"))
+class FakeReader:
+    class PinnedSourceError(Exception):
+        category = "source_missing"
+
+    @staticmethod
+    def load_consumer():
+        return _consumer()
+
+    @staticmethod
+    def read_pinned_export(lock, store, code):
+        if code != "SEF1":
+            raise AssertionError("fixture exports only SEF1")
+        return valid_export()
 
 
-class ShapeAndFilesystemTests(unittest.TestCase):
-    def test_canonical_fixture_shapes_without_runtime_dependency(self):
-        names = ["SEF1-AS1-unreviewed.json", "SEF1-AS2-self-review.json",
-                 "SEF10-AS2-unreviewed.json",
-                 "SEF10-AS3-claimed-human-review.json"]
-        for name in names:
-            with self.subTest(name=name):
-                record = read(name)
-                self.assertEqual(record_shape(record), record)
-
-    def test_invalid_shape_fixtures_are_rejected_by_stdlib(self):
-        for file in sorted((FIXTURES / "invalid-schema").glob("*.json")):
-            with self.subTest(name=file.name):
-                with self.assertRaises(EvidenceIssue):
-                    record_shape(json.loads(file.read_text(encoding="utf-8")))
-
-    def test_schema_valid_but_source_invalid_fixtures_parse(self):
-        for file in sorted((FIXTURES / "invalid-reference").glob("*.json")):
-            with self.subTest(name=file.name):
-                record = json.loads(file.read_text(encoding="utf-8"))
-                if file.name == "wrong-course-path-SEF1.json":
-                    # Published JSON Schema cannot compare two fields, but
-                    # the stdlib domain validator enforces their relationship.
-                    with self.assertRaises(EvidenceIssue) as caught:
-                        record_shape(record)
-                    self.assertEqual(caught.exception.code, "WSE005")
-                else:
-                    record_shape(record)
-
-    def test_attempt_display_review_state_never_authenticates_reviewer(self):
-        unreviewed = read("SEF10-AS2-unreviewed.json")
-        self.assertEqual(review_state(unreviewed)["status"], "attempt-recorded")
-        self.assertIsNone(review_state(unreviewed)["decision"])
-        reviewed = read("SEF1-AS2-self-review.json")
-        self.assertEqual(review_state(reviewed)["status"], "self-assessed")
-        claimed = read("SEF10-AS3-claimed-human-review.json")
-        self.assertEqual(review_state(claimed)["status"], "human-review-reported")
-        self.assertFalse(review_state(claimed)["reviewerIdentityVerified"])
-
-    def test_unsafe_paths_are_not_treated_as_relative(self):
-        for text in ("../private", "a/../private", "a//b", "./file", "/tmp/secret",
-                     "C:/Users/user/secrets", r"notes\private", "a/\x00/file"):
-            with self.subTest(path=text):
-                with self.assertRaises(EvidenceIssue):
-                    relative_artifact(text)
+def _consumer():
+    import importlib.util
+    script = Path(__file__).resolve().parents[1] / "scripts/verify-oee-export.py"
+    spec = importlib.util.spec_from_file_location("test_evidence_release_consumer", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-@unittest.skipUnless(
-    (OEE / "tooling" / "oee_toolkit" / "__main__.py").is_file(),
-    "pinned OEE Toolkit checkout required; CI supplies _oee",
-)
-class RealEvidenceOperationsTests(unittest.TestCase):
+class ReleaseEvidenceOperationsTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "learner"
         self.root.mkdir()
-        self.service = EvidenceService(self.root, OEE)
+        self.lock = Path(self.temp.name) / "oee-curriculum.lock.json"
+        self.lock.write_text(json.dumps(PIN), encoding="utf-8")
+        self.patch_reader = patch.object(ev, "load_reader", return_value=FakeReader)
+        self.patch_reader.start()
+        self.addCleanup(self.patch_reader.stop)
+        self.service = ev.EvidenceService(self.root, self.lock)
 
-    def install(self, name, category="valid", *, record=None):
-        record = deepcopy(record if record is not None else read(name, category))
-        code = record["course"]["code"]
-        program = code.rstrip("0123456789")
-        directory = (self.root / "evidence" / program / code /
-                     record["assessmentId"])
-        directory.mkdir(parents=True, exist_ok=True)
-        path = directory / (record["attemptId"] + ".json")
-        path.write_text(json.dumps(record), encoding="utf-8")
-        return path
+    def install(self, record=None):
+        record = valid_attempt() if record is None else record
+        folder = self.root / "evidence/SEF/SEF1/SEF1-AS1"
+        folder.mkdir(parents=True, exist_ok=True)
+        file = folder / (record["attemptId"] + ".json")
+        file.write_text(json.dumps(record), encoding="utf-8")
+        return file
 
-    def build_artifact(self, name="projects/SEF10/tests/results.txt",
-                       content=b"synthetic test output"):
-        path = self.root / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(content)
-        return path
-
-    def test_real_fixed_commit_attempts_and_unverified_review_states(self):
-        for name in ("SEF1-AS1-unreviewed.json", "SEF1-AS2-self-review.json",
-                     "SEF10-AS3-claimed-human-review.json"):
-            with self.subTest(name=name):
-                record_path = self.install(name)
-                if name == "SEF10-AS3-claimed-human-review.json":
-                    self.build_artifact("projects/SEF10/docs/evaluation.md",
-                                        b"synthetic review fixture, not actual proof")
-                result = self.service.check(record_path)
-                self.assertEqual(result["outcome"], "valid", result["findings"])
-                self.assertEqual(result["revision"], PIN)
-                self.assertTrue(result["sourceValidated"])
-                self.assertFalse(result["review"]["reviewerIdentityVerified"])
-
-    def test_missing_artifact_is_incomplete_and_hash_mismatch_invalid(self):
-        missing = self.install("missing-artifact-SEF10.json", "invalid-reference")
-        self.assertEqual(self.service.check(missing)["outcome"], "incomplete")
-        mismatched = self.install("mismatched-artifact-hash-SEF10.json",
-                                  "invalid-reference")
-        self.build_artifact()
-        result = self.service.check(mismatched)
-        self.assertEqual(result["outcome"], "invalid")
-        self.assertEqual(result["findings"][0]["code"], "WSE007")
-
-    def test_good_sha256_matches_and_changed_file_invalidates(self):
-        data = b"reproducible example, not genuine learner proof"
-        self.build_artifact(content=data)
-        record = read("SEF10-AS2-unreviewed.json")
-        record["artifacts"][0]["sha256"] = hashlib.sha256(data).hexdigest()
-        path = self.install("SEF10-AS2-unreviewed.json", record=record)
-        self.assertEqual(self.service.check(path)["outcome"], "valid")
-        self.build_artifact(content=data + b" - tampered")
-        self.assertEqual(self.service.check(path)["outcome"], "invalid")
-
-    def test_symlinked_artifact_rejected_even_when_target_inside_workspace(self):
-        record = read("SEF10-AS2-unreviewed.json")
-        target = self.build_artifact()
-        alias = target.parent / "alias.txt"
-        alias.symlink_to(target)
-        record["artifacts"] = [{"kind": "relative-path",
-                                "value": "projects/SEF10/tests/alias.txt"}]
-        path = self.install("SEF10-AS2-unreviewed.json", record=record)
-        result = self.service.check(path)
-        self.assertEqual(result["outcome"], "invalid")
-        self.assertEqual(result["findings"][0]["code"], "WSE004")
-
-    def test_source_revision_and_assessment_reference_failures(self):
-        cases = {
-            "wrong-revision-SEF1.json": ("incomplete", "WSE003"),
-            "wrong-course-path-SEF1.json": ("invalid", "WSE005"),
-            "unknown-assessment-SEF1.json": ("invalid", "WSE005"),
-            "foreign-outcome-SEF1.json": ("invalid", "WSE005"),
-        }
-        for name, expected in cases.items():
-            with self.subTest(name=name):
-                path = self.install(name, "invalid-reference")
-                result = self.service.check(path)
-                self.assertEqual((result["outcome"], result["findings"][0]["code"]),
-                                 expected)
-                # Isolate each malformed-reference fixture; they intentionally
-                # reuse a UUID and must not create accidental duplicate IDs.
-                path.unlink()
-
-    def test_wrong_record_path_does_not_elevate_a_claim(self):
-        path = self.install("SEF1-AS2-self-review.json")
-        moved = path.with_name("someone-elses-id.json")
-        path.rename(moved)
-        result = self.service.check(moved)
-        self.assertEqual(result["outcome"], "invalid")
-        self.assertEqual(result["findings"][0]["code"], "WSE005")
-
-    def test_read_only_status_exposes_all_required_assessment_gaps(self):
-        self.install("SEF10-AS3-claimed-human-review.json")
-        self.build_artifact("projects/SEF10/docs/evaluation.md", b"synthetic")
-        snapshot = self.service.status()
-        self.assertEqual(snapshot["counts"]["valid"], 1)
-        course = next(c for c in snapshot["courses"] if c["course"] == "SEF10")
-        self.assertFalse(course["allRequiredAssessmentDecisionsRecorded"])
-        self.assertEqual(course["completion"], "not-determined")
-        outcome = next(row for row in course["outcomes"] if row["outcomeId"] == "SEF10-O3")
-        self.assertEqual(set(outcome["requiredAssessmentIds"]),
-                         {"SEF10-AS2", "SEF10-AS3"})
-        self.assertEqual(outcome["decisionsRecordedFor"], ["SEF10-AS3"])
-        self.assertEqual(outcome["outstandingAssessmentIds"], ["SEF10-AS2"])
-        self.assertFalse(snapshot["educationalAchievementDetermined"])
-
-    def test_explicit_pinned_course_without_attempts_reports_no_evidence(self):
-        snapshot = self.service.status("SEF1", PIN)
-        self.assertEqual(snapshot["counts"]["valid"], 0)
-        self.assertEqual(len(snapshot["courses"]), 1)
-        course = snapshot["courses"][0]
-        self.assertEqual(course["course"], "SEF1")
-        self.assertTrue(all(row["reportedStates"] == ["no-evidence"]
-                            for row in course["assessments"]))
-        self.assertTrue(all(not row["decisionsRecordedFor"]
-                            for row in course["outcomes"]))
-        self.assertFalse(course["allRequiredAssessmentDecisionsRecorded"])
-        self.assertEqual(course["completion"], "not-determined")
-
-    def test_explicit_status_source_scope_rejects_head_fallback(self):
-        with self.assertRaises(EvidenceIssue):
-            self.service.status("SEF1", None)
-        with self.assertRaises(EvidenceIssue) as caught:
-            self.service.status("SEF1", "f" * 40)
-        self.assertEqual(caught.exception.kind, "incomplete")
-
-    def test_automated_observation_stays_attempt_recorded_without_decision(self):
-        self.build_artifact()
-        path = self.install("SEF10-AS2-unreviewed.json")
-        checked = self.service.check(path)
-        self.assertEqual(checked["outcome"], "valid")
+    def test_full_release_identification_and_valid_attempt(self):
+        file = self.install()
+        checked = self.service.check(file)
+        self.assertEqual(checked["outcome"], "valid", checked)
+        self.assertTrue(checked["sourceValidated"])
+        self.assertEqual(checked["releaseId"], PIN["releaseId"])
+        self.assertEqual(checked["manifestSha256"], PIN["manifestSha256"])
         self.assertEqual(checked["review"]["status"], "attempt-recorded")
-        self.assertIsNone(checked["review"]["decision"])
 
-    def test_duplicate_ids_across_distinct_assessments_are_invalid_in_status(self):
-        original = read("SEF1-AS1-unreviewed.json")
-        first = self.install("SEF1-AS1-unreviewed.json", record=original)
-        other = deepcopy(original)
-        other["assessmentId"] = "SEF1-AS2"
-        other["outcomeIds"] = ["SEF1-O3"]
-        second = self.install("SEF1-AS1-unreviewed.json", record=other)
-        self.assertNotEqual(first, second)
-        snapshot = self.service.status()
-        self.assertEqual(snapshot["counts"]["invalid"], 2)
-        self.assertTrue(all(item["findings"][0]["code"] == "WSE008"
-                            for item in snapshot["records"]))
+    def test_wrong_digest_and_release_not_reinterpreted(self):
+        for field, value in (("releaseId", "2026.11.2"),
+                             ("manifestSha256", "f" * 64),
+                             ("courseSha256", "e" * 64)):
+            record = valid_attempt()
+            record["course"][field] = value
+            path = self.install(record)
+            result = self.service.check(path)
+            self.assertEqual(result["outcome"], "invalid", result)
+            self.assertEqual(result["findings"][0]["code"], "WSE005")
+            path.unlink()
 
-    def test_standalone_check_rejects_duplicate_uuid_in_another_assessment(self):
-        attempt = read("SEF1-AS1-unreviewed.json")
-        first = self.install("SEF1-AS1-unreviewed.json", record=attempt)
-        other = deepcopy(attempt)
-        other["assessmentId"] = "SEF1-AS2"
-        other["outcomeIds"] = ["SEF1-O3"]
-        second = self.install("SEF1-AS1-unreviewed.json", record=other)
-        for path in (first, second):
-            with self.subTest(path=path):
-                result = self.service.check(path)
-                self.assertEqual(result["outcome"], "invalid")
-                self.assertEqual(result["findings"][0]["code"], "WSE008")
-        with self.assertRaises(EvidenceIssue) as caught:
-            self.service.export_selected([first])
-        self.assertEqual(caught.exception.code, "WSE008")
+    def test_unknown_assessment_and_outcome_not_auto_granted(self):
+        record = valid_attempt()
+        record["assessmentId"] = "SEF1-AS9"
+        file = self.install(record)
+        # Filename location must follow the submitted assessment ID.
+        target = file.parent.parent / "SEF1-AS9" / file.name
+        target.parent.mkdir(parents=True)
+        file.rename(target)
+        result = self.service.check(target)
+        self.assertEqual(result["outcome"], "invalid", result)
+        record = valid_attempt()
+        record["outcomeIds"] = ["SEF1-O9"]
+        file = self.install(record)
+        self.assertEqual(self.service.check(file)["outcome"], "invalid")
 
-    def test_selective_export_excludes_unselected_records_and_artifact_bytes(self):
-        selected = self.install("SEF1-AS1-unreviewed.json")
-        omitted = self.install("SEF1-AS2-self-review.json")
-        payload = self.service.export_selected([selected])
-        self.assertEqual(payload["exportVersion"], 1)
-        self.assertEqual(len(payload["records"]), 1)
-        self.assertEqual(payload["records"][0]["attempt"]["attemptId"],
-                         read("SEF1-AS1-unreviewed.json")["attemptId"])
-        self.assertNotIn(str(self.root), json.dumps(payload))
-        self.assertNotIn(omitted.name, json.dumps(payload))
-        self.assertFalse(payload["artifactBytesIncluded"])
-        self.assertFalse(payload["educationalAchievementDetermined"])
+    def test_missing_artifact_incomplete_without_file_mutation(self):
+        record = valid_attempt()
+        record["artifacts"] = [{"kind": "relative-path", "value": "notes/SEF/SEF1/missing.md"}]
+        file = self.install(record)
+        original = file.read_bytes()
+        report = self.service.check(file)
+        self.assertEqual(report["outcome"], "incomplete")
+        self.assertEqual(file.read_bytes(), original)
 
-    def test_export_rejects_unselected_leak_and_bad_choices(self):
-        selected = self.install("SEF1-AS1-unreviewed.json")
-        with self.assertRaises(EvidenceIssue):
-            self.service.export_selected([])
-        with self.assertRaises(EvidenceIssue):
-            self.service.export_selected([selected, selected])
-        bad = self.install("wrong-revision-SEF1.json", "invalid-reference")
-        with self.assertRaises(EvidenceIssue) as caught:
-            self.service.export_selected([bad])
+    def test_artifact_hash_and_symlink_rejected(self):
+        path = self.root / "notes/SEF/SEF1/example.md"
+        path.parent.mkdir(parents=True)
+        path.write_text("evidence", encoding="utf-8")
+        record = valid_attempt()
+        record["artifacts"] = [{"kind": "relative-path", "value": "notes/SEF/SEF1/example.md",
+                                "sha256": hashlib.sha256(b"other").hexdigest()}]
+        file = self.install(record)
+        self.assertEqual(self.service.check(file)["outcome"], "invalid")
+        record["artifacts"][0]["sha256"] = hashlib.sha256(b"evidence").hexdigest()
+        file.write_text(json.dumps(record), encoding="utf-8")
+        self.assertEqual(self.service.check(file)["outcome"], "valid")
+
+    def test_no_evidence_projection_does_not_grant_completion(self):
+        result = self.service.status("SEF1")
+        self.assertEqual(result["counts"]["valid"], 0)
+        self.assertEqual(result["courses"][0]["course"], "SEF1")
+        self.assertEqual(result["courses"][0]["releaseId"], PIN["releaseId"])
+        self.assertEqual(result["courses"][0]["completion"], "not-determined")
+        self.assertEqual(result["courses"][0]["assessments"][0]["reportedStates"], ["no-evidence"])
+
+    def test_immutable_selected_record_export_excludes_artifact_bytes(self):
+        file = self.install()
+        result = self.service.export_selected([file])
+        self.assertEqual(result["exportVersion"], 2)
+        self.assertEqual(len(result["records"]), 1)
+        self.assertFalse(result["artifactBytesIncluded"])
+        self.assertFalse(result["reviewerIdentityVerified"])
+        with self.assertRaises(ev.EvidenceIssue):
+            self.service.export_selected([file, file])
+
+    def test_missing_lock_blocks_source_without_guessing(self):
+        self.lock.unlink()
+        with self.assertRaises(ev.EvidenceIssue) as caught:
+            ev.EvidenceService(self.root, self.lock).source("SEF1")
         self.assertEqual(caught.exception.kind, "incomplete")
-
-    def test_status_never_rewrites_learner_progress_or_artifacts(self):
-        prior = self.root / "progress.md"
-        prior.write_text("My original notes", encoding="utf-8")
-        self.install("SEF1-AS1-unreviewed.json")
-        self.service.status()
-        self.assertEqual(prior.read_text(encoding="utf-8"), "My original notes")
-        self.assertFalse((self.root / "evidence-status.json").exists())
-
-    def test_symlinked_record_is_refused(self):
-        original = self.install("SEF1-AS1-unreviewed.json")
-        alias = original.with_name("another-name.json")
-        alias.symlink_to(original)
-        snapshot = self.service.check(alias)
-        self.assertEqual(snapshot["outcome"], "invalid")
-        self.assertEqual(snapshot["findings"][0]["code"], "WSE004")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Offline OEE Toolkit export consumer contract (WS-I11 / OT-I06).
 
-Checks a *derived* OEE export and optional Workspace v2 map against an
-explicit source pin. Does not re-parse course Markdown, read moving HEAD,
+Checks a *derived* OEE export v2 and optional Workspace v3 map against an
+independently reviewed immutable release lock. Does not re-parse course Markdown, read moving HEAD,
 grade learners, validate books, or recognize legacy source/map formats.
 
 Full resource-map editorial validation remains WS-I03/WS-I01/WS-I02.
@@ -17,7 +17,9 @@ import re
 import sys
 
 SOURCE = "0xbuffdev/open-engineering-education"
-SHA = re.compile(r"[0-9a-f]{40}\Z")
+SHA = re.compile(r"[0-9a-f]{64}\Z")
+COMMIT = re.compile(r"[0-9a-f]{40}\Z")
+RELEASE = re.compile(r"[0-9]{4}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*\Z")
 CODE = re.compile(r"[A-Z]{2,6}[1-9][0-9]*\Z")
 OUTCOME = re.compile(r"[A-Z]{2,6}[1-9][0-9]*-O[1-9][0-9]*\Z")
 ASSESSMENT = re.compile(r"[A-Z]{2,6}[1-9][0-9]*-AS[1-9][0-9]*\Z")
@@ -73,24 +75,49 @@ def refs(value, pattern, name: str) -> list[str]:
     return items
 
 
-def check_export(data: dict, expected_revision: str) -> dict:
+def check_export(data: dict, expected: dict) -> dict:
     """Validate a supported, structurally complete OEE export without Markdown.
 
     A structural-consumer success is not proof of curriculum conformance.
     """
     obj(data, "export")
-    if data.get("exportVersion") != 1:
+    require(set(data) == {"exportVersion", "source", "toolkit", "course",
+                         "outcomes", "assessments", "modules", "coverage", "validation"},
+            "WSX004", "unsupported Toolkit export properties")
+    if type(data.get("exportVersion")) is not int or data["exportVersion"] != 2:
         raise ContractError("WSX004", "unsupported_format",
-                            "requires exactly OEE course exportVersion 1")
+                            "requires exactly OEE Toolkit exportVersion 2")
     source = obj(data.get("source"), "source")
+    require(set(source) == {"repository", "releaseId", "manifestSha256",
+                            "specification", "coursePath", "courseSha256", "originCommit"},
+            "WSX004", "unsupported Toolkit v2 source properties")
     if source.get("repository") != SOURCE or source.get("specification") != "v0.2.0":
         raise ContractError("WSX004", "unsupported_format",
                             "unsupported source repository/specification")
-    rev = source.get("revision")
-    if type(rev) is not str or not SHA.fullmatch(rev):
-        raise ContractError("WSX004", "unsupported_format", "invalid full source revision SHA")
-    require(rev == expected_revision, "WSX005",
-            "export revision does not equal explicitly selected source commit")
+    require(type(expected) is dict and
+            type(expected.get("releaseId")) is str and
+            RELEASE.fullmatch(expected["releaseId"]) and
+            type(expected.get("manifestSha256")) is str and
+            SHA.fullmatch(expected["manifestSha256"]),
+            "WSX005", "independent release lock identity is invalid")
+    require(type(source.get("releaseId")) is str and
+            RELEASE.fullmatch(source["releaseId"]) and
+            type(source.get("manifestSha256")) is str and
+            SHA.fullmatch(source["manifestSha256"]) and
+            type(source.get("courseSha256")) is str and
+            SHA.fullmatch(source["courseSha256"]) and
+            type(source.get("originCommit")) is str and
+            COMMIT.fullmatch(source["originCommit"]),
+            "WSX005", "export release, course or provenance digest is invalid")
+    require(source["releaseId"] == expected["releaseId"] and
+            source["manifestSha256"] == expected["manifestSha256"],
+            "WSX005", "export identity does not match independently selected release lock")
+    toolkit = obj(data.get("toolkit"), "toolkit")
+    require(set(toolkit) == {"toolVersion", "ruleSetVersion"},
+            "WSX004", "unsupported Toolkit software identity properties")
+    string(toolkit.get("toolVersion"), "toolkit.toolVersion")
+    require(toolkit.get("ruleSetVersion") == "v0.2.0-ot-i04",
+            "WSX004", "unsupported OEE Toolkit rule set")
     course = obj(data.get("course"), "course")
     code = course.get("code")
     require(type(code) is str and CODE.fullmatch(code), "WSX006", "invalid course code")
@@ -176,17 +203,19 @@ def check_export(data: dict, expected_revision: str) -> dict:
 
 
 def check_map(mapping: dict, verified: dict) -> None:
-    """Narrow Workspace v2 consumer seam; not a complete resource-map checker."""
+    """Workspace v3 consumer seam; editorial checks remain in check-resources."""
     obj(mapping, "map")
-    if mapping.get("schemaVersion") != 2:
+    if type(mapping.get("schemaVersion")) is not int or mapping["schemaVersion"] != 3:
         raise ContractError("WSX012", "unsupported_format",
-                            "resource-map v1/unknown schema is not supported; v2 required")
+                            "only release-keyed resource-map schemaVersion 3 is supported")
     ref = obj(mapping.get("curriculum"), "map.curriculum")
     source = verified["source"]
     require(
         ref.get("repository") == SOURCE and
         ref.get("specification") == "v0.2.0" and
-        ref.get("revision") == source["revision"] and
+        ref.get("releaseId") == source["releaseId"] and
+        ref.get("manifestSha256") == source["manifestSha256"] and
+        ref.get("courseSha256") == source["courseSha256"] and
         ref.get("course") == verified["course"] and
         ref.get("path") == source["coursePath"],
         "WSX013", "resource-map source identity does not match pinned export",
@@ -230,42 +259,65 @@ def load_json(path: Path) -> dict:
                             f"cannot read valid JSON: {type(exc).__name__}") from exc
 
 
+def load_lock(path: Path) -> dict:
+    """Read only an explicit reviewed lock; Toolkit verifies it again offline."""
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 4096:
+        raise ContractError("WSX017", "missing_input", "release lock is absent or unsafe")
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON property")
+            result[key] = value
+        return result
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique)
+    except (ValueError, UnicodeError, OSError) as exc:
+        raise ContractError("WSX017", "missing_input", "invalid release lock JSON") from exc
+    if (type(value) is not dict or set(value) !=
+            {"formatVersion", "releaseId", "manifestSha256"} or
+            type(value["formatVersion"]) is not int or value["formatVersion"] != 1 or
+            type(value["releaseId"]) is not str or not RELEASE.fullmatch(value["releaseId"]) or
+            type(value["manifestSha256"]) is not str or
+            not SHA.fullmatch(value["manifestSha256"])):
+        raise ContractError("WSX004", "unsupported_format", "invalid current release lock")
+    return value
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export", type=Path, required=True,
-                        help="OEE export-format-v1 JSON, generated from an immutable Git revision")
-    parser.add_argument("--revision", required=True,
-                        help="independently selected full OEE source commit SHA")
-    parser.add_argument("--map", type=Path,
-                        help="optional resource-map v2 JSON; historical v1 explicitly rejected")
+                        help="first-party OEE Toolkit exportVersion 2 JSON")
+    parser.add_argument("--lock", type=Path, required=True,
+                        help="independently approved oee-curriculum.lock.json")
+    parser.add_argument("--map", type=Path, help="optional release-keyed resource-map v3")
     parser.add_argument("--json", action="store_true", help="deterministic JSON result")
     args = parser.parse_args(argv)
-    if not SHA.fullmatch(args.revision):
-        parser.error("--revision requires full lowercase 40-character Git SHA")
     try:
-        validated = check_export(load_json(args.export), args.revision)
+        expected = load_lock(args.lock)
+        validated = check_export(load_json(args.export), expected)
         if args.map:
             check_map(load_json(args.map), validated)
         result = {"outcome": "passed", "course": validated["course"],
-                  "sourceRevision": args.revision, "mapInspected": bool(args.map),
-                  "manualReviewRequired": True}
+                  "releaseId": expected["releaseId"],
+                  "manifestSha256": expected["manifestSha256"],
+                  "mapInspected": bool(args.map), "manualReviewRequired": True}
         status = 0
     except ContractError as exc:
         result = {"outcome": "incomplete" if exc.category in
                   ("unsupported_format", "missing_input") else "failed",
-                  "sourceRevision": args.revision, "mapInspected": bool(args.map),
+                  "mapInspected": bool(args.map),
                   "manualReviewRequired": True, "finding": exc.as_dict()}
         status = 3 if result["outcome"] == "incomplete" else 1
     if args.json:
         print(json.dumps(result, sort_keys=True, ensure_ascii=False,
                          separators=(",", ":")))
+    elif status:
+        print(f"{result['finding']['code']}: {result['finding']['message']}",
+              file=sys.stderr)
     else:
-        if status:
-            print(f"{result['finding']['code']}: {result['finding']['message']}",
-                  file=sys.stderr)
-        else:
-            print(f"{result['course']} structurally compatible at {args.revision}; "
-                  "editorial and learner review still required.")
+        print(f"{result['course']} structurally compatible with release "
+              f"{expected['releaseId']}; editorial and learner review still required.")
     return status
 
 

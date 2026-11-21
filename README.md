@@ -52,86 +52,49 @@ A fork of a public repository is public. For private work, create your repositor
 
 Do not commit personal work to the upstream starter repository. All content committed to a public repository is publicly visible.
 
-### 2. Clone the OEE repository
+### 2. Select an approved curriculum release
 
-The Python CLI validates canonical course and project identifiers against a local OEE Toolkit checkout at an explicit immutable Git commit before creating any files. The checkout also lets you read the canonical course definitions and project briefs next to your work, and it keeps validation working offline.
+Workspace uses the first-party [OEE Toolkit](https://github.com/0xbuffdev/open-engineering-education/blob/main/tooling/README.md) and a verified, immutable, reviewed curriculum release. The learner CLI does not require an OEE Git checkout.
 
-Stay in the parent directory from step 1 and clone OEE as a sibling of your fork:
+**Activation gate:** No official steward-signed CalVer curriculum release or published Toolkit package has yet been authorized. The commands below describe the implemented interface; they will return incomplete without an approved, safely installed release. CI uses disposable releases and temporary keys only. Never copy a test digest or key into a real learner project.
 
-```bash
-cd ~/projects
+When available, independently verify/install the signed whole-curriculum archive using an explicitly trusted steward public key, and commit a reviewed oee-curriculum.lock.json to the learner project. A lock has formatVersion 1, releaseId in YYYY.MM.N format, and a full 64-character manifestSha256. The selected release's Git commit is provenance within its signed manifest, **not a learner input**.
 
-git clone https://github.com/0xbuffdev/open-engineering-education.git
+By default, Workspace reads the lock **only from the current working directory**, and Toolkit looks for an already-installed release in its user-scoped cache. The optional --lock and --store arguments select explicit, independently approved paths. No implicit downloads, parent-directory lock search, moving HEAD or auto-repin are allowed.
+
+### 3. Check the selected source
+
+```sh
+python -m oee_workspace doctor
+# Or explicit reviewed inputs:
+python -m oee_workspace doctor --lock ./oee-curriculum.lock.json --store /path/to/verified-releases
 ```
 
-Use the explicit `--oee` argument to select that trusted local checkout and `--revision` to select a full 40-character commit SHA. No command selects the moving `HEAD`, downloads a source or requires an account.
+Missing or altered releases return an incomplete result, never a Git or network fallback.
 
-### 3. Check the local OEE source
+### 4. Generate a course or project workspace
 
-From the root of your Workspace fork or template copy, run the offline CLI using Python 3.11 or later. This example uses one known immutable OEE v0.2.0 commit; choose the exact published source revision for the course you intend to study.
-
-```bash
-python -m oee_workspace doctor --oee ../open-engineering-education \
-  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff
+```sh
+python -m oee_workspace course add SEF1 --dest .
+python -m oee_workspace course add SEF10 --dest .
 ```
 
-### 4. Generate a course workspace
+The CLI uses Toolkit exportVersion 2 to verify the exact selected source before creating learner files. The SEF10 project course also gets project-specific templates. Existing learner directories are never overwritten. Canonical source hyperlinks use the original Git commit from the verified release for attribution/audit, not source selection.
 
-The supported entry point is **`python -m oee_workspace`**. Both the source checkout and learner destination are explicit:
+A reading-plan.md is included only if a reviewed resource-map v3 matches releaseId, manifestSha256, courseSha256 and the course's actual academic references. **No SEF1 map is currently active.** Its earlier [editorial review](resources/editorial/SEF1-REVIEW.md) is preserved but not approved for any unreleased source. SEF1 scaffolds without a reading plan until a separate release-specific editorial decision.
 
-```bash
-python -m oee_workspace course add SEF1 \
-  --oee ../open-engineering-education \
-  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
-  --dest .
+### 5. Record, inspect and export learner evidence
+
+```sh
+python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .
+python -m oee_workspace evidence check --path evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json --dest .
+python -m oee_workspace status --course SEF1 --dest .
+python -m oee_workspace export --dest . --attempt ATTEMPT-UUID --output exports/selected.json
 ```
 
-The CLI validates one Toolkit export from that commit, stages templates off-path, and creates `labs/`, `exercises/` and `notes/` only when no corresponding learner directories already exist. A `reading-plan.md` is included only when a **reviewed** public resource map matches the **same** source revision. An unmatched or unreviewed map is clearly omitted, not silently attached to newer course requirements. `resources.md` and `summary.md` remain learner-owned.
+Replace ATTEMPT-UUID with the UUID shown by the init command. Each attempt follows [schema v2](evidence/schemas/attempt-v2.schema.json) and retains full release, manifest and course digests plus original OEE assessment/outcome IDs. A new attempt has no evaluation. A claimed self- or human-review is not an authenticated grade or completion.
 
-If the Toolkit identifies the course as `Type: project`, the same command also generates `projects/<COURSE_CODE>/` with its design and review templates. For example:
-
-```bash
-python -m oee_workspace course add SEF10 \
-  --oee ../open-engineering-education \
-  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
-  --dest .
-```
-
-There is no project-alias table or second Bash generator. A project brief is a link to the exact canonical OEE commit. Course status and requirements are not invented by Workspace.
-
-### 5. Record and check evidence
-
-A new assessment attempt receives a fresh UUID, includes its real pinned assessment/outcome identifiers and starts with **no evaluation**:
-
-```bash
-python -m oee_workspace evidence init \
-  --oee ../open-engineering-education \
-  --revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
-  --course SEF1 --assessment SEF1-AS1 --dest .
-```
-
-The command prints the resulting `evidence/SEF/SEF1/SEF1-AS1/<UUID>.json` path. Add your actual artifact links, observations and deliberately recorded evaluation as appropriate, then check the specific record:
-
-```bash
-python -m oee_workspace evidence check \
-  --oee ../open-engineering-education \
-  --path evidence/SEF/SEF1/SEF1-AS1/<UUID>.json --dest .
-
-python -m oee_workspace status \
-  --oee ../open-engineering-education --dest .
-```
-
-For a local, **explicitly selected** evidence-only export:
-
-```bash
-python -m oee_workspace export \
-  --oee ../open-engineering-education --dest . \
-  --attempt <UUID> --output exports/selected.json
-```
-
-The export command creates a new JSON file and refuses to overwrite an existing one. It includes neither unselected records nor artifact file bytes, and never uploads data. Review learner-authored text for private information before sharing. The tool cannot authenticate reviewer claims, certify mastery or change OEE course readiness.
-
-On Windows, use the equivalent `python -m oee_workspace` command from PowerShell, with your own `--oee` and `--dest` paths. The CLI, Toolkit and Git must be available locally; no Bash runtime is required.
+The export writes only explicitly chosen local attempt JSON records and never copies artifact bytes, uploads learner data, or overwrites existing output. CLI commands work in Windows PowerShell as well as Linux and macOS, with Python 3.11+ and a separately installed Toolkit; Git is not required for consumer operations.
 
 ## Workspace structure
 
@@ -173,35 +136,19 @@ Use the workspace to retain:
 
 A completion claim should be supported by inspectable evidence, not by a checked box alone.
 
-## Public study resources
+## Public study resources and immutable release updates
 
-The [public resource library](resources/README.md) contains optional book and online resources and a strict v2 mapping schema. A [reviewed SEF1 v2 resource map](resources/mappings/SEF/SEF1.json) and [generated guide](resources/guides/SEF/SEF1.md) are available for independent study. The review confirms the recorded references and explicit partial-coverage gaps; it does not certify OEE educational readiness or completion.
+The [public resource catalogue](resources/README.md) remains available with optional books and free online material. No paid resource is required by OEE. Resource maps use strict release-keyed schema v3; the previous [SEF1 editorial source review](resources/editorial/SEF1-REVIEW.md) documents useful recommendations and gaps, including the OEE eight-bit versus Hack 16-bit distinction, but is **not an active reviewed release map**. Learners can still start any valid course without a guide.
 
-Mapped SEF1 workspaces generate a source-pinned reviewed reading-plan snapshot; other courses without a map still initialize **without a reading plan**. The resource validator resolves the exact OEE Git commit recorded in each map, not the checkout's moving HEAD. Learner-owned `resources.md` remains available, and existing learner directories are never overwritten. Generation stages complete directories before installation. Expected publication failures roll back only unchanged, newly created directories and preserve pre-existing files; a process crash or concurrent external modification can still leave partial new output requiring inspection. Evidence files and exports are published using exclusive, no-clobber filesystem operations. Public resources stay independent of private 0xNAND content.
-
-### Upstream OEE updates are advisory
-
-Workspace maps are pinned to an exact OEE commit. When OEE `main` changes,
-the [upstream drift guide](docs/OEE-UPSTREAM-DRIFT.md) explains how the separate
-read-only CI report identifies moved modules, revised assessments, outcome
-definitions and affected references without modifying reviewed maps or
-learner guides. A changed upstream revision **never** automatically changes
-your selected course source.
+[Read-only release comparison](docs/OEE-UPSTREAM-DRIFT.md) compares two separately installed approved source locks; it never changes a map or learner evidence. Any edited course source digest requires independent editorial approval before publishing a replacement guide.
 
 ## Independent release verification
 
-The [Workspace release-readiness guide](docs/RELEASE-READINESS.md) traces the
-existing WS-T01–WS-T24 acceptance matrix to executable checks and required
-human review. A separate, clean-clone smoke runs on Linux, macOS and Windows
-using public OEE/Workspace source only. It tests CLI scaffolding, pinned
-resources, local evidence integrity and explicit exports without publishing
-a release, uploading learner data or requiring an AI provider.
+The [readiness plan](docs/RELEASE-READINESS.md) describes the disposable signed-archive smoke and negative tests, exercised on Linux/macOS/Windows. Synthetic test keys and temporary locks do not approve or publish an official release. No learner, commercial or host data is affected by CI.
 
 ## Learner assessment evidence
 
-The [learner evidence record format](evidence/README.md) provides a strict, learner-owned JSON Schema v1 for OEE v0.2.0 assessment attempts. Records identify the exact OEE source commit, required assessment and outcome IDs, optional artifacts and observations, and explicitly declared evaluations.
-
-The schema and [synthetic SEF1/SEF10 fixtures](tests/fixtures/evidence/) are published for interoperability. The supported Python CLI now exposes evidence initialization, pinned validation, read-only status and explicitly selected, local JSON export. A structurally valid record, automated test observation, self-assessment or claimed human-review label does **not** prove mastery or verify reviewer identity. No account, online service or paid resource is required.
+The [evidence contract](evidence/README.md) is current-only schema v2. Previous Git-revision attempts are not silently upgraded, granted retrospective credit or destroyed. New attempts are tied to a full immutable course identity; local structural checks and reported evaluations cannot certify mastery or verify reviewer identity.
 
 ## Evidence and reproducibility
 

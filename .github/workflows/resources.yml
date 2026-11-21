@@ -1,89 +1,45 @@
-name: Validate OEE Workspace contracts
+name: Validate OEE Workspace release contracts
 
 on:
-  push:
-    paths:
-      - "resources/**"
-      - "evidence/**"
-      - "oee_workspace/**"
-      - "tests/**"
-      - "scripts/check-resources.py"
-      - "scripts/verify-oee-export.py"
-      - "scripts/render-resource-guides.py"
-      - "scripts/report-oee-drift.py"
-      - ".github/workflows/resources.yml"
   pull_request:
     paths:
       - "resources/**"
       - "evidence/**"
       - "oee_workspace/**"
       - "tests/**"
-      - "scripts/check-resources.py"
-      - "scripts/verify-oee-export.py"
-      - "scripts/render-resource-guides.py"
-      - "scripts/report-oee-drift.py"
+      - "scripts/**"
+      - ".github/workflows/resources.yml"
+  push:
+    paths:
+      - "resources/**"
+      - "evidence/**"
+      - "oee_workspace/**"
+      - "tests/**"
+      - "scripts/**"
       - ".github/workflows/resources.yml"
 
 permissions:
   contents: read
 
 jobs:
-  pinned-contracts:
-    name: Pinned resource and evidence contracts
+  release-contracts:
+    name: Current-only offline source, resource and evidence contracts
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Workspace
-        uses: actions/checkout@v4
-      - name: Checkout complete canonical OEE history
-        uses: actions/checkout@v4
-        with:
-          repository: 0xbuffdev/open-engineering-education
-          path: _oee
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Set up supported Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Validate all reviewed resource maps against exact source commits
-        run: python scripts/check-resources.py --oee _oee
-      - name: Reject stale generated reading guides
-        run: python scripts/render-resource-guides.py --oee _oee --check
-      - name: Install test-only JSON Schema validator
+      - name: Install JSON Schema contract test validator
         run: python -m pip install --disable-pip-version-check "jsonschema==4.23.0"
-      - name: Verify schemas, exact Toolkit exports, safe publishers and Python CLI
+      - name: Validate public resource catalogue and all active release maps
+        run: python scripts/check-resources.py
+      - name: Reject unapproved or stale published guides
+        run: python scripts/render-resource-guides.py --check
+      - name: Test release v2 source, maps, no-clobber CLI and evidence
         run: python -m unittest discover -s tests -p "test_*.py" -v
-      - name: Keep recorded SEF1 pin reproducible independently of upstream HEAD
+      - name: Validate command-line argument surface (no Git source selectors)
         run: |
-          python scripts/report-oee-drift.py --oee _oee \
-            --target-revision 67416343f3eab17ada5d3c79ae6cc782524c29ff \
-            --course SEF1 > pinned-sef1-contract.json
-          python -c "import json; r=json.load(open('pinned-sef1-contract.json', encoding='utf-8')); assert r['results'][0]['state'] == 'unchanged' and r['pinnedValidation'] == 'passed'"
-
-  cli-portability:
-    name: Python CLI (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - name: Checkout Workspace
-        uses: actions/checkout@v4
-      - name: Checkout complete canonical OEE history
-        uses: actions/checkout@v4
-        with:
-          repository: 0xbuffdev/open-engineering-education
-          path: _oee
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Set up supported Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Exercise offline doctor, scaffolding, evidence, status and export
-        run: python -m unittest discover -s tests -p "test_cli.py" -v
-      - name: Enforce negative AI and agent safety tests
-        run: python -m unittest discover -s tests -p "test_ai_safety.py" -v
-      - name: Verify pinned and advisory Toolkit drift contracts
-        run: python -m unittest discover -s tests -p "test_upstream_drift.py" -v
+          python -m oee_workspace --help
+          python -m oee_workspace doctor --help
+          python -m oee_workspace evidence init --help

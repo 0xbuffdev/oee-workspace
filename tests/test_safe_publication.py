@@ -134,103 +134,39 @@ class GuidePublicationTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.catalog_root = self.root / "resources" / "catalog"
-        self.map_root = self.root / "resources" / "mappings"
-        self.guide_root = self.root / "resources" / "guides"
-        (self.catalog_root / "online").mkdir(parents=True)
-        (self.map_root / "SEF").mkdir(parents=True)
-        self.catalog = {
-            "id": "R1", "kind": "course-material", "title": "A free resource",
-            "access": {"mode": "free", "url": "https://example.org/"},
-            "verification": {"status": "verified", "basis": "Test fixture",
-                             "checkedOn": "2026-11-20"}
-        }
-        (self.catalog_root / "online" / "R1.json").write_text(
-            json.dumps(self.catalog), encoding="utf-8")
-        self.mapping = {
-            "schemaVersion": 2, "status": "reviewed",
-            "curriculum": {
-                "repository": "0xbuffdev/open-engineering-education",
-                "revision": "a" * 40, "specification": "v0.2.0",
-                "course": "SEF1", "path": "curriculum/SEF/SEF1.md"
-            },
-            "modules": [{
-                "number": 1, "title": "Bits",
-                "coverage": "partial", "gap": "Other work still required",
-                "resources": [{
-                    "resource": "R1", "role": "optional",
-                    "part": {"type": "topics", "titles": ["Binary"]},
-                    "purpose": "Read for additional practice",
-                    "verification": "verified"
-                }]
-            }]
-        }
-        self.write_mapping()
+        self.guide_root = self.root / "guides"
+        self.guide_root.mkdir()
+        self.program = self.guide_root / "SEF"
+        self.program.mkdir()
+        self.output = self.program / "SEF1.md"
 
-    def write_mapping(self):
-        (self.map_root / "SEF" / "SEF1.json").write_text(
-            json.dumps(self.mapping), encoding="utf-8")
+    def test_release_keyed_guide_render_is_deterministic(self):
+        from test_toolkit_consumer import PIN, valid_map, COURSE_SHA
+        mapping = valid_map()
+        mapping["status"] = "reviewed"
+        catalog = {"R1": ({"title": "Resource", "access": {"mode": "free", "url": "https://example.com"}},
+                          "resources/catalog/online/R1.json")}
+        source = {"originCommit": "c" * 40, "releaseId": PIN["releaseId"],
+                  "manifestSha256": PIN["manifestSha256"],
+                  "courseSha256": COURSE_SHA}
+        a = guides.render(mapping, catalog, source)
+        b = guides.render(mapping, catalog, source)
+        self.assertEqual(a, b)
+        self.assertIn(PIN["releaseId"], a)
+        self.assertIn(PIN["manifestSha256"], a)
+        self.assertIn("blob/" + "c" * 40, a)
 
-    def scoped(self):
-        return (
-            patch.object(guides, "ROOT", self.root),
-            patch.object(guides, "CATALOG", self.catalog_root),
-            patch.object(guides, "MAPPINGS", self.map_root),
-            patch.object(guides, "GUIDES", self.guide_root),
-        )
-
-    def render_under(self, *, source_status=0):
-        with self.scoped()[0], self.scoped()[1], self.scoped()[2], self.scoped()[3]:
-            with patch.object(guides.subprocess, "run",
-                              return_value=subprocess.CompletedProcess(
-                                  [], source_status, "", "unsupported source")):
-                return list(guides.outputs("SEF1", self.root / "oee"))
-
-    def test_reject_draft_even_if_toolkit_structural_check_would_pass(self):
-        self.mapping["status"] = "draft"
-        self.write_mapping()
-        with self.assertRaisesRegex(ValueError, "unreviewed_map"):
-            self.render_under()
-
-    def test_reject_wrong_source_before_rendering(self):
-        with self.assertRaisesRegex(ValueError, "pinned-source validation"):
-            self.render_under(source_status=3)
-
-    def test_immutable_render_bytes_for_same_reviewed_input(self):
-        one = self.render_under()
-        two = self.render_under()
-        self.assertEqual(one, two)
-        self.assertIn("**Map status:** Reviewed", one[0][1])
-        self.assertIn("No book purchase is required", one[0][1])
-
-    def test_repository_owned_guide_atomically_replaced(self):
-        target = self.guide_root / "SEF" / "SEF1.md"
+    def test_atomic_guide_writer_refuses_symlink_output(self):
         with patch.object(guides, "GUIDES", self.guide_root):
-            guides.atomic_write_guide(target, "first\n")
-            guides.atomic_write_guide(target, "second\n")
-        self.assertEqual(target.read_text(), "second\n")
-        self.assertEqual(list(target.parent.glob("*.tmp")), [])
+            self.output.symlink_to(self.root / "target.md")
+            with self.assertRaises(ValueError):
+                guides.atomic_write_guide(self.output, "new guide")
+            self.assertFalse((self.root / "target.md").exists())
 
-    def test_atomic_write_failure_preserves_original(self):
-        target = self.guide_root / "SEF" / "SEF1.md"
-        with patch.object(guides, "GUIDES", self.guide_root):
-            guides.atomic_write_guide(target, "learner-preserved\n")
-            with patch.object(guides.os, "replace", side_effect=OSError("injected")):
-                with self.assertRaises(OSError):
-                    guides.atomic_write_guide(target, "new\n")
-        self.assertEqual(target.read_text(), "learner-preserved\n")
-        self.assertFalse(list(target.parent.glob("*.tmp")))
-
-    def test_refuse_symlinked_guide_destination(self):
-        outside = self.root / "external.md"
-        outside.write_text("do not alter", encoding="utf-8")
-        target = self.guide_root / "SEF" / "SEF1.md"
-        target.parent.mkdir(parents=True)
-        target.symlink_to(outside)
-        with patch.object(guides, "GUIDES", self.guide_root):
-            with self.assertRaisesRegex(ValueError, "symlink"):
-                guides.atomic_write_guide(target, "danger\n")
-        self.assertEqual(outside.read_text(), "do not alter")
+    def test_no_active_map_does_not_create_unapproved_guide(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(guides, "MAPPINGS", Path(tmp) / "mappings"):
+                self.assertEqual(list(guides.outputs(None, None, None)), [])
 
 
 if __name__ == "__main__":

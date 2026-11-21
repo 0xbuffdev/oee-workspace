@@ -1,6 +1,6 @@
 """Offline, learner-owned evidence operations (Workspace Evidence Contract 0002).
 
-One active attempt format (v1) for OEE v0.2.0. This module validates
+One active attempt format (v2) for immutable-release OEE v0.2.0. This module validates
 local JSON records and references a trusted pinned OEE Toolkit export.
 It never grades, executes learner commands, fetches links or uploads data.
 """
@@ -20,7 +20,7 @@ from uuid import UUID
 SOURCE = "0xbuffdev/open-engineering-education"
 SPECIFICATION = "v0.2.0"
 COURSE = re.compile(r"(SEF|APP|SYS|AI|SEC)[1-9][0-9]*\Z")
-SHA = re.compile(r"[a-f0-9]{40}\Z")
+RELEASE = re.compile(r"[0-9]{4}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*\Z")
 HASH = re.compile(r"[a-f0-9]{64}\Z")
 UTC = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\Z")
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
@@ -94,7 +94,7 @@ def relative_artifact(value: str) -> Path:
 
 
 def record_shape(record: dict) -> dict:
-    """Enforce the current JSON Schema v1 constraints with Python stdlib.
+    """Enforce the current JSON Schema v2 constraints with Python stdlib.
 
     Full Draft 2020-12 schema equivalence is independently tested in CI.
     Cross-document references and real filesystem checks happen separately.
@@ -103,21 +103,24 @@ def record_shape(record: dict) -> dict:
                 "assessmentId", "outcomeIds", "artifacts", "observations",
                 "evaluation"}
     record_obj(record, required | {"assistance"}, required, "record")
-    if type(record["schemaVersion"]) is not int or record["schemaVersion"] != 1:
-        invalid("only evidence schemaVersion 1 is supported", "WSE002")
+    if type(record["schemaVersion"]) is not int or record["schemaVersion"] != 2:
+        invalid("only evidence schemaVersion 2 is supported", "WSE002")
     uuid4(record["attemptId"])
     timestamp(record["recordedAt"], "recordedAt")
 
     course = record_obj(record["course"],
-                        {"repository", "revision", "specification", "path", "code"},
-                        {"repository", "revision", "specification", "path", "code"},
+                        {"repository", "releaseId", "manifestSha256", "courseSha256", "specification", "path", "code"},
+                        {"repository", "releaseId", "manifestSha256", "courseSha256", "specification", "path", "code"},
                         "course")
     code = course["code"]
     matched = COURSE.fullmatch(code) if type(code) is str else None
     if not matched or course["repository"] != SOURCE or course["specification"] != SPECIFICATION:
         invalid("unsupported OEE source identity or specification", "WSE002")
-    if type(course["revision"]) is not str or not SHA.fullmatch(course["revision"]):
-        invalid("course revision must be a full lower-case Git SHA", "WSE002")
+    if type(course["releaseId"]) is not str or not RELEASE.fullmatch(course["releaseId"]):
+        invalid("course releaseId must be YYYY.MM.N", "WSE002")
+    for field in ("manifestSha256", "courseSha256"):
+        if type(course[field]) is not str or not HASH.fullmatch(course[field]):
+            invalid(f"course {field} must be a full lowercase SHA-256", "WSE002")
     if course["path"] != f"curriculum/{matched.group(1)}/{code}.md":
         invalid("course path does not match canonical code", "WSE005")
 
@@ -290,42 +293,44 @@ def review_state(record: dict) -> dict:
 
 
 class EvidenceService:
-    def __init__(self, workspace: Path, oee: Path):
+    def __init__(self, workspace: Path, lock: Path | None = None,
+                 store: Path | None = None):
         self.workspace = Path(workspace)
-        self.oee = Path(oee)
-        self._sources: dict[tuple[str, str], dict] = {}
+        self.lock = Path(lock) if lock is not None else Path.cwd() / "oee-curriculum.lock.json"
+        self.store = Path(store) if store is not None else None
+        self._sources: dict[str, dict] = {}
 
-    def source(self, code: str, revision: str) -> dict:
-        key = (code, revision)
-        if key not in self._sources:
+    def source(self, code: str) -> dict:
+        if code not in self._sources:
             reader = load_reader()
+            consumer = reader.load_consumer()
             try:
-                raw = reader.read_pinned_export(self.oee, revision, code)
-                checked = reader.load_consumer().check_export(raw, revision)
-                # This type came from the already validated Toolkit export,
-                # never from a second Markdown parser or the moving worktree.
+                expected = consumer.load_lock(self.lock)
+                raw = reader.read_pinned_export(self.lock, self.store, code)
+                checked = consumer.check_export(raw, expected)
                 checked["courseType"] = raw["course"]["type"]
             except reader.PinnedSourceError as exc:
                 if exc.category in ("source_missing", "unsupported_format"):
-                    incomplete("pinned OEE course source unavailable: " + exc.category, "WSE003")
-                invalid("pinned OEE Toolkit export rejected: " + exc.category, "WSE005")
-            except reader.load_consumer().ContractError as exc:
+                    incomplete("pinned release unavailable: " + exc.category, "WSE003")
+                invalid("installed Toolkit export rejected: " + exc.category, "WSE005")
+            except consumer.ContractError as exc:
                 if exc.category in ("missing_input", "unsupported_format"):
-                    incomplete("unsupported pinned export: " + exc.code, "WSE003")
-                invalid("invalid pinned export: " + exc.code, "WSE005")
-            self._sources[key] = checked
-        return self._sources[key]
+                    incomplete("selected OEE release unavailable: " + exc.code, "WSE003")
+                invalid("release export contract rejected: " + exc.code, "WSE005")
+            self._sources[code] = checked
+        return self._sources[code]
 
     def check(self, path: Path, *, check_duplicates: bool = True) -> dict:
         """Check one existing record; do not write to the learner workspace."""
         result = {"outcome": "invalid", "record": None, "attemptId": None,
-                  "course": None, "revision": None, "assessmentId": None,
+                  "course": None, "releaseId": None, "manifestSha256": None, "assessmentId": None,
                   "review": None, "findings": [], "sourceValidated": False}
         try:
             record, rel = load_record(self.workspace, Path(path))
             result.update({"record": rel.as_posix(), "attemptId": record["attemptId"],
                            "course": record["course"]["code"],
-                           "revision": record["course"]["revision"],
+                           "releaseId": record["course"]["releaseId"],
+                           "manifestSha256": record["course"]["manifestSha256"],
                            "assessmentId": record["assessmentId"],
                            "review": review_state(record)})
             if check_duplicates and any(
@@ -334,11 +339,14 @@ class EvidenceService:
                 for other in self.paths()
             ):
                 invalid("attempt UUID exists in another evidence record", "WSE008")
-            source = self.source(record["course"]["code"], record["course"]["revision"])
+            source = self.source(record["course"]["code"])
             origin = source["source"]
             if (origin["repository"] != record["course"]["repository"] or
                     origin["specification"] != record["course"]["specification"] or
-                    origin["coursePath"] != record["course"]["path"]):
+                    origin["coursePath"] != record["course"]["path"] or
+                    origin["releaseId"] != record["course"]["releaseId"] or
+                    origin["manifestSha256"] != record["course"]["manifestSha256"] or
+                    origin["courseSha256"] != record["course"]["courseSha256"]):
                 invalid("record identity disagrees with pinned OEE export", "WSE005")
             assessment = source["assessments"].get(record["assessmentId"])
             if assessment is None or not assessment["required"]:
@@ -375,23 +383,19 @@ class EvidenceService:
             invalid("evidence root must be a directory", "WSE004")
         return sorted(root.rglob("*.json"))
 
-    def status(self, course: str | None = None,
-               revision: str | None = None) -> dict:
+    def status(self, course: str | None = None) -> dict:
         """Read-only projections, never mastery or official completion claims.
 
-        An explicitly selected course+revision also reports no-evidence
-        assessments when there are no attempts. Sources are never inferred
-        from the moving Git HEAD.
+        An explicitly selected course reports no-evidence assessments
+        for the reviewed release lock. No implicit source upgrade.
         """
-        if (course is None) != (revision is None):
-            invalid("status source scope needs both course and full revision", "WSE005")
         if course is not None:
-            if not COURSE.fullmatch(course) or not SHA.fullmatch(revision):
+            if not COURSE.fullmatch(course):
                 invalid("invalid explicit source scope", "WSE005")
-            self.source(course, revision)
+            self.source(course)
         # Scan duplicate identities in a single pass rather than O(N²).
         results = [self.check(path, check_duplicates=False) for path in self.paths()]
-        grouped: dict[tuple[str, str], list[dict]] = {}
+        grouped: dict[tuple[str, str, str], list[dict]] = {}
         duplicates: dict[str, list[dict]] = {}
         for item in results:
             if item["attemptId"]:
@@ -406,12 +410,13 @@ class EvidenceService:
                     })
         for item in results:
             if item["outcome"] == "valid":
-                grouped.setdefault((item["course"], item["revision"]), []).append(item)
+                grouped.setdefault((item["course"], item["releaseId"], item["manifestSha256"]), []).append(item)
         if course is not None:
-            grouped.setdefault((course, revision), [])
+            grouped.setdefault((course, self.source(course)["source"]["releaseId"],
+                                self.source(course)["source"]["manifestSha256"]), [])
         courses = []
-        for (code, revision), items in sorted(grouped.items()):
-            export = self.source(code, revision)
+        for (code, release_id, digest), items in sorted(grouped.items()):
+            export = self.source(code)
             assessment_rows = []
             for assessment_id, assessment in sorted(export["assessments"].items()):
                 if not assessment["required"]:
@@ -448,7 +453,7 @@ class EvidenceService:
                     ],
                 })
             courses.append({
-                "course": code, "revision": revision,
+                "course": code, "releaseId": release_id, "manifestSha256": digest,
                 "assessments": assessment_rows, "outcomes": outcome_rows,
                 "allRequiredAssessmentDecisionsRecorded": all(
                     row["decisionRecorded"] for row in assessment_rows
@@ -480,7 +485,7 @@ class EvidenceService:
         if len({item["attemptId"] for item in selected.values()}) != len(selected):
             invalid("duplicate attempt IDs in selected records", "WSE008")
         return {
-            "exportVersion": 1, "selection": "explicit-records",
+            "exportVersion": 2, "selection": "explicit-records",
             "records": [{"path": name, "attempt": selected[name]} for name in sorted(selected)],
             "artifactBytesIncluded": False, "reviewerIdentityVerified": False,
             "educationalAchievementDetermined": False,

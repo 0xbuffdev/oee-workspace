@@ -22,7 +22,7 @@ from oee_workspace.__main__ import parser, render
 from oee_workspace.evidence import EvidenceService, record_shape, review_state
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "tests" / "fixtures" / "evidence" / "valid" / "SEF1-AS1-unreviewed.json"
+from test_evidence_schema import valid_attempt
 IMPLEMENTATION = (
     "oee_workspace/__main__.py",
     "oee_workspace/evidence.py",
@@ -36,7 +36,6 @@ IMPLEMENTATION = (
 ALLOWED_SUBPROCESS_CALLS = {
     ("oee_workspace/__main__.py", "execute"),
     ("scripts/check-resources.py", "read_pinned_export"),
-    ("scripts/render-resource-guides.py", "outputs"),
 }
 BANNED_ROOT_IMPORTS = {
     "requests", "httpx", "aiohttp", "websockets", "websocket",
@@ -70,9 +69,9 @@ class BaselineCommandTests(unittest.TestCase):
             ["tutor"], ["provider"], ["connect"], ["grade"],
             ["course", "run", "SEF1"],
             ["evidence", "grade"],
-            ["doctor", "--oee", str(ROOT), "--revision", "f" * 40,
+            ["doctor",
              "--provider", "fake-provider"],
-            ["doctor", "--oee", str(ROOT), "--revision", "f" * 40,
+            ["doctor",
              "--api-key", "fake-secret"],
         )
         for argv in blocked:
@@ -171,11 +170,10 @@ class EvidenceSafetyTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.service = EvidenceService(self.root, self.root)
+        self.service = EvidenceService(self.root)
 
     def fixture(self):
-        record = json.loads(FIXTURE.read_text(encoding="utf-8"))
-        return record
+        return valid_attempt()
 
     def put(self, record):
         code = record["course"]["code"]
@@ -192,7 +190,9 @@ class EvidenceSafetyTests(unittest.TestCase):
                 "repository": record["course"]["repository"],
                 "specification": record["course"]["specification"],
                 "coursePath": record["course"]["path"],
-                "revision": record["course"]["revision"],
+                "releaseId": record["course"]["releaseId"],
+                "manifestSha256": record["course"]["manifestSha256"],
+                "courseSha256": record["course"]["courseSha256"],
             },
             "assessments": {
                 record["assessmentId"]: {

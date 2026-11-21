@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate OEE Workspace resource-map v2 shape and pinned export identities.
+"""Validate OEE Workspace resource-map v3 shape and immutable release identities.
 
 Standard-library only. No historical-schema adapter or moving-HEAD source fallback.
 """
@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import functools
 import importlib.util
-import os
 import subprocess
 import json
 import re
@@ -25,7 +24,8 @@ REVIEW_STATES = {"verified", "review-needed"}
 COVERAGE = {"mapped", "partial", "unmapped"}
 IDENTIFIER = re.compile(r"(?:B|R)[1-9][0-9]*\Z")
 CODE = re.compile(r"([A-Z]{2,4})([1-9][0-9]*)\Z")
-SHA = re.compile(r"[a-f0-9]{40}\Z")
+SHA = re.compile(r"[a-f0-9]{64}\Z")
+RELEASE = re.compile(r"[0-9]{4}\.(?:0[1-9]|1[0-2])\.[1-9][0-9]*\Z")
 
 
 class Check:
@@ -124,13 +124,13 @@ def known_fields(value, expected, loc, check):
 
 
 def validate_map_shape(mapping, catalog, check, loc):
-    """Validate schema-v2 shape/catalogue; source references require pinned export."""
+    """Validate schema-v3 shape/catalogue; source references require release export."""
     before = len(check.errors)
     if not isinstance(mapping, dict):
         check.error(loc, "mapping must be an object")
         return False
-    if type(mapping.get("schemaVersion")) is not int or mapping["schemaVersion"] != 2:
-        check.error(loc, "unsupported_schema: only resource-map v2 is accepted")
+    if type(mapping.get("schemaVersion")) is not int or mapping["schemaVersion"] != 3:
+        check.error(loc, "unsupported_schema: only release-keyed resource-map v3 is accepted")
         return False
     known_fields(mapping, {"schemaVersion", "status", "curriculum", "modules", "notes"}, loc, check)
     if mapping.get("status") not in ("draft", "reviewed"):
@@ -141,7 +141,7 @@ def validate_map_shape(mapping, catalog, check, loc):
     if not isinstance(canon, dict):
         check.error(loc, "curriculum must be an object")
         return False
-    known_fields(canon, {"repository", "revision", "specification", "course", "path"}, loc, check)
+    known_fields(canon, {"repository", "releaseId", "manifestSha256", "courseSha256", "specification", "course", "path"}, loc, check)
     course = canon.get("course")
     match = CODE.fullmatch(course) if isinstance(course, str) else None
     if not match:
@@ -155,9 +155,13 @@ def validate_map_shape(mapping, catalog, check, loc):
         check.error(loc, f"invalid canonical OEE path; expected {wanted}")
     if canon.get("specification") != "v0.2.0":
         check.error(loc, "unsupported_format: only OEE v0.2.0 is supported")
-    revision = canon.get("revision")
-    if not isinstance(revision, str) or not SHA.fullmatch(revision):
-        check.error(loc, "curriculum.revision must be a full lowercase Git SHA")
+    release_id = canon.get("releaseId")
+    if not isinstance(release_id, str) or not RELEASE.fullmatch(release_id):
+        check.error(loc, "curriculum.releaseId must be YYYY.MM.N")
+    for field in ("manifestSha256", "courseSha256"):
+        value = canon.get(field)
+        if not isinstance(value, str) or not SHA.fullmatch(value):
+            check.error(loc, f"curriculum.{field} must be a full lowercase SHA-256")
     modules = mapping.get("modules")
     if not isinstance(modules, list) or not modules:
         check.error(loc, "modules must be a nonempty array")
@@ -258,33 +262,25 @@ class PinnedSourceError(Exception):
         self.category = category
 
 
-def read_pinned_export(oee: Path, revision: str, course: str) -> dict:
-    """Ask the single public Toolkit parser to read the map's local Git commit.
-
-    No HEAD, worktree, network or user-supplied JSON export is a substitute.
-    """
-    if not isinstance(revision, str) or not SHA.fullmatch(revision):
-        raise PinnedSourceError("unsupported_format", "full lowercase commit SHA required")
+def read_pinned_export(lock: Path, store: Path | None, course: str) -> dict:
+    """Call only the installed first-party Toolkit release consumer (no Git)."""
     if not isinstance(course, str) or not CODE.fullmatch(course):
-        raise PinnedSourceError("invalid_reference", "invalid course code")
-    repo = oee.expanduser().resolve()
-    if not repo.is_dir():
-        raise PinnedSourceError("source_missing", "local OEE Git checkout not found")
-    argv = [
-        sys.executable, "-m", "tooling.oee_toolkit", "export",
-        "--repo", str(repo), "--revision", revision,
-        "--course", course, "--output", "-",
-    ]
+        raise PinnedSourceError("invalid_reference", "invalid canonical course code")
+    # Toolkit enforces the reviewed lock, signature-installed store, and all
+    # source bytes. No repository/local Git or moving-ref fallback exists.
+    argv = [sys.executable, "-m", "oee_toolkit", "export", course,
+            "--lock", str(lock), "--output", "-"]
+    if store is not None:
+        argv.extend(("--store", str(store)))
     try:
-        result = subprocess.run(argv, cwd=repo, capture_output=True,
-                                timeout=90, check=False)
+        result = subprocess.run(argv, capture_output=True, timeout=90, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise PinnedSourceError("tool_error", f"Toolkit execution: {type(exc).__name__}") from exc
     if result.returncode:
         stderr = result.stderr.decode("utf-8", errors="replace")
-        detail = " ".join(stderr.strip().splitlines()[:3])[:500] or "Toolkit export failed"
-        if result.returncode == 3:
-            category = "unsupported_format" if "unsupported_format" in stderr else "source_missing"
+        detail = " ".join(stderr.strip().splitlines()[:3])[:500] or "Toolkit release unavailable"
+        if result.returncode in (2, 3):
+            category = "source_missing" if result.returncode == 3 else "unsupported_format"
         elif result.returncode == 1:
             category = "invalid_reference"
         else:
@@ -299,25 +295,25 @@ def read_pinned_export(oee: Path, revision: str, course: str) -> dict:
     return exported
 
 
-def check_pinned_map(mapping: dict, oee: Path) -> dict:
+def check_pinned_map(mapping: dict, lock: Path, store: Path | None = None) -> dict:
     canon = mapping["curriculum"]
     consumer = load_consumer()
-    exported = read_pinned_export(oee, canon["revision"], canon["course"])
-    checked = consumer.check_export(exported, canon["revision"])
+    expected = consumer.load_lock(lock)
+    exported = read_pinned_export(lock, store, canon["course"])
+    checked = consumer.check_export(exported, expected)
     consumer.check_map(mapping, checked)
     return checked
 
 
-def validate_maps(catalog, check, course_filter=None, oee=None):
+def validate_maps(catalog, check, course_filter=None, lock=None, store=None):
     paths = sorted(MAPPINGS.rglob("*.json"))
     if course_filter:
         paths = [p for p in paths if p.stem == course_filter]
     if not paths:
         if course_filter:
-            check.error("mappings", f"unmapped course {course_filter}; no active v2 map")
+            check.error("mappings", f"unmapped course {course_filter}; no active release map")
         return
-    source = oee or Path(os.environ.get(
-        "OEE_REPO", str(ROOT.parent / "open-engineering-education")))
+    selected_lock = lock if lock is not None else Path.cwd() / "oee-curriculum.lock.json"
     for path in paths:
         loc = str(path.relative_to(ROOT))
         mapping = load_json(path, check)
@@ -330,7 +326,7 @@ def validate_maps(catalog, check, course_filter=None, oee=None):
             check.error(loc, f"map path must be mappings/{program}/{course}.json")
             continue
         try:
-            check_pinned_map(mapping, source)
+            check_pinned_map(mapping, selected_lock, store)
         except PinnedSourceError as exc:
             if exc.category in ("source_missing", "unsupported_format"):
                 check.missing(loc, f"{exc.category}: {exc}")
@@ -345,15 +341,16 @@ def validate_maps(catalog, check, course_filter=None, oee=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--oee", type=Path, default=Path(os.environ.get(
-        "OEE_REPO", str(ROOT.parent / "open-engineering-education"))),
-        help="trusted local OEE Git checkout; never fetches")
-    parser.add_argument("--course", help="check one active v2 map")
+    parser.add_argument("--lock", type=Path, default=None,
+                        help="reviewed project lock (default: current directory only)")
+    parser.add_argument("--store", type=Path, default=None,
+                        help="existing trusted installed-release store")
+    parser.add_argument("--course", help="check one active v3 map")
     parser.add_argument("--json", action="store_true", help="machine-readable diagnostics")
     args = parser.parse_args()
     check = Check()
     catalog = validate_catalog(check)
-    validate_maps(catalog, check, args.course, args.oee)
+    validate_maps(catalog, check, args.course, args.lock, args.store)
     status = "failed" if check.errors else "incomplete" if check.incomplete else "passed"
     if args.json:
         print(json.dumps({
@@ -373,7 +370,7 @@ def main():
               f"{len(check.warnings)} warnings, {len(check.incomplete)} incomplete, "
               f"{len(check.errors)} errors")
         if not list(MAPPINGS.rglob("*.json")):
-            print("No active v2 resource maps; catalog validation only.")
+            print("No active release-keyed resource maps; catalog validation only.")
     return {"passed": 0, "failed": 1, "incomplete": 3}[status]
 
 
