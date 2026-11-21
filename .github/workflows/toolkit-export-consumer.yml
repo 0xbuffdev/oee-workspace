@@ -1,16 +1,20 @@
-name: Offline OEE export consumer contract
+name: Offline OEE Toolkit export v2 consumer contract
 
 on:
   pull_request:
     paths:
       - "scripts/verify-oee-export.py"
+      - "scripts/check-resources.py"
       - "tests/test_toolkit_consumer.py"
+      - "tests/test_pinned_resource_source.py"
       - ".github/workflows/toolkit-export-consumer.yml"
   push:
     branches: [main]
     paths:
       - "scripts/verify-oee-export.py"
+      - "scripts/check-resources.py"
       - "tests/test_toolkit_consumer.py"
+      - "tests/test_pinned_resource_source.py"
       - ".github/workflows/toolkit-export-consumer.yml"
 
 permissions:
@@ -18,7 +22,7 @@ permissions:
 
 jobs:
   consumer-contract:
-    name: Strict export v1 consumer (${{ matrix.os }})
+    name: Release-locked export v2 (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -26,5 +30,10 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
-      - name: Test independent consumer and negative revision/map cases
-        run: python -m unittest discover -s tests -p 'test_toolkit_consumer.py' -v
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test independent v2 consumer and release/map rejection cases
+        run: python -m unittest discover -s tests -p "test_toolkit_consumer.py" -v
+      - name: Validate installed-release subprocess boundary
+        run: python -m unittest discover -s tests -p "test_pinned_resource_source.py" -v
