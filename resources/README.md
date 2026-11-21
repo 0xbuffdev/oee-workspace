@@ -1,63 +1,34 @@
 # Public OEE resource library
 
-This library supports independent study of [Open Engineering Education](https://github.com/0xbuffdev/open-engineering-education). OEE owns course requirements, outcomes and assessments. This free Workspace owns optional resource recommendations and learner-authored records.
+OEE Workspace provides optional resources for independent study. The [OEE specification and curriculum](https://github.com/0xbuffdev/open-engineering-education) remain authoritative for courses, outcomes, assessments and completion evidence. Neither paid books nor a private teaching platform are required.
 
-## Current mapping status
+## Current map status
 
-**The SEF1 v2 mapping is reviewed.** Its [source-pinned map](mappings/SEF/SEF1.json) and [generated Markdown](guides/SEF/SEF1.md) make verified external references available alongside explicit gaps. The active resource-map format is v2 only; unsupported inputs are exercised in rejection tests rather than accepted or automatically remapped.
+The [resource catalogue](catalog/) remains browsable: [books](catalog/books/) and [online material](catalog/online/). However, **no active resource-map or generated SEF1 reading guide has yet been approved for an immutable curriculum release**. The previous reviewed Git-source SEF1 map cannot be transferred automatically to a new release. Its references, eight module descriptions and explicit learning gaps survive in the [SEF1 editorial review](editorial/SEF1-REVIEW.md). It documents the 16-bit Hack versus OEE eight-bit teaching-machine differences.
 
-The public catalogue remains available: [books](catalog/books/) and [online resources](catalog/online/). The single [active mapping schema](schemas/course-map.schema.json) is **v2 only**, with an explicit OEE specification v0.2.0, exact 40-character lowercase source commit, canonical path, and optional outcome/assessment references. Module numbers, lesson locators and reading recommendations are scoped to the recorded revision.
+New public maps follow only [resource-map schema v3](schemas/course-map.schema.json). Each map identifies the exact releaseId, manifestSha256, courseSha256, OEE specification, course code/path and repository. Its draft/reviewed status describes independent resource editorial review, not source academic readiness.
 
-The reviewed SEF1 map covers eight modules to independently checked public sources, including [Nand to Tetris](https://www.nand2tetris.org/course), the second-edition book table of contents and the [Computer Science Field Guide](https://www.csfieldguide.org.nz/en/chapters/data-representation/). Except for the logic-gates module, coverage is **partial**; the Hack architecture uses 16-bit components and is not OEE's eight-bit reference machine. Learners can use the reviewed guide as optional support while respecting the documented gaps; review does not imply OEE course readiness or assessment equivalence. Courses without a map still scaffold **without a reading plan**.
+## Editorial requirements
 
-## Editorial principles
+- Confirm each recommendation against the actual released course, authored outcome/assessment IDs, module titles and optional lesson navigation.
+- Identify edition and source section accurately. Mark module coverage mapped, partial or unmapped, recording clear gaps for partial/unmapped cases.
+- Never treat external projects, books or fees as substitutes for public OEE assessments. Preserve free alternatives.
+- Only an explicitly reviewed map with a matching verified Toolkit exportVersion 2 may generate a guide. Missing or stale maps are not silently attached.
+- Learner resources.md, personal notes, previous projects and assessment evidence are never overwritten or automatically re-pinned.
 
-- No legacy schema reader, converter, or automatic remapping. Historical data is not current guidance.
-- Every map must reference one canonical OEE revision and carry a draft or reviewed mapping status. Valid JSON is not certification of educational meaning.
-- Coverage is mapped, partial, or unmapped. Partial/unmapped require explicit gap explanations. Verified mapping claims need independent edition, section, or authoritative website checks.
-- Catalogue IDs are stable and reusable, with optional resource-specific lesson, outcome and assessment references. References must exist in the exact selected OEE Toolkit export.
-- Paid resources are always optional; no public OEE requirement depends on paid books, private 0xNAND content or proprietary services.
+## Validate
 
-## Learner CLI
+~~~sh
+python scripts/check-resources.py
+python scripts/render-resource-guides.py --check
+python -m unittest discover -s tests -p "test_*.py" -v
+~~~
 
-The supported cross-platform command is `python -m oee_workspace`, with an
-explicit local OEE Toolkit checkout and exact immutable source revision. To
-check a mapping's structural and source-reference validity:
+Those commands can validate the public catalogue and the currently empty active map set without an official release. After approval and independent installation of an official signed curriculum release, use an explicitly reviewed lock:
 
-```sh
-python -m oee_workspace resources check --oee /path/to/open-engineering-education --map resources/mappings/SEF/SEF1.json
-```
+~~~sh
+python -m oee_workspace resources check --lock ./oee-curriculum.lock.json --map resources/mappings/SEF/SEF1.json
+python scripts/render-resource-guides.py --lock ./oee-curriculum.lock.json --check
+~~~
 
-This check does not imply editorial approval; only a **reviewed** resource map
-for the *exact selected source commit* may be attached to a generated learner
-workspace. Other valid courses can still be initialized without a guide.
-No purchased resource, Content repository or 0xNAND account is required.
-
-## Source changes and mapping review
-
-The [upstream OEE drift guide](../docs/OEE-UPSTREAM-DRIFT.md) describes how
-to compare each immutable reviewed map with a **separately chosen** full
-OEE source commit. Advisory differences to outcomes, assessment coverage,
-module/lesson positions and resource associations require deliberate
-human review. An upstream change never updates a learner guide or map
-silently; structurally valid v2 mappings stay pinned until a reviewed
-change is explicitly merged.
-
-## Validation
-
-Run catalogue checks and tests without a private service:
-
-```sh
-python3 scripts/check-resources.py
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-python3 scripts/render-resource-guides.py --check
-```
-
-Validate the reviewed v2 map against its **exact local OEE Git commit**:
-
-```sh
-python3 scripts/check-resources.py --course SEF1 --oee /path/to/open-engineering-education --json
-python3 scripts/render-resource-guides.py --course SEF1 --oee /path/to/open-engineering-education --stdout
-```
-
-The resource validator now invokes the public OEE Toolkit directly on the map's recorded full Git commit and checks the derived export's exact source identity, modules, lessons, outcomes and assessments. When the commit is missing or unsupported, it returns **incomplete** (exit `3`) rather than using `HEAD`. The selected local checkout must be trusted; Git object IDs do not independently authenticate repository origin. The maintainer reviewed the SEF1 source/edition references, mapping choices and explicitly declared gaps under WS-I02. This does not assert full resource coverage, promote the OEE course status, or certify learner achievement. Only reviewed maps can publish a guide. Repository-owned generated guides are written through temporary files and atomic replacement; learner-owned reading logs and existing course workspaces are never overwritten.
+The SEF1 map path above is **illustrative for future activation**, not a currently published map. Optional --store chooses an already verified local release store. A test-only signed archive is not steward authorization. [Release-drift review](../docs/OEE-UPSTREAM-DRIFT.md) is an independent read-only process.
