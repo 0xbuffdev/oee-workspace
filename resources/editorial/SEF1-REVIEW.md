@@ -1,5 +1,7 @@
 # SEF1 — Editorial resource review before release activation
 
+**New source-by-source follow-up:** the [41-lesson SEF1 editorial alignment matrix](SEF1-LESSON-MAP.md) compares current OEE SEF1 with existing Content B1/B7/B46 and independently verified free supplementary resources. It is not a release-keyed resource map or grading contract. The historical review below is preserved for source-specific comparison.
+
 This preserves the independently reviewed **resource recommendations and known gaps** from the November 20, 2026 SEF1 editorial assessment. It is **not an active resource map**, approved curriculum release, learner guide or transferable source approval.
 
 The reviewed comparison was against the immutable OEE course at Git commit `67416343f3eab17ada5d3c79ae6cc782524c29ff`. That commit is historical editorial context, **not a supported Workspace runtime selector**. An official signed curriculum release, an approved release lock, a re-review of its actual SEF1 export and new release-keyed resource-map v3 are required before publishing a reading plan.

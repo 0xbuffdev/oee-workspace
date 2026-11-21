@@ -1,0 +1,15 @@
+{
+  "id": "R95",
+  "kind": "article",
+  "title": "Computer History Museum — Timeline of Computer History",
+  "access": {
+    "mode": "free",
+    "url": "https://www.computerhistory.org/timeline/",
+    "notes": "Public historical timeline; use 1947 transistor history, 1949 EDSAC and broader stored-program context, not as a substitute for technical circuit exercises."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Computer History Museum timeline and 1947/1949 entries inspected 2026-11-21; silicon-engine timeline independently identifies invention of the point-contact transistor.",
+    "checkedOn": "2026-11-21"
+  }
+}

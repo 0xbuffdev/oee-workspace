@@ -1,0 +1,15 @@
+{
+  "id": "R96",
+  "kind": "course-material",
+  "title": "The Open Book Project — Input-Output Interface and Modes of Transfer",
+  "access": {
+    "mode": "free",
+    "url": "https://open-book-project.github.io/courses/csa_course/io-interface-and-modes-of-transfer.html",
+    "notes": "Free Chapter 20; §§20.5–20.7 explain programmed/polled I/O vs interrupt-driven I/O. This is conceptual background only: OEE SEF1's eight-bit machine has no interrupts."
+  },
+  "verification": {
+    "status": "verified",
+    "basis": "Public Open Book Project chapter 20 §§20.5 (Modes of Data Transfer), 20.6 (Programmed I/O), 20.7 (Interrupt-initiated I/O) were inspected on 2026-11-21; chapter contrasts CPU polling and device interrupt notification.",
+    "checkedOn": "2026-11-21"
+  }
+}
