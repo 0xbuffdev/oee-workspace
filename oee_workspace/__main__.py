@@ -1,8 +1,8 @@
 """Current-only, offline OEE Workspace command line (WS-I08).
 
 python -m oee_workspace {doctor,course,resources,evidence,status,export}
-Requires Python >= 3.11, Git and a trusted local first-party OEE Toolkit
-checkout. No curriculum Markdown parser, network, model, grader or daemon.
+Requires Python >= 3.11, an installed OEE Toolkit and a reviewed release
+lock with an independently verified installed archive; no Git checkout. No curriculum Markdown parser, network, model, grader or daemon.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import tempfile
 from uuid import uuid4
 
 from .evidence import (
-    COURSE, SHA, EvidenceIssue, EvidenceService, incomplete, invalid, load_reader,
+    COURSE, EvidenceIssue, EvidenceService, incomplete, invalid, load_reader,
     record_shape,
 )
 from .local import PublicationError, exists, publish, publish_file_new, workspace_root
@@ -29,23 +29,21 @@ TEMPLATES = ROOT / "templates"
 MAPS = ROOT / "resources" / "mappings"
 
 
-def source(service: EvidenceService, code: str, revision: str) -> dict:
+def source(service: EvidenceService, code: str) -> dict:
     if not isinstance(code, str) or not COURSE.fullmatch(code):
         invalid(f"unsupported canonical course code: {code}", "WSC001")
-    if not isinstance(revision, str) or not SHA.fullmatch(revision):
-        incomplete("source revision must be a complete lowercase commit SHA", "WSC003")
-    return service.source(code, revision)
+    return service.source(code)
 
 
-def canonical_source(code: str, revision: str) -> str:
+def canonical_source(code: str, origin_commit: str) -> str:
     program = COURSE.fullmatch(code).group(1)
     return ("https://github.com/0xbuffdev/open-engineering-education/blob/"
-            f"{revision}/curriculum/{program}/{code}.md")
+            f"{origin_commit}/curriculum/{program}/{code}.md")
 
 
-def learner_root(dest: Path, oee: Path) -> Path:
+def learner_root(dest: Path) -> Path:
     try:
-        return workspace_root(dest, oee)
+        return workspace_root(dest)
     except PublicationError as exc:
         invalid(str(exc), "WSC004")
 
@@ -72,7 +70,7 @@ def execute(script: str, args: list[str]) -> str:
     return result.stdout
 
 
-def study_guide(code: str, revision: str, oee: Path) -> tuple[str | None, str]:
+def study_guide(code: str, checked: dict, lock: Path | None, store: Path | None) -> tuple[str | None, str]:
     """Use the established v2 renderer/validator, not a new course parser."""
     path = MAPS / COURSE.fullmatch(code).group(1) / f"{code}.json"
     if path.is_symlink():
@@ -85,9 +83,9 @@ def study_guide(code: str, revision: str, oee: Path) -> tuple[str | None, str]:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (UnicodeError, ValueError):
         invalid("resource map is not valid JSON", "WSC005")
-    if (type(data) is not dict or data.get("schemaVersion") != 2 or
+    if (type(data) is not dict or data.get("schemaVersion") != 3 or
             data.get("curriculum", {}).get("specification") != "v0.2.0"):
-        invalid("only the current OEE v0.2.0 resource-map v2 is supported", "WSC005")
+        invalid("only the current OEE v0.2.0 resource-map v3 is supported", "WSC005")
     canon = data["curriculum"]
     if canon.get("course") != code:
         invalid("resource map is attached to a different course", "WSC005")
@@ -95,8 +93,11 @@ def study_guide(code: str, revision: str, oee: Path) -> tuple[str | None, str]:
         invalid("unsupported resource map review status", "WSC005")
     if data["status"] == "draft":
         return None, "The selected resource map is not reviewed; no reading plan was generated."
-    if canon.get("revision") != revision:
-        return None, "Reviewed resource map belongs to another source commit; no reading plan was generated."
+    ident = checked["source"]
+    if (canon.get("releaseId") != ident["releaseId"] or
+            canon.get("manifestSha256") != ident["manifestSha256"] or
+            canon.get("courseSha256") != ident["courseSha256"]):
+        return None, "Reviewed map belongs to another immutable release; no reading plan was generated."
 
     # Perform the authoritative v2 and exact-OEE-commit validation once.
     # Reuse the repository-owned guide renderer in-process instead of parsing
@@ -104,7 +105,9 @@ def study_guide(code: str, revision: str, oee: Path) -> tuple[str | None, str]:
     # subprocess can expose stdout=None even when the direct renderer works;
     # rendering from the same validated map avoids that failure mode and
     # remains byte-identical to scripts/render-resource-guides.py.
-    execute("check-resources.py", ["--oee", str(oee), "--course", code])
+    execute("check-resources.py",
+            ["--lock", str(lock or Path.cwd() / "oee-curriculum.lock.json"), "--course", code] +
+            (["--store", str(store)] if store is not None else []))
     name = "oee_workspace_current_guide_renderer"
     spec = importlib.util.spec_from_file_location(
         name, ROOT / "scripts" / "render-resource-guides.py"
@@ -114,7 +117,7 @@ def study_guide(code: str, revision: str, oee: Path) -> tuple[str | None, str]:
     renderer = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(renderer)
     try:
-        guide = renderer.render(data, renderer.load_catalog())
+        guide = renderer.render(data, renderer.load_catalog(), ident)
     except (KeyError, ValueError, UnicodeError, OSError) as exc:
         invalid("canonical guide renderer rejected the validated map: "
                 + str(exc)[:350], "WSC005")
@@ -127,21 +130,21 @@ def doctor(args) -> None:
     # The probe course is a canonical OEE source, not an invented project alias.
     if sys.version_info < (3, 11):
         incomplete("Python >= 3.11 is required", "WSC003")
-    checked = source(EvidenceService(Path.cwd(), args.oee), "SEF1", args.revision)
+    checked = source(EvidenceService(Path.cwd(), args.lock, args.store), "SEF1")
     print("OEE Workspace doctor: passed (offline)")
     print(f"  Python: {sys.version_info.major}.{sys.version_info.minor}")
-    print("  Toolkit: first-party, locally available")
-    print(f"  Probe course: {checked['course']} @ {args.revision}")
+    print("  Toolkit: first-party, installed release")
+    print(f"  Probe course: {checked['course']} @ {checked['source']['releaseId']}")
     print("  Checks: structural source only; educational review still required")
 
 
 def course_add(args) -> None:
-    root = learner_root(args.dest, args.oee)
-    service = EvidenceService(root, args.oee)
-    checked = source(service, args.code, args.revision)
+    root = learner_root(args.dest)
+    service = EvidenceService(root, args.lock, args.store)
+    checked = source(service, args.code)
     code = args.code
     program = COURSE.fullmatch(code).group(1)
-    url = canonical_source(code, args.revision)
+    url = canonical_source(code, checked["source"]["originCommit"])
     destinations = [Path(area) / program / code
                     for area in ("labs", "exercises", "notes")]
     course_type = checked["courseType"]
@@ -153,7 +156,7 @@ def course_add(args) -> None:
         invalid(f"course already exists in learner workspace: {code}; no files replaced",
                 "WSC004")
 
-    guide, notice = study_guide(code, args.revision, args.oee)
+    guide, notice = study_guide(code, checked, args.lock, args.store)
     values = {"course": code, "course_link": url}
     with tempfile.TemporaryDirectory(prefix=".oee-stage-", dir=root) as tmp:
         stage = Path(tmp)
@@ -187,7 +190,7 @@ def course_add(args) -> None:
             (stage / base / "BRIEF.md").write_text(
                 f"# {code} project workspace\n\n"
                 f"**Canonical OEE course:** [{code}]({url})\n"
-                f"**OEE source revision:** {args.revision}\n\n"
+                f"**OEE release:** {checked['source']['releaseId']} (manifest: {checked['source']['manifestSha256']})\n\n"
                 "Follow the public project's outcomes, required assessments and "
                 "defense criteria. These templates do not define separate graduation "
                 "requirements or attest to learner achievement.\n",
@@ -197,7 +200,7 @@ def course_add(args) -> None:
             publish(root, stage, destinations)
         except PublicationError as exc:
             invalid(str(exc), "WSC004")
-    print(f"Created {course_type} workspace: {code} @ {args.revision}")
+    print(f"Created {course_type} workspace: {code} @ {checked['source']['releaseId']}")
     for rel in destinations:
         print(f"  {rel.as_posix()}/")
     print(f"Canonical source: {url}")
@@ -223,7 +226,7 @@ def resources_check(args) -> None:
     if findings.errors:
         invalid("; ".join(findings.errors[:3]), "WSC005")
     try:
-        reader.check_pinned_map(mapping, args.oee)
+        reader.check_pinned_map(mapping, args.lock or Path.cwd() / "oee-curriculum.lock.json", args.store)
     except reader.PinnedSourceError as exc:
         if exc.category in ("source_missing", "unsupported_format"):
             incomplete("pinned source unavailable: " + exc.category, "WSC003")
@@ -234,7 +237,7 @@ def resources_check(args) -> None:
         invalid("invalid resource mapping reference: " + exc.code, "WSC005")
     print("Resource mapping: structurally passed")
     print(f"  Canonical source: {mapping['curriculum']['course']} @ "
-          f"{mapping['curriculum']['revision']}")
+          f"{mapping['curriculum']['releaseId']}")
     print(f"  Editorial status: {mapping['status']}")
     if mapping["status"] != "reviewed":
         print("  Publication: not permitted until independent mapping review")
@@ -243,9 +246,9 @@ def resources_check(args) -> None:
 
 
 def evidence_init(args) -> None:
-    root = learner_root(args.dest, args.oee)
-    service = EvidenceService(root, args.oee)
-    checked = source(service, args.course, args.revision)
+    root = learner_root(args.dest)
+    service = EvidenceService(root, args.lock, args.store)
+    checked = source(service, args.course)
     assessment = checked["assessments"].get(args.assessment)
     if assessment is None or not assessment["required"]:
         invalid("assessment is not a required summative assessment in this OEE course",
@@ -257,13 +260,16 @@ def evidence_init(args) -> None:
         invalid("generated attempt UUID collides with an existing learner attempt",
                 "WSC004")
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "attemptId": ident,
         "recordedAt": datetime.now(timezone.utc).replace(microsecond=0)
         .isoformat().replace("+00:00", "Z"),
         "course": {
             "repository": checked["source"]["repository"],
-            "revision": args.revision, "specification": "v0.2.0",
+            "releaseId": checked["source"]["releaseId"],
+            "manifestSha256": checked["source"]["manifestSha256"],
+            "courseSha256": checked["source"]["courseSha256"],
+            "specification": "v0.2.0",
             "path": checked["source"]["coursePath"], "code": code,
         },
         "assessmentId": args.assessment,
@@ -280,28 +286,28 @@ def evidence_init(args) -> None:
     except PublicationError as exc:
         invalid(str(exc), "WSC004")
     print(f"Created a new unreviewed evidence attempt: {relative.as_posix()}")
-    print(f"Source: {code} @ {args.revision}; assessment: {args.assessment}")
+    print(f"Source: {code} @ {checked['source']['releaseId']}; assessment: {args.assessment}")
     print("No evaluation, grading or learner completion was inferred.")
 
 
 def evidence_check(args) -> None:
-    root = learner_root(args.dest, args.oee)
-    report = EvidenceService(root, args.oee).check(args.path)
+    root = learner_root(args.dest)
+    report = EvidenceService(root, args.lock, args.store).check(args.path)
     if report["outcome"] != "valid":
         item = report["findings"][0]
         raise EvidenceIssue(item["code"], report["outcome"], item["message"])
     print(f"Evidence record: valid structure and pinned references ({report['record']})")
-    print(f"  Source: {report['course']} @ {report['revision']}")
+    print(f"  Source: {report['course']} @ {report['releaseId']}")
     print(f"  Review: {report['review']['status']} "
           "(learner-reported; reviewer identity unverified)")
     print("  Educational achievement: not determined")
 
 
 def status(args) -> None:
-    root = learner_root(args.dest, args.oee)
-    projection = EvidenceService(root, args.oee).status(args.course, args.revision)
+    root = learner_root(args.dest)
+    projection = EvidenceService(root, args.lock, args.store).status(args.course)
     for item in projection["courses"]:
-        print(f"{item['course']} @ {item['revision']}:")
+        print(f"{item['course']} @ {item['releaseId']}:")
         for row in item["assessments"]:
             print(f"  {row['assessmentId']}: "
                   f"{','.join(row['reportedStates'])} (attempts: {row['attempts']})")
@@ -324,8 +330,8 @@ def status(args) -> None:
 
 
 def export(args) -> None:
-    root = learner_root(args.dest, args.oee)
-    service = EvidenceService(root, args.oee)
+    root = learner_root(args.dest)
+    service = EvidenceService(root, args.lock, args.store)
     if not args.attempt:
         invalid("select one or more attempt UUIDs", "WSC009")
     if len(args.attempt) != len(set(args.attempt)):
@@ -374,63 +380,57 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, prog="python -m oee_workspace")
     commands = p.add_subparsers(dest="command", required=True)
 
-    def oee_option(parser):
-        parser.add_argument("--oee", type=Path, required=True,
-                            help="trusted local OEE Toolkit repository (never fetched)")
-
-    def revision_option(parser):
-        parser.add_argument("--revision", required=True,
-                            help="40-character immutable lowercase OEE commit SHA")
+    def release_options(parser):
+        parser.add_argument("--lock", type=Path, default=None,
+                            help="reviewed release lock (default: ./oee-curriculum.lock.json)")
+        parser.add_argument("--store", type=Path, default=None,
+                            help="existing trusted installed-release cache")
 
     def dest_option(parser):
         parser.add_argument("--dest", type=Path, required=True,
                             help="existing learner-owned destination directory")
 
     doc = commands.add_parser("doctor", help="probe local Toolkit and exact course source")
-    oee_option(doc)
-    revision_option(doc)
+    release_options(doc)
     doc.set_defaults(run=doctor)
 
     course = commands.add_parser("course", help="course workspace operations")
     courses = course.add_subparsers(dest="course_command", required=True)
     add = courses.add_parser("add", help="stage a new canonical course workspace")
     add.add_argument("code")
-    oee_option(add)
-    revision_option(add)
+    release_options(add)
     dest_option(add)
     add.set_defaults(run=course_add)
 
     resources = commands.add_parser("resources", help="public resource maps")
     resource_cmds = resources.add_subparsers(dest="resource_command", required=True)
-    check = resource_cmds.add_parser("check", help="validate one exact-pinned v2 map")
-    oee_option(check)
+    check = resource_cmds.add_parser("check", help="validate one exact-release-keyed v3 map")
+    release_options(check)
     check.add_argument("--map", type=Path, required=True)
     check.set_defaults(run=resources_check)
 
     ev = commands.add_parser("evidence", help="learner assessment evidence")
     ev_cmds = ev.add_subparsers(dest="evidence_command", required=True)
     init = ev_cmds.add_parser("init", help="create fresh unreviewed UUID attempt")
-    oee_option(init)
-    revision_option(init)
+    release_options(init)
     init.add_argument("--course", required=True)
     init.add_argument("--assessment", required=True)
     dest_option(init)
     init.set_defaults(run=evidence_init)
     ev_check = ev_cmds.add_parser("check", help="validate one local pinned attempt")
-    oee_option(ev_check)
+    release_options(ev_check)
     ev_check.add_argument("--path", type=Path, required=True)
     dest_option(ev_check)
     ev_check.set_defaults(run=evidence_check)
 
     status_command = commands.add_parser("status", help="read-only assessment projection")
-    oee_option(status_command)
+    release_options(status_command)
     dest_option(status_command)
     status_command.add_argument("--course", help="optional empty-course projection")
-    status_command.add_argument("--revision", help="required with --course")
     status_command.set_defaults(run=status)
 
     export_command = commands.add_parser("export", help="write selected local evidence JSON")
-    oee_option(export_command)
+    release_options(export_command)
     dest_option(export_command)
     export_command.add_argument("--output", type=Path, required=True)
     export_command.add_argument("--attempt", action="append", required=True,
