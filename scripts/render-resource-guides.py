@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """Render portable Markdown guides from the public OEE resource catalogue.
 
-No third-party dependencies. The canonical OEE/module validation runs
-separately through check-resources.py before generating these snapshots.
+No third-party dependencies. Course identities use the one verified offline
+Toolkit v2 export through the existing Workspace resource checker.
 """
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import tempfile
-import subprocess
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -59,10 +58,10 @@ def access_label(item):
     return access["mode"].capitalize() + " — " + " · ".join(links)
 
 
-def render(mapping, catalog):
+def render(mapping, catalog, source):
     canon = mapping["curriculum"]
     course = canon["course"]
-    url = "https://github.com/" + canon["repository"] + "/blob/" + canon["revision"] + "/" + canon["path"]
+    url = "https://github.com/" + canon["repository"] + "/blob/" + source["originCommit"] + "/" + canon["path"]
     lines = [
         "# " + course + " — Resource study guide",
         "",
@@ -71,7 +70,9 @@ def render(mapping, catalog):
         "This is a non-normative study aid. OEE defines the required outcomes, assessments, and labs. "
         "No book purchase is required. Check verification labels before following chapter references.",
         "",
-        "**Curriculum revision:** " + canon["revision"],
+        "**Curriculum release:** " + canon["releaseId"],
+        "",
+        "**Manifest SHA-256:** " + canon["manifestSha256"],
         "",
         "**Map status:** " + mapping["status"].capitalize(),
     ]
@@ -112,13 +113,26 @@ def render(mapping, catalog):
     return "\n".join(lines)
 
 
-def outputs(course_filter, oee_repo):
+def load_checker():
+    spec = importlib.util.spec_from_file_location(
+        "oee_workspace_guide_resource_checker", ROOT / "scripts" / "check-resources.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def outputs(course_filter, lock, store):
     catalog = load_catalog()
+    checker = load_checker()
     found = False
     for path in sorted(MAPPINGS.rglob("*.json")):
+        if path.is_symlink() or not path.is_file():
+            raise ValueError("unsafe resource map entry")
         mapping = json.loads(path.read_text(encoding="utf-8"))
-        if mapping.get("schemaVersion") != 2 or mapping.get("curriculum", {}).get("specification") != "v0.2.0":
-            raise ValueError("unsupported_schema: only OEE v0.2.0 resource-map v2 is supported")
+        findings = checker.Check()
+        if not checker.validate_map_shape(mapping, {k: v[0] for k, v in catalog.items()},
+                                          findings, str(path)):
+            raise ValueError("invalid resource map: " + "; ".join(findings.errors[:3]))
         code = mapping["curriculum"]["course"]
         if course_filter and code != course_filter:
             continue
@@ -128,14 +142,10 @@ def outputs(course_filter, oee_repo):
                 f"unreviewed_map: {code} resource map must be reviewed before "
                 "publishing a study guide"
             )
-        checked = subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "check-resources.py"),
-             "--course", code, "--oee", str(oee_repo)],
-            capture_output=True, text=True, check=False)
-        if checked.returncode:
-            raise ValueError("resource map failed pinned-source validation: " + checked.stderr.strip())
+        verified = checker.check_pinned_map(
+            mapping, lock or Path.cwd() / "oee-curriculum.lock.json", store)
         program = re.match(r"^[A-Z]+", code).group()
-        yield GUIDES / program / (code + ".md"), render(mapping, catalog)
+        yield GUIDES / program / (code + ".md"), render(mapping, catalog, verified["source"])
     if course_filter and not found:
         raise ValueError("No public resource map exists for " + course_filter)
 
@@ -190,9 +200,10 @@ def main():
     modes.add_argument("--check", action="store_true", help="verify all guides match their mappings")
     modes.add_argument("--stdout", action="store_true", help="print one course guide")
     parser.add_argument("--course", help="course code (required with --stdout)")
-    parser.add_argument("--oee", type=Path, default=Path(os.environ.get(
-        "OEE_REPO", str(ROOT.parent / "open-engineering-education"))),
-        help="local OEE Git checkout supplying the map's exact pinned commit")
+    parser.add_argument("--lock", type=Path, default=None,
+                        help="reviewed OEE curriculum lock (current directory by default)")
+    parser.add_argument("--store", type=Path, default=None,
+                        help="existing trusted installed-release store")
     args = parser.parse_args()
     if args.stdout and not args.course:
         parser.error("--stdout requires --course")
@@ -201,7 +212,7 @@ def main():
     if args.check and args.course:
         parser.error("--check validates all guides; omit --course")
     try:
-        results = list(outputs(args.course, args.oee))
+        results = list(outputs(args.course, args.lock, args.store))
         if args.stdout:
             if len(results) != 1:
                 raise ValueError("Expected exactly one mapped course")
