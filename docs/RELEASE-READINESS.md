@@ -20,17 +20,17 @@ The [external smoke script](../scripts/verify-external-workspace.py) tests actua
 
 To run unit and contract checks:
 
-~~~sh
+```sh
 python -m unittest discover -s tests -p "test_*.py" -v
 python scripts/check-resources.py
 python scripts/render-resource-guides.py --check
-~~~
+```
 
 For disposable publisher-fixture smoke only, with source-built OEE Toolkit and optional cryptography installed:
 
-~~~sh
+```sh
 python scripts/verify-external-workspace.py --workspace-source . --oee-source ../open-engineering-education --report ./workspace-test.json
-~~~
+```
 
 The --oee-source switch belongs **only** to the release-test fixture publisher, not any learner CLI.
 

@@ -14,12 +14,12 @@ The earlier Git-revision-based evidence contract is **not** an active runtime re
 
 After an official curriculum release is reviewed, independently verified/installed and locked for your project:
 
-~~~sh
+```sh
 python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .
 python -m oee_workspace evidence check --path evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json --dest .
 python -m oee_workspace status --course SEF1 --dest .
 python -m oee_workspace export --dest . --attempt ATTEMPT-UUID --output exports/selected.json
-~~~
+```
 
 Use the actual UUID returned by the first command. The current working directory supplies only its own oee-curriculum.lock.json by default; --lock and --store optionally select reviewed explicit inputs. Missing or altered sources return an incomplete result, never a Git/network fallback.
 

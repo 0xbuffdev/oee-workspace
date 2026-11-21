@@ -15,6 +15,9 @@ from test_evidence_schema import valid_attempt, COURSE_SHA
 
 
 class FakeReader:
+    class PinnedSourceError(Exception):
+        category = "source_missing"
+
     @staticmethod
     def load_consumer():
         return _consumer()

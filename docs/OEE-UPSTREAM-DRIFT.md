@@ -8,9 +8,9 @@ Workspace never uses moving upstream Git main, HEAD or a guessed latest curricul
 
 For two already reviewed and installed releases:
 
-~~~sh
+```sh
 python scripts/report-oee-drift.py --lock ./oee-curriculum.lock.json --target-lock ./reviewed-next-release.lock.json --course SEF1
-~~~
+```
 
 Optional --store and --target-store select explicit existing trusted stores. The script reports immutable source identities, changes, reference risks, reviewRequired and autoRemapped: false. An unavailable target is incomplete, not unchanged.
 

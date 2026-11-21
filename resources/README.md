@@ -18,17 +18,17 @@ New public maps follow only [resource-map schema v3](schemas/course-map.schema.j
 
 ## Validate
 
-~~~sh
+```sh
 python scripts/check-resources.py
 python scripts/render-resource-guides.py --check
 python -m unittest discover -s tests -p "test_*.py" -v
-~~~
+```
 
 Those commands can validate the public catalogue and the currently empty active map set without an official release. After approval and independent installation of an official signed curriculum release, use an explicitly reviewed lock:
 
-~~~sh
+```sh
 python -m oee_workspace resources check --lock ./oee-curriculum.lock.json --map resources/mappings/SEF/SEF1.json
 python scripts/render-resource-guides.py --lock ./oee-curriculum.lock.json --check
-~~~
+```
 
 The SEF1 map path above is **illustrative for future activation**, not a currently published map. Optional --store chooses an already verified local release store. A test-only signed archive is not steward authorization. [Release-drift review](../docs/OEE-UPSTREAM-DRIFT.md) is an independent read-only process.

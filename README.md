@@ -64,20 +64,20 @@ By default, Workspace reads the lock **only from the current working directory**
 
 ### 3. Check the selected source
 
-~~~sh
+```sh
 python -m oee_workspace doctor
 # Or explicit reviewed inputs:
 python -m oee_workspace doctor --lock ./oee-curriculum.lock.json --store /path/to/verified-releases
-~~~
+```
 
 Missing or altered releases return an incomplete result, never a Git or network fallback.
 
 ### 4. Generate a course or project workspace
 
-~~~sh
+```sh
 python -m oee_workspace course add SEF1 --dest .
 python -m oee_workspace course add SEF10 --dest .
-~~~
+```
 
 The CLI uses Toolkit exportVersion 2 to verify the exact selected source before creating learner files. The SEF10 project course also gets project-specific templates. Existing learner directories are never overwritten. Canonical source hyperlinks use the original Git commit from the verified release for attribution/audit, not source selection.
 
@@ -85,12 +85,12 @@ A reading-plan.md is included only if a reviewed resource-map v3 matches release
 
 ### 5. Record, inspect and export learner evidence
 
-~~~sh
+```sh
 python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .
 python -m oee_workspace evidence check --path evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json --dest .
 python -m oee_workspace status --course SEF1 --dest .
 python -m oee_workspace export --dest . --attempt ATTEMPT-UUID --output exports/selected.json
-~~~
+```
 
 Replace ATTEMPT-UUID with the UUID shown by the init command. Each attempt follows [schema v2](evidence/schemas/attempt-v2.schema.json) and retains full release, manifest and course digests plus original OEE assessment/outcome IDs. A new attempt has no evaluation. A claimed self- or human-review is not an authenticated grade or completion.
 
