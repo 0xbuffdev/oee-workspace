@@ -59,6 +59,30 @@ class OfflineReleaseSourceTests(unittest.TestCase):
                     checker.read_pinned_export(self.lock, self.store, "SEF1")
                 self.assertIn(error.exception.category, ("unsupported_format", "source_missing"))
 
+    def test_missing_store_and_lock_digest_have_distinct_diagnostics(self):
+        cases = (
+            (b"invalid_release: trusted release store is missing or symlinked",
+             "store_missing", "check --store"),
+            (b"invalid_release: pinned curriculum release is not installed",
+             "lock_digest_not_found", PIN["manifestSha256"]),
+        )
+        for stderr, category, hint in cases:
+            with self.subTest(category=category):
+                with patch.object(checker.subprocess, "run",
+                                  return_value=self.mock_export(3, b"", stderr)):
+                    with self.assertRaises(checker.PinnedSourceError) as caught:
+                        checker.read_pinned_export(self.lock, self.store, "SEF1")
+                self.assertEqual(caught.exception.category, category)
+                self.assertIn(hint, str(caught.exception))
+        # Unexpected Toolkit exit-three errors remain explicitly incomplete.
+        with patch.object(checker.subprocess, "run",
+                          return_value=self.mock_export(
+                              3, b"", b"invalid_release: source bytes altered"
+                          )):
+            with self.assertRaises(checker.PinnedSourceError) as caught:
+                checker.read_pinned_export(self.lock, self.store, "SEF1")
+        self.assertEqual(caught.exception.category, "source_missing")
+
     def test_malformed_toolkit_json_cannot_be_used(self):
         with patch.object(checker.subprocess, "run",
                           return_value=self.mock_export(0, b'{"exportVersion":')):

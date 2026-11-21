@@ -279,8 +279,27 @@ def read_pinned_export(lock: Path, store: Path | None, course: str) -> dict:
     if result.returncode:
         stderr = result.stderr.decode("utf-8", errors="replace")
         detail = " ".join(stderr.strip().splitlines()[:3])[:500] or "Toolkit release unavailable"
-        if result.returncode in (2, 3):
-            category = "source_missing" if result.returncode == 3 else "unsupported_format"
+        if result.returncode == 2:
+            category = "unsupported_format"
+        elif result.returncode == 3:
+            category = "source_missing"
+            # The installed Toolkit remains the authority for validation.
+            # Distinguish its two explicit missing-store conditions without
+            # inspecting untrusted release bytes or trying another source.
+            if detail.startswith("invalid_release: trusted release store is missing or symlinked"):
+                category = "store_missing"
+                detail = (
+                    "trusted installed-release store is missing or symlinked; "
+                    "check --store or the documented default cache location"
+                )
+            elif detail.startswith("invalid_release: pinned curriculum release is not installed"):
+                category = "lock_digest_not_found"
+                lock_identity = load_consumer().load_lock(lock)
+                detail = (
+                    "no installed release matches lock manifestSha256 "
+                    + lock_identity["manifestSha256"]
+                    + "; verify the reviewed lock and trusted store"
+                )
         elif result.returncode == 1:
             category = "invalid_reference"
         else:
@@ -328,7 +347,8 @@ def validate_maps(catalog, check, course_filter=None, lock=None, store=None):
         try:
             check_pinned_map(mapping, selected_lock, store)
         except PinnedSourceError as exc:
-            if exc.category in ("source_missing", "unsupported_format"):
+            if exc.category in ("source_missing", "store_missing",
+                                "lock_digest_not_found", "unsupported_format"):
                 check.missing(loc, f"{exc.category}: {exc}")
             else:
                 check.error(loc, f"{exc.category}: {exc}")
