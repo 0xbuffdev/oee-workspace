@@ -1,12 +1,12 @@
 # REL-I04 Workspace immutable-release readiness
 
-**State:** engineering implementation for review. No official steward curriculum release, approved Toolkit package, commercial deployment or learner-data migration is authorized by this document.
+The signed OEE curriculum `2026.11.1` and Toolkit `0.1.0` are published. Workspace still needs passing disposable-fixture and public-release smoke tests on the exact merged `main` commit before its own release. These tests do not authorize grading, a commercial deployment, unreviewed resource maps or changes to learner records.
 
-The authoritative architecture is [OEE RFC 0005](https://github.com/0xbuffdev/open-engineering-education/blob/main/rfcs/0005-immutable-curriculum-releases.md), tracked in [Stage 2 issue #257](https://github.com/0xbuffdev/open-engineering-education/issues/257). The Toolkit's one parser is the academic export authority, not a Workspace Markdown reader.
+The implementation follows [OEE RFC 0005](https://github.com/0xbuffdev/open-engineering-education/blob/main/rfcs/0005-immutable-curriculum-releases.md) and the work recorded in [Stage 2 issue #257](https://github.com/0xbuffdev/open-engineering-education/issues/257). Toolkit provides the academic exports; Workspace does not read curriculum Markdown directly.
 
 ## Current-only supported interfaces
 
-- Python 3.11+ and installed first-party OEE Toolkit source-build candidate.
+- Python 3.11+ and the published first-party OEE Toolkit `0.1.0`.
 - Independently reviewed project lock with formatVersion 1, CalVer releaseId and full manifestSha256, selecting a previously installed and independently verified curriculum release.
 - Toolkit exportVersion 2; resource-map schemaVersion 3; learner assessment-attempt schemaVersion 2.
 - No learner-facing --oee / --revision, no moving Git source fallback, no v1 runtime export reader, no automatic map or learner-evidence conversion.
@@ -14,9 +14,9 @@ The authoritative architecture is [OEE RFC 0005](https://github.com/0xbuffdev/op
 
 ## Independent disposable test
 
-The [release-readiness CI](../.github/workflows/release-readiness.yml) runs on Linux, macOS and Windows. It checks out OEE **only for publisher-side fixture generation**, builds a complete temporary curriculum archive from one pinned Git commit, signs with an ephemeral Ed25519 key, independently verifies and installs into a temporary content-addressed store, and writes a temporary lock.
+The [release-readiness workflow](../.github/workflows/release-readiness.yml) runs on Linux, macOS and Windows. It checks out OEE to build a disposable test archive at a pinned commit. Each platform signs that temporary archive with a test-only Ed25519 key, installs it in an isolated store and creates a temporary lock.
 
-The [external smoke script](../scripts/verify-external-workspace.py) tests actual installed offline Toolkit v2 byte determinism, Workspace doctor, SEF1 course/SEF10 project scaffolding, learner file no-clobber, absence of unapproved SEF1 guide, evidence-v2 init/check/status/explicit export and bad-lock failure. CI stores JSON evidence only, not the archive, keys or real learner data.
+The [external smoke script](../scripts/verify-external-workspace.py) checks deterministic Toolkit v2 exports, Workspace `doctor`, SEF1 and SEF10 scaffolding, and evidence-v2 operations. It also checks that a duplicate course leaves files untouched, an unapproved SEF1 reading plan stays absent and a bad lock is rejected. CI retains JSON results without uploading the test archive, keys or learner data.
 
 To run unit and contract checks:
 
@@ -32,7 +32,7 @@ For disposable publisher-fixture smoke only, with source-built OEE Toolkit and o
 python scripts/verify-external-workspace.py --workspace-source . --oee-source ../open-engineering-education --report ./workspace-test.json
 ```
 
-The --oee-source switch belongs **only** to the release-test fixture publisher, not any learner CLI.
+The `--oee-source` flag is accepted by the release-test fixture publisher only. Learner CLI commands do not use it.
 
 ## Separate stop gates
 
@@ -43,19 +43,21 @@ The --oee-source switch belongs **only** to the release-test fixture publisher, 
 - [ ] Preserve non-disposable learner files and obtain separate approval before destructive data changes.
 - [ ] Independent Workspace release and deployment approval. REL-I05 Content/0xNAND host replacement remains separately tracked.
 
-No successful test is equivalent to a learner grade, a released curriculum, or production authorization.
+A passing test confirms the behavior it exercises. It cannot grade a learner or authorize a production release.
 
 ## Release workflow triggering
 
-The independent three-platform workflow runs for changes to learner-facing
-`README.md` and `CONTRIBUTING.md`, release docs, CLI, templates, tests,
-source/resource code and its own workflow. It can also be dispatched
-manually and runs on `v*` tags as a post-tag verification. **The tag
-trigger cannot substitute for a green pre-tag test on the final main
-commit.** Documentation-only final merges still trigger the pre-tag
-main-branch run.
+The three-platform workflow runs when learner docs (`README.md` and `CONTRIBUTING.md`), maintainer docs, CLI, templates, resource code or tests change. It can also run manually or on `v*` tags. The tag run adds evidence after publication; the release decision still needs a passing run on the final `main` commit before tagging, even if the merge changed only documentation.
 
 Read the run SHA and each Ubuntu/macOS/Windows conclusion. A successful
 run based on a different source commit is insufficient for release
 approval. The [release decision](RELEASE-DECISION.md) records the
 remaining formal publishing steps; the CI signature is always test-only.
+
+## Actual official OEE release acceptance
+
+The [official-release smoke](../.github/workflows/official-release-smoke.yml) downloads all six published files for Toolkit `0.1.0` and curriculum `2026.11.1`. It checks their SHA-256 hashes before installing the wheel and checks the signing key against the independent fingerprint in the [release-trust record](OEE-RELEASE-TRUST.md).
+
+The [offline installer](../scripts/install-official-curriculum.py) uses the committed [curriculum lock](../oee-curriculum.lock.json) to verify the signed attestation and install the archive in a temporary trusted store. The [consumer smoke](../scripts/verify-official-workspace.py) then runs Toolkit export v2, `doctor`, SEF1 and SEF10 generation, and evidence-v2 operations. It tests duplicate-course protection, missing reading-plan approval and invalid-lock rejection before any learner file is created.
+
+The official smoke consumes downloaded release files without an OEE source checkout, test signing key or publishing permission. Wait for both workflows to pass on the final merged `main` commit before creating tag `v0.1.0`. Record the final SHA and run URLs in the [release tracker](https://github.com/0xbuffdev/oee-workspace/issues/18) after the merge, so the documentation does not need a new commit just to refer to itself.
