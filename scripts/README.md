@@ -1,141 +1,72 @@
-# Internal validation and resource tools
+# Workspace maintenance tools
 
-The supported learner command is [`python -m oee_workspace`](../README.md). The
-`scripts/` directory contains **repository-maintenance tools**, not a second
-course or project generator. All CLI commands use Python 3.11+, Git and a
-trusted local OEE Toolkit checkout. No Bash or remote service is required.
+Learners should start with the [Workspace README](../README.md) and the `python -m oee_workspace` CLI. Scripts in this directory maintain the public catalogue, review OEE release changes and test the published files. They are not an alternate course generator.
 
-| Tool | Purpose |
+Use Python 3.11 or newer from the repository root. Learner CLI commands read an already installed, signed OEE curriculum selected by [`oee-curriculum.lock.json`](../oee-curriculum.lock.json). They do not accept a Git checkout or revision, fetch an archive or run learner programs.
+
+## Scripts at a glance
+
+| Script | Purpose |
 | --- | --- |
-| `check-resources.py` | Validate the resource catalogue and resource-map v2 against its exact OEE source |
-| `render-resource-guides.py` | Render or check deterministic, repository-owned guides from reviewed v2 maps |
-| `verify-oee-export.py` | Validate the canonical Toolkit export contract and optional consumer references without parsing OEE Markdown |
-| `report-oee-drift.py` | Compare exact pinned maps with a separately selected upstream OEE commit; report review risks without remapping |
+| `install-official-curriculum.py` | Check six official release assets before installing the checked wheel, then verify and install the signed archive offline |
+| `check-resources.py` | Validate the catalogue and any active release-keyed resource maps |
+| `render-resource-guides.py` | Generate or check reading guides for approved, matching resource maps |
+| `verify-oee-export.py` | Inspect the structure of a Toolkit export v2 for the current contract |
+| `report-oee-drift.py` | Compare reviewed installed releases without changing learner locks or files |
+| `verify-external-workspace.py` | Run independent learner-flow smoke with a disposable test-signed OEE release |
+| `verify-official-workspace.py` | Exercise real published Toolkit and curriculum assets against the Workspace CLI |
 
-## Learner CLI
+## Validate repository contracts
 
-The current module provides the following operations without maintaining
-deprecated Bash commands or project-name aliases:
-
-```text
-python -m oee_workspace doctor --oee OEE_REPO --revision FULL_SHA
-python -m oee_workspace course add SEF1 --oee OEE_REPO --revision FULL_SHA --dest LEARNER_DIR
-python -m oee_workspace resources check --oee OEE_REPO --map MAP_FILE
-python -m oee_workspace evidence init --oee OEE_REPO --revision FULL_SHA --course SEF1 --assessment SEF1-AS1 --dest LEARNER_DIR
-python -m oee_workspace evidence check --oee OEE_REPO --path RECORD_FILE --dest LEARNER_DIR
-python -m oee_workspace status --oee OEE_REPO --dest LEARNER_DIR
-python -m oee_workspace export --oee OEE_REPO --dest LEARNER_DIR --output FILE --attempt UUID
-```
-
-The `--oee` checkout and `--revision` are explicit where source selection
-is needed. A moving `HEAD`, branch or abbreviated SHA cannot replace an exact
-canonical course commit. The CLI refuses unsupported OEE formats: only
-`v0.2.0` and Workspace resource-map v2 are current.
-
-Course generation stages all new files under the learner destination before
-publication. The validated Toolkit course type controls project scaffolding;
-there is no separate arbitrary project generator. An existing course or
-project destination is never merged or overwritten. Expected failed staged
-publication rolls back only newly owned, unchanged directories. Power failure
-or external concurrent mutations can require manual inspection.
-
-Fresh evidence attempts and explicit local exports use a same-directory
-temporary file and an exclusive hard-link installation to prevent
-overwriting existing records. If hard links are unsupported by a selected
-filesystem, publication fails rather than silently replacing a file.
-`--output` for local exports must stay inside the selected learner workspace,
-and exported files contain no artifact bytes. Workspace performs no hidden
-upload, telemetry, automated grading or execution of learner code.
-
-## Resource validation
-
-The resource checker executes the **first-party OEE Toolkit** against the
-map's recorded immutable local Git commit, then checks v2 source references.
-No independent curriculum Markdown parser or schema converter is included.
+The repository currently has no active release-keyed resource maps. The public catalogue still works, and missing optional reading plans never block course scaffolding.
 
 ```sh
-python scripts/check-resources.py --oee /path/to/open-engineering-education
-python scripts/render-resource-guides.py --oee /path/to/open-engineering-education --check
-python -m oee_workspace resources check --oee /path/to/open-engineering-education --map resources/mappings/SEF/SEF1.json
-```
-
-SEF1 has a reviewed, source-pinned map with seven documented partial-coverage
-gaps. Optional resources never replace OEE assessments or require a purchase.
-A course without a matching **reviewed** map still scaffolds without a
-reading plan and explicitly reports why guidance was omitted.
-
-### Export-consumer interface
-
-`verify-oee-export.py` is a narrow structural interface check for the
-first-party Toolkit's `exportVersion: 1` JSON contract, not proof that
-caller-supplied JSON is trustworthy. Normal Workspace operations obtain
-exports directly from the first-party Toolkit.
-
-```sh
-python scripts/verify-oee-export.py \
-  --export /path/to/pinned-course-export.json \
-  --revision FULL_OEE_SOURCE_COMMIT_SHA \
-  --json
-```
-
-A full, locally available source SHA and matching course, outcomes, assessments,
-modules and lessons are mandatory. Missing revisions are incomplete;
-unsupported formats and invalid source references fail explicitly.
-
-## Advisory upstream OEE changes
-
-Pinned maps and published guides are validated against the **recorded**
-revision, not a moving branch. The separate
-[upstream drift workflow](../docs/OEE-UPSTREAM-DRIFT.md) detects meaningful
-changes in a chosen, explicit target revision. Its results never overwrite
-resource maps or infer module/assessment equivalence.
-
-```sh
-# Supply a full OEE Git SHA for the target you wish to inspect.
-python scripts/report-oee-drift.py \
-  --oee /path/to/open-engineering-education \
-  --target-revision TARGET_FULL_SHA \
-  --course SEF1
-```
-
-Drift reports are deterministic JSON. Exit `0` means both revisions were
-structurally comparable, **not** necessarily drift-free; consult
-`results[].state`. Exit `3` means target revision data is incomplete, while
-invalid recorded pins fail. The scheduled/manual workflow preserves a
-separate advisory artifact and job summary. No automatically generated
-resource remap or backward-compatibility reader is provided.
-
-## Independent release smoke
-
-Use the [release-readiness guide](../docs/RELEASE-READINESS.md) to verify an
-entire learner flow from clean Git clones, without relying on private 0xNAND
-content, paid resources or credentials:
-
-```sh
-python scripts/verify-external-workspace.py \
-  --workspace-source . --oee-source /path/to/open-engineering-education \
-  --report ../workspace-readiness.json
-```
-
-The script clones both selected source commits to a temporary directory,
-runs their supported CLI with a separate local learner destination, and
-records a JSON report. The CI release matrix runs it on Linux, macOS and
-Windows, preserving platform artifacts. It does not release/tag software,
-fetch remote sources, or rewrite either source checkout.
-
-## Development checks
-
-```sh
+python scripts/check-resources.py
+python scripts/render-resource-guides.py --check
 python -m unittest discover -s tests -p 'test_*.py' -v
 python -m oee_workspace --help
 npx --yes markdownlint-cli2@0.24.0
 ```
 
-The repository contract CI additionally installs `jsonschema==4.23.0`
-**for schema tests only** and exercises pinned SEF1/SEF10 OEE exports.
-A separate CI matrix runs the public CLI smoke tests on Linux, macOS and
-Windows. Only source repositories you trust should be selected with
-`--oee`: a local Git object ID does not authenticate a repository origin.
+The tests need `jsonschema==4.23.0` for the JSON Schema contract checks. CI installs it separately. Most CLI operations also require the exact official Toolkit distribution and an already installed signed release. See the [installation walkthrough](../README.md).
 
-For evidence record semantics, privacy boundaries and review claims, see
-[the evidence record guide](../evidence/README.md).
+A reviewed, release-keyed map can be checked using the exact lock and a verified store:
+
+```sh
+python scripts/check-resources.py --lock ./oee-curriculum.lock.json
+python scripts/render-resource-guides.py --lock ./oee-curriculum.lock.json --check
+```
+
+These commands validate active maps when they exist. They do not create or approve maps from editorial notes. Resource maps use schema v3 and Toolkit exports use exportVersion 2. See [resource review](../resources/README.md).
+
+## Verify the published OEE release
+
+The [official-release smoke workflow](../.github/workflows/official-release-smoke.yml) downloads the Toolkit `0.1.0` wheel/sdist and curriculum `2026.11.1` archive, attestation, signature and public key. It validates their independently pinned hashes before executing the wheel, verifies the real steward-signed archive and runs the learner CLI on Linux, macOS and Windows.
+
+To check the downloaded assets before installation:
+
+```sh
+python scripts/install-official-curriculum.py --artifacts oee-official-assets --verify-only
+```
+
+After installing the exact wheel and `cryptography`, the [installer](install-official-curriculum.py) and `verify-official-workspace.py` can run offline against those assets. Follow the [README](../README.md) for the complete download, verification and install sequence. Never use a disposable CI signing key as an official learner trust anchor.
+
+The [independent readiness workflow](../.github/workflows/release-readiness.yml) is separate: it builds and signs a disposable OEE test release, then checks Toolkit export, `doctor`, SEF1/SEF10 folders, no-overwrite behavior and evidence operations without any official signing key. Its temporary release is not approved for students.
+
+## Review curriculum changes
+
+A new curriculum release does not update existing learners or make editorial maps approved. Once two releases and their locks have been independently reviewed and installed, compare them with:
+
+```sh
+python scripts/report-oee-drift.py --lock ./oee-curriculum.lock.json --target-lock ./reviewed-next-release.lock.json --course SEF1
+```
+
+The example requires an existing active SEF1 resource map; none has been approved yet, so running it now reports no active maps. Optional `--store` and `--target-store` select existing verified release stores. The advisory comparison reports changed course source hashes, outcomes, assessments and lesson locators. It never selects a new release, transfers chapter mappings or edits learner work.
+
+Read [OEE upstream drift](../docs/OEE-UPSTREAM-DRIFT.md) and [release readiness](../docs/RELEASE-READINESS.md) before approving new mappings or releases.
+
+## Preserve learner files
+
+Course publication stages new directories and refuses existing destinations. Evidence creation and export use exclusive file publication to avoid overwriting records. If the filesystem cannot support the required safe operation, the command fails. Concurrent external mutations or abrupt termination may still require manual inspection.
+
+Exports include selected JSON attempt records, not referenced artifact bytes. Neither scripts nor CLI submit learner data, certify work or operate a hosted grading service. See the [evidence guide](../evidence/README.md) and [AI safety boundaries](../docs/AI-SAFETY.md).

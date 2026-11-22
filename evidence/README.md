@@ -1,28 +1,41 @@
-# Learner-owned evidence records
+# Assessment evidence in your workspace
 
-OEE Workspace records assessment **attempts**, not academic grades or automatic certification. The [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md) remain authoritative.
+You can use OEE Workspace to record what you submitted for each assessment attempt, the work it refers to and any evaluation you received. The [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md) determine what evidence is required.
 
-## Active format
+Workspace records attempts. It does not grade them, establish achievement or issue certificates.
 
-The only active record is [assessment-attempt schema v2](schemas/attempt-v2.schema.json). It contains a UTC timestamp and UUIDv4, an exact source repository and OEE specification, canonical course code/path and the independently selected releaseId, full manifestSha256 and courseSha256. It records one required authored assessment ID, its outcome IDs, optional artifact references, observations, assistance disclosure and an evaluation (initially null).
+## Record format
 
-Artifact paths stay inside the selected learner workspace; optional SHA-256 values verify bytes. Display-only external HTTP(S) references are never fetched. No automatic student-code execution, model access or grading occurs. Evaluations are explicitly self- or human-reported and reviewer identity is **not authenticated**. A passing structural validation does not prove the learner satisfied academic criteria or upgrade the OEE course status.
+The active format is [assessment-attempt schema v2](schemas/attempt-v2.schema.json). Each record has a UUIDv4, UTC timestamp, exact OEE release and course identity, one required assessment ID and its outcome references. Optional fields describe artifacts, observations, assistance and evaluation.
 
-The earlier Git-revision-based evidence contract is **not** an active runtime reader. There is no automatic conversion, retroactive grading, re-pinning or deletion of existing learner files. Non-disposable learner work must be preserved pending a separately approved disposition process.
+New attempts start with an empty artifacts list, an empty observations list and a null evaluation. An evaluation may be self-reported or attributed to a reviewer; the CLI does not authenticate that identity.
 
-## Commands
+References to files inside your Workspace are relative paths. You can include SHA-256 hashes to detect changed bytes. External HTTP(S) references are display-only and are never fetched. Do not point a local artifact outside the learner directory or include private credentials.
 
-After an official curriculum release is reviewed, independently verified/installed and locked for your project:
+## Create, check and export
+
+After [installing the signed curriculum](../README.md#install-the-official-oee-curriculum), run from your Workspace root:
 
 ```sh
 python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .
+```
+
+The command prints the new attempt file, such as `evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json`. Open it, keep the canonical identifiers unchanged and add links to files you actually created. Replace the UUID placeholder in the following commands:
+
+```sh
 python -m oee_workspace evidence check --path evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json --dest .
 python -m oee_workspace status --course SEF1 --dest .
 python -m oee_workspace export --dest . --attempt ATTEMPT-UUID --output exports/selected.json
 ```
 
-Use the actual UUID returned by the first command. The current working directory supplies only its own oee-curriculum.lock.json by default; --lock and --store optionally select reviewed explicit inputs. Missing or altered sources return an incomplete result, never a Git/network fallback.
+The validator checks record shape, release identity, required assessment references and local artifact paths and hashes. Missing files, incorrect hashes and invalid source references fail the check. It does not execute your programs.
 
-New attempt paths follow evidence/PROGRAM/COURSE/ASSESSMENT/UUID.json. Evidence check validates the record format and source identity against the verified Toolkit export, confirms required assessment references, checks local artifacts, and rejects unsafe traversal and mismatched digests. Read-only status reports separate assessment decisions and never infers completion. Export includes only selected JSON records, no artifact bytes, and refuses overwriting existing output or unrelated learner data.
+`status` shows locally recorded attempts and evaluation decisions. `export` writes only the selected JSON records to a new local file; it never includes the referenced artifact bytes or overwrites an existing output file. Share supporting work separately when required.
 
-Unit tests use synthetic records and CI uses disposable signed curriculum releases. Neither constitutes steward authorization or a learner grade.
+Use the default project `oee-curriculum.lock.json` from the working directory, or select a reviewed `--lock` and already verified `--store` explicitly. An absent release cannot be replaced with a Git checkout or automatically fetched.
+
+## Privacy and assessment claims
+
+Keep work you do not want public in a private repository. Review exports and attached files before sending them to an assessor. A structural check or a reviewer name written in JSON does not prove that the course was completed.
+
+The CLI preserves existing learner work. It does not repin evidence, convert attempt formats, revise old assessments, upload records or make academic decisions on your behalf.

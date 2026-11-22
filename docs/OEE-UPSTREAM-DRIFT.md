@@ -1,19 +1,19 @@
-# Advisory comparison between immutable curriculum releases
+# Review changes between signed curriculum releases
 
-Workspace never uses moving upstream Git main, HEAD or a guessed latest curriculum as a learner source. An approved releaseId and full manifestSha256 are selected in a local project lock, and all course bytes are verified by the first-party OEE Toolkit.
+Workspace uses a reviewed `releaseId` and `manifestSha256` from its project lock. The first-party OEE Toolkit verifies the locally installed curriculum before Workspace reads any course data. Normal learner commands do not select Git `main`, fetch a new archive or repin existing work.
 
-**Blocking validation** checks the current release-locked source against every active reviewed resource map. A missing/altered release or invalid source reference fails closed. It does not upgrade a release, migrate old maps or reinterpret learner evidence.
+Resource-map validation is blocking: an active reviewed map must match the exact signed release and course source. Missing, malformed or changed source data fails validation. A map approved for one release cannot be reused on another without review.
 
-**Optional advisory comparison** validates a **second independently approved release lock**, then compares the first-party Toolkit exportVersion 2 for the same course. Differences include source digests, outcomes, assessment criteria, module/lesson locators and affected resource associations. A changed courseSha256 requires review even when derived structural fields remain identical. Neither report creates a reviewed guide nor updates source selection.
+The advisory comparison checks a second, independently reviewed lock and installed release. Toolkit export v2 provides the course hashes, outcomes, assessments and module/lesson locators. The report identifies changes that may affect resource recommendations. Even when visible course structure is unchanged, a different `courseSha256` needs editorial review.
 
-For two already reviewed and installed releases:
+When **both** releases are installed and an active reviewed map exists, run:
 
 ```sh
 python scripts/report-oee-drift.py --lock ./oee-curriculum.lock.json --target-lock ./reviewed-next-release.lock.json --course SEF1
 ```
 
-Optional --store and --target-store select explicit existing trusted stores. The script reports immutable source identities, changes, reference risks, reviewRequired and autoRemapped: false. An unavailable target is incomplete, not unchanged.
+Optional `--store` and `--target-store` select existing verified stores. The tool reports source identities, changed references, `reviewRequired` and `autoRemapped: false`. A missing target is incomplete rather than unchanged. It never writes a new map or edits learner evidence.
 
-There are currently no active resource maps before the first official approved release. [SEF1 editorial findings](../resources/editorial/SEF1-REVIEW.md) remain historical source-specific context and may be reconsidered when a new release is actually approved. Review must explicitly approve any replacement mapping, not automatically transfer old chapter numbers or associate a book with newly changed assessments.
+The signed curriculum `2026.11.1` is published, but **no active release-keyed resource map has been approved**. Until there is one, the example command reports that no active map was selected. The [SEF1 editorial review](../resources/editorial/SEF1-REVIEW.md) and [41-lesson matrix](../resources/editorial/SEF1-LESSON-MAP.md) are research for a future review, not learner-ready guides. Recheck chapter references, free alternatives and OEE-specific assessment behavior against the actual released course before activating a map.
 
-No auto-repin, network fetch, historical-format reader, official certification, learner-data conversion or source Markdown re-parser exists in this advisory path.
+Any new release selection or resource-guide publication requires explicit approval. Workspace does not fetch updates automatically or convert existing learner files.

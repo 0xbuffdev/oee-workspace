@@ -2,17 +2,15 @@
 
 Exercises reinforce recall, reasoning, and implementation. They require you to produce an answer or artifact and explain the reasoning behind it, rather than follow a guided demonstration.
 
-## Create a course workspace
+## Create an exercise folder
 
-From the root of your OEE Workspace checkout, run:
+After [installing the verified OEE release](../README.md#install-the-official-oee-curriculum), run this command from your Workspace root:
 
-```bash
-./scripts/new-course-workspace SEF SEF2
+```sh
+python -m oee_workspace course add SEF1 --dest .
 ```
 
-The example uses a course identifier from the current OEE curriculum. The generator creates the exercise directory alongside the matching lab and notes directories.
-
-The course definition in OEE determines which exercises are required. This directory contains your own solutions, tests, traces, and explanations.
+The command creates `exercises/SEF/SEF1/` alongside the matching lab and notes directories. It refuses to replace an existing course folder. OEE defines the course and assessment requirements; this directory holds your own solutions, tests, traces and explanations.
 
 ## Suggested layout
 
