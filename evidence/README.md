@@ -14,7 +14,7 @@ References to files inside your Workspace are relative paths. You can include SH
 
 ## Create, check and export
 
-After [installing the signed curriculum](../README.md#install-the-official-oee-curriculum), run from your Workspace root:
+After [installing the signed curriculum](../docs/CLI-SETUP.md), run from your Workspace root:
 
 ```sh
 python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .

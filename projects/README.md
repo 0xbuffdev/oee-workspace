@@ -4,7 +4,7 @@ An OEE project is where you apply what you have learned, make engineering decisi
 
 ## Create a project workspace
 
-After [installing the official OEE release](../README.md#install-the-official-oee-curriculum), choose a course that OEE identifies as a project. For the Software Engineering Foundations capstone, run from the Workspace root:
+After [installing the official OEE release](../docs/CLI-SETUP.md), choose a course that OEE identifies as a project. For the Software Engineering Foundations capstone, run from the Workspace root:
 
 ```sh
 python -m oee_workspace course add SEF10 --dest .

@@ -4,7 +4,7 @@ Labs turn course concepts into practical evidence. Each lab answers one concrete
 
 ## Create a course lab
 
-After [installing and verifying the published OEE release](../README.md#install-the-official-oee-curriculum), run this from your Workspace root:
+After [installing and verifying the published OEE release](../docs/CLI-SETUP.md), run this from your Workspace root:
 
 ```sh
 python -m oee_workspace course add SEF1 --dest .

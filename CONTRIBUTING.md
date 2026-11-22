@@ -42,7 +42,7 @@ python -m oee_workspace --help
 npx --yes markdownlint-cli2@0.24.0
 ```
 
-The learner CLI also requires the verified OEE Toolkit and signed curriculum; follow the [README installation instructions](README.md#install-the-official-oee-curriculum).
+The optional learner CLI needs the published OEE Toolkit and verified local curriculum. The [learner CLI setup guide](docs/CLI-SETUP.md) covers installation. Maintainers should use the [approved release trust record](docs/OEE-RELEASE-TRUST.md) when reviewing or changing its source or verification steps.
 
 The [official OEE smoke workflow](.github/workflows/official-release-smoke.yml) downloads the published Toolkit `0.1.0` and signed curriculum `2026.11.1`, verifies their fixed hashes and signature and checks the learner path on Ubuntu, macOS and Windows.
 

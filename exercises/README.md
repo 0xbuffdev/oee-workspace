@@ -4,7 +4,7 @@ Exercises reinforce recall, reasoning, and implementation. They require you to p
 
 ## Create an exercise folder
 
-After [installing the verified OEE release](../README.md#install-the-official-oee-curriculum), run this command from your Workspace root:
+After [installing the verified OEE release](../docs/CLI-SETUP.md), run this command from your Workspace root:
 
 ```sh
 python -m oee_workspace course add SEF1 --dest .

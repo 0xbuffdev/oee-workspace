@@ -6,7 +6,7 @@ The course definition in OEE remains the authoritative source for course outcome
 
 ## Create your course notes
 
-After [verifying and installing the published OEE curriculum](../README.md#install-the-official-oee-curriculum), run this from the root of your Workspace:
+After [verifying and installing the published OEE curriculum](../docs/CLI-SETUP.md), run this from the root of your Workspace:
 
 ```sh
 python -m oee_workspace course add SEF1 --dest .
