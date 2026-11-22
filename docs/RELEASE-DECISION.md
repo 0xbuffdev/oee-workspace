@@ -1,73 +1,41 @@
-# OEE Workspace release decision
+# OEE Workspace v0.1.0 release decision
 
-The steward approved preparation of the OEE and Workspace releases on 2026-11-21, with an explicit review of release checks and documentation before publication.
+The steward approved release preparation on November 21, 2026. OEE Toolkit `0.1.0` and the steward-signed curriculum `2026.11.1` were published on November 22. Workspace `v0.1.0` is the next planned release, separate from the OEE specification `v0.2.0`, Toolkit package and curriculum archive.
 
-The Toolkit `0.1.0` and signed curriculum `2026.11.1` are published. Workspace release preparation is approved, but its own release must wait for both independent test suites to pass on the exact final merged `main` commit across Linux, macOS and Windows. This record tracks that decision and the remaining work.
+The [learner documentation PR #23](https://github.com/0xbuffdev/oee-workspace/pull/23) was DCO-signed and merged on November 22. It updated the README and directory guides to describe the supported release-locked CLI and removed obsolete generator commands.
 
-The existing Workspace release is `v0.0.1`. The next release will include the offline Toolkit v2 consumer path. OEE's specification `v0.2.0` has its own version number, while the signed curriculum is distributed as [`2026.11.1`](https://github.com/0xbuffdev/open-engineering-education/releases/tag/curriculum-2026.11.1).
+## Accepted release scope
 
-## Acceptance scope
+The release includes the Python 3.11+ learner CLI, OEE Toolkit export v2, exact signed curriculum lock, local course and project scaffolding, evidence attempt schema v2, read-only status, explicit JSON export and optional resource-map schema v3.
 
-The next Workspace release must include:
+The default curriculum lock selects the official signed release `2026.11.1` by manifest SHA-256 `57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c`. The separately approved steward Ed25519 public-key DER fingerprint is `0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef`.
 
-- The student-focused README and the maintainer CONTRIBUTING guide.
-- Exact-release Toolkit v2 integration and evidence schema v2.
-- Optional resource-map schema v3, without an invented active SEF1 guide.
-- No overwrite of existing learner files; fail closed for missing,
-  mismatched or compromised release locks.
-- Precise `store_missing` and `lock_digest_not_found` diagnostics, plus
-  existing-course `WSC011 [conflict]`.
-- CI that runs Linux/macOS/Windows release readiness for student docs
-  changes and the exact merged final commit.
-- No assumption of automatic grading, certification, curriculum
-  course readiness or mandatory paid learning resources.
+Normal learner commands do not access the network, install updates, follow a Git branch, overwrite existing learner files or convert earlier evidence. The [resource catalogue](../resources/README.md) is public, but no SEF1 release-keyed resource map has received independent approval. Workspace does not grade assessments, authenticate reviewers or award certificates.
 
-## Required final release evidence
+## Verified merged baseline
 
-- [x] Preflight PR #21 DCO-signed and merged at Workspace main
-      `c3176d5de5a1b69decd6cdb63158bad94ad23a8f`.
-- [ ] This official-release integration PR DCO-signed and merged at
-      a new exact final Workspace main SHA; record post-merge evidence.
-- [x] Preflight `Independent Workspace release readiness` workflow
-      [passed on the previous exact main SHA](https://github.com/0xbuffdev/oee-workspace/actions/runs/44957330776).
-- [ ] The disposable and official signed-release workflows both pass on the
-      **new** exact final merged main SHA on Ubuntu, macOS and Windows.
-      Record both run URLs and all six job conclusions before tagging.
-- [ ] Workspace quality, resource/evidence unit contracts and
-      negative lock/file safety tests pass on the final commit.
-- [x] Coordinated OEE Toolkit portability and 0.1.0 package PRs merged;
-      [published Toolkit](https://github.com/0xbuffdev/open-engineering-education/releases/tag/toolkit-v0.1.0)
-      has independently checked wheel/sdist SHA-256 and three-OS CI.
-- [x] Official whole-curriculum archive, signed attestation, public key
-      and independently packaged Toolkit `0.1.0` are published.
-      Actual manifest SHA-256 and public-key fingerprint are locked.
-- [ ] The **real published release** passes cross-platform offline
-      signature+consumer acceptance on this final Workspace source.
-- [ ] Merge final learner README and official installation/lock instructions
-      and retest their exact merged main SHA before tagging.
-- [ ] Record the selected new Workspace version, GitHub tag and
-      release assets only after the above evidence is complete.
+All four CI workflows passed on Workspace main commit `ed573e81051dd0e7c4bd6936fabc51ce60760304`, the merge of PR #23.
 
-## Release log
-
-| Item | Value |
+| Verification | Results on final documented baseline |
 | --- | --- |
-| Delegated preparation/approval date | 2026-11-21 |
-| Documentation milestone | Student README and maintainer CONTRIBUTING merged previously |
-| Prior tested Workspace SHA | `80050dd9b67c37f05ded8dbeaff7b024fae23a1d`, passed three platforms |
-| Reviewed docs-only SHA | `2b245502c9c31af4016048f92aa55a89ca5f8079`, quality passed; no original release-smoke trigger |
-| Previous confirmed Workspace main SHA | `c3176d5de5a1b69decd6cdb63158bad94ad23a8f` |
-| Previous exact-main disposable smoke | [Passed three OS](https://github.com/0xbuffdev/oee-workspace/actions/runs/44957330776) |
-| **New exact final Workspace SHA for release** | Pending official-installation PR merge |
-| **Exact-final-SHA cross-platform official CI URL** | Pending post-merge run |
-| Official Ubuntu/macOS/Windows job conclusions | Pending post-merge run |
-| Coordinated OEE Toolkit PR | [OEE PR #261](https://github.com/0xbuffdev/open-engineering-education/pull/261) |
-| Official signed curriculum and Toolkit | [`2026.11.1` published](https://github.com/0xbuffdev/open-engineering-education/releases/tag/curriculum-2026.11.1); [Toolkit `0.1.0` published](https://github.com/0xbuffdev/open-engineering-education/releases/tag/toolkit-v0.1.0) |
-| Committed manifest SHA-256 | `57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c` |
-| Independently pinned public-key DER fingerprint | `0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef` |
-| Proposed Workspace version/tag | `v0.1.0` (not created until final CI passes) |
-| Published release status | **Not published by this PR** |
+| [Official signed-release smoke](https://github.com/0xbuffdev/oee-workspace/actions/runs/45005257450) | Ubuntu, macOS and Windows passed |
+| [Independent disposable-release smoke](https://github.com/0xbuffdev/oee-workspace/actions/runs/45005257433) | Ubuntu, macOS and Windows passed |
+| [Workspace release contracts](https://github.com/0xbuffdev/oee-workspace/actions/runs/45005257422) | Passed |
+| [Workspace quality](https://github.com/0xbuffdev/oee-workspace/actions/runs/45005257408) | Passed |
 
-After Workspace is released, finish Content/0xNAND integration against the same reviewed OEE consumer contract. Return to the optional SEF resource mappings afterward. Existing learner work must remain untouched unless a separate reviewed change explicitly authorizes a migration.
+The official smoke uses the separately published OEE Toolkit wheel, signed curriculum archive, attestation and independently reviewed signing-key fingerprint. The disposable smoke uses an isolated test-only signing key. Successful tests establish the checked implementation behavior, not a learner grade or independent academic endorsement.
 
-Record the final Workspace SHA and workflow URLs from GitHub after the signed PR merges. Until those results exist, the release cannot be marked ready.
+## Remaining publication steps
+
+- [x] Publish the separate OEE Toolkit and signed curriculum releases.
+- [x] Merge the student README and current-only documentation corrections with DCO sign-off.
+- [x] Verify the official and disposable three-OS suites on the merged documentation baseline.
+- [ ] Merge this publication-metadata update, including `CITATION.cff` and the public release notes, with DCO sign-off.
+- [ ] Verify quality, resource/evidence contracts and both three-OS suites on the **new exact main SHA after this merge**.
+- [ ] Check that the release date in `CITATION.cff` matches the actual publication date. If publication moves beyond November 22, update it before tagging and rerun the checks on the new final commit.
+- [ ] Create `v0.1.0` on the final approved commit and publish a GitHub release with the [release notes](RELEASE-NOTES-v0.1.0.md).
+- [ ] Confirm the tag resolves to the intended commit and the tag-triggered checks succeed.
+
+Record the final commit and run URLs in [release tracking issue #18](https://github.com/0xbuffdev/oee-workspace/issues/18) after merging, so another documentation-only commit is not required solely to record its own SHA.
+
+This release does not approve a new resource map, change existing learner locks or authorize a Content/0xNAND deployment. Those are separate subsequent reviews.
