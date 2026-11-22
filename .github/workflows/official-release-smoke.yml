@@ -1,0 +1,99 @@
+name: Official published OEE Workspace release smoke
+
+# This release acceptance uses real public Toolkit/curriculum release assets.
+# No disposable signing key and no OEE Git checkout. Normal Workspace CLI
+# remains offline. Network access is restricted to explicit artifact download.
+on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
+      - "oee-curriculum.lock.json"
+      - "oee_workspace/**"
+      - "resources/**"
+      - "evidence/**"
+      - "scripts/install-official-curriculum.py"
+      - "scripts/verify-official-workspace.py"
+      - "tests/**"
+      - ".github/workflows/official-release-smoke.yml"
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
+      - "oee-curriculum.lock.json"
+      - "oee_workspace/**"
+      - "resources/**"
+      - "evidence/**"
+      - "scripts/install-official-curriculum.py"
+      - "scripts/verify-official-workspace.py"
+      - "tests/**"
+      - ".github/workflows/official-release-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-published-release:
+    name: Actual steward-signed archive and Workspace / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout the exact Workspace commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Fetch only the published, fixed-version OEE release files
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p official-release-assets
+          gh release download toolkit-v0.1.0 \
+            --repo 0xbuffdev/open-engineering-education \
+            --dir official-release-assets \
+            --pattern 'oee_toolkit-0.1.0-py3-none-any.whl' \
+            --pattern 'oee_toolkit-0.1.0.tar.gz'
+          gh release download curriculum-2026.11.1 \
+            --repo 0xbuffdev/open-engineering-education \
+            --dir official-release-assets \
+            --pattern 'oee-curriculum-2026.11.1.tar' \
+            --pattern 'oee-curriculum-2026.11.1.attestation.json' \
+            --pattern 'oee-curriculum-2026.11.1.sig' \
+            --pattern 'oee-steward-ed25519-public.pem'
+      - name: Verify all published distribution hashes BEFORE pip installation
+        run: python scripts/install-official-curriculum.py --artifacts official-release-assets --verify-only
+      - name: Install exact approved wheel and signing verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'cryptography>=44,<50'
+          python -m pip install --no-index --no-deps ./official-release-assets/oee_toolkit-0.1.0-py3-none-any.whl
+      - name: Real published archive, signature, lock and learner smoke
+        shell: bash
+        env:
+          OFFICIAL_REPORT: ${{ runner.temp }}/oee-workspace-official-release.json
+        run: |
+          python scripts/verify-official-workspace.py \
+            --artifacts official-release-assets \
+            --report "$OFFICIAL_REPORT"
+      - name: Store audit without the archive, signature or any learner data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-official-oee-2026.11.1-${{ matrix.os }}
+          path: ${{ runner.temp }}/oee-workspace-official-release.json
+          if-no-files-found: warn
+          retention-days: 30

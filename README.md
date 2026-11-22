@@ -3,15 +3,15 @@
 
 # OEE Workspace
 
-OEE Workspace is a free, personal place to do the practical work in the [Open Engineering Education (OEE) curriculum](https://github.com/0xbuffdev/open-engineering-education). You can use it on your own or with a study group. It gives you a way to organize what you study, keep the programs and circuits you build, write down what you learn, and save evidence of the skills you have demonstrated.
+OEE Workspace is a free place to organize your work as you follow the [Open Engineering Education (OEE) curriculum](https://github.com/0xbuffdev/open-engineering-education). Study independently or with a group. Keep your programs, circuits, notes and assessment evidence together in a workspace you control.
 
-OEE tells you which courses to take, what each lesson covers, and what you must be able to do. Workspace gives you folders and simple commands to manage the work. It does not teach the lessons for you, run your assignments, grade your answers, or award certificates. You choose how to study and which free or optional learning materials to use. You do not need a 0xNAND account or a paid book.
+OEE defines the courses, lessons and assessment requirements. Workspace helps you turn those requirements into organized work. You still choose your study materials and complete the exercises yourself. Workspace does not run assignments, grade submissions or award certificates, and you do not need a 0xNAND account or paid books.
 
-**You can start organizing and studying now.** Some commands below depend on an official, signed OEE curriculum release and a published OEE Toolkit. Those official releases are not available yet. Until they are published, follow the manual starting steps. The commands are documented so you know exactly what will become available.
+The [OEE Toolkit 0.1.0](https://github.com/0xbuffdev/open-engineering-education/releases/tag/toolkit-v0.1.0) and [signed OEE curriculum 2026.11.1](https://github.com/0xbuffdev/open-engineering-education/releases/tag/curriculum-2026.11.1) are published. Step 4 explains how to check the signing key and install the verified curriculum for Workspace commands. You can start using the Markdown folders without installing either package.
 
 ## How to use it
 
-The usual learning cycle is straightforward:
+For each course, follow this routine:
 
 1. Choose a course from the public OEE curriculum.
 2. Read the course's prerequisites, modules, lesson descriptions, learning outcomes and required assessments.
@@ -20,7 +20,7 @@ The usual learning cycle is straightforward:
 5. Check your work against the requirements in OEE and save reproducible evidence.
 6. Review what you still need to learn before moving to another course.
 
-For example, [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/SEF1.md) starts with bits and logic and proceeds through storage, computation and program execution. You can use Workspace to keep circuit designs, truth tables, state traces, experiment notes and your records for the three required SEF1 assessments.
+In [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/SEF1.md), you start with bits and logic, then work through storage, computation and program execution. Workspace is where you can save the circuits you build, truth tables, state traces, experiment notes and evidence for SEF1's three required assessments.
 
 The public [SEF program guide](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/README.md) gives the study order and prerequisites. Follow that order, especially where one course depends on work you should already have demonstrated in another.
 
@@ -36,7 +36,7 @@ The public [SEF program guide](https://github.com/0xbuffdev/open-engineering-edu
 | [`resources/`](resources/README.md) | Browse optional books, free websites, tools and reviewed study suggestions |
 | [`evidence/`](evidence/README.md) | Keep records that point to work for required OEE assessments |
 
-The folders belong to you once you create your own copy of this repository. Workspace stores work locally, so you can study without a hosted learning account. You decide what to share and with whom.
+Your copy of the repository is yours to manage. It stores your work locally, and you decide whether to share it. You do not need an account on a hosted learning platform.
 
 ## Start here
 
@@ -51,11 +51,11 @@ git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
 cd YOUR-REPOSITORY
 ```
 
-Replace both uppercase placeholders with the actual names shown on your new repository page. Run the rest of the commands from this directory unless a step says otherwise.
+Replace the uppercase placeholders with your repository's owner and name. Run subsequent commands from that directory unless noted otherwise.
 
 You can also choose **Code > Download ZIP** on the [original repository](https://github.com/0xbuffdev/oee-workspace), extract the files and open the folder on your computer. GitHub and Git are optional for studying. A downloaded ZIP has no Git commit history or remote backup.
 
-If you prefer to fork instead, remember that **forks of public repositories are public by default**. Do not put private student records or credentials in a public fork. The template option is the better choice for a private personal workspace.
+A fork of a public repository is public by default. For private study records or credentials, create a private repository from the template instead of keeping them in a public fork.
 
 ### Step 2. Choose what to learn
 
@@ -70,28 +70,68 @@ Before starting a course, read these parts of its OEE page:
 
 Use the course codes exactly as OEE publishes them, for example `SEF1` and `SEF1-AS1`. Workspace uses those identifiers to keep your work connected to the right requirements.
 
-### Step 3. Begin studying while official releases are pending
+### Step 3. Begin studying, with or without the CLI
 
-You can use the repository as a study notebook today. Read the OEE course, browse the [resource library](resources/README.md), save notes in [`progress.md`](progress.md), and create your own study folder such as `study/SEF1/` for your early exercises.
+You can start with the files already here. Read the [published curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum), browse the [resource library](resources/README.md), update [`progress.md`](progress.md), and make a study folder such as `study/SEF1/`. Python and Toolkit installation can come later.
 
-Keep this temporary folder separate from `labs/SEF/SEF1/`, `notes/SEF/SEF1/` and `exercises/SEF/SEF1/` for now. Once the official release is available, the `course add` command will create those course folders, but **it refuses to replace any folder that already exists**. You can then move your own files into the generated folders yourself, after reviewing where they belong.
+Before running `course add`, keep your manually created work in a separate folder from `labs/SEF/SEF1/`, `notes/SEF/SEF1/` and `exercises/SEF/SEF1/`. The command will stop if those destinations already exist. Afterward, move your earlier work into the generated folders where it belongs.
 
-At this stage, progress notes and files are your own study records. You cannot yet create release-verified assessment attempts with the CLI, because no official signed curriculum release has been installed.
+Step 4 sets up verified course files, source checks and evidence records. Workspace organizes these files; you complete the learning and assessments.
 
-### Step 4. Prepare for the automated tools
+### Step 4. Install and verify the published OEE release
 
-The automated course and evidence commands require:
+Install Python **3.11 or newer** with `pip`, the Toolkit `0.1.0` wheel and signed curriculum `2026.11.1`. Once the release is installed, ordinary Workspace commands run offline against the pinned files. They do not fetch GitHub or follow a moving `main` branch.
 
-- Python **3.11 or newer**, available through `python --version` (on some systems the command is `python3`).
-- An **officially published OEE Toolkit** installed following its [Toolkit instructions](https://github.com/0xbuffdev/open-engineering-education/blob/main/tooling/README.md).
-- An **official signed OEE curriculum release**, verified with an independently trusted steward public key and installed in the Toolkit's local release store.
-- A reviewed `oee-curriculum.lock.json` file in the root of your learner workspace. This file selects the exact approved release you intend to use.
+The project already includes an immutable [`oee-curriculum.lock.json`](oee-curriculum.lock.json).
+It selects exactly:
 
-**Release availability:** OEE Toolkit's installable package is still a development candidate and no official steward-signed curriculum release has been published. There is no official package installation or release-lock value to copy yet. Do not use test keys, example hashes, an unapproved Git commit or an arbitrary download as a substitute.
+- `releaseId: 2026.11.1`
+- `manifestSha256: 57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c`
 
-When the official releases are available, follow their published installation and signature-verification instructions before continuing. The project lock must contain an approved release ID and the complete verified manifest SHA-256. A hash by itself does not prove who published an archive.
+The approved public-key DER SHA-256 fingerprint is `0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef`. Check it against the steward's separate record in [release trust and verification](docs/OEE-RELEASE-TRUST.md). A key file downloaded alongside an archive needs this independent check before it can establish who signed the release.
 
-You will not need to clone the OEE curriculum repository to run the learner commands. Once installed, Toolkit reads the verified curriculum files locally. Workspace uses that same source to identify course outcomes, assessments and lesson positions.
+From the root of your personal Workspace, use [GitHub CLI](https://cli.github.com/) to download the release files into a new `oee-official-assets` folder. The same commands work in a Windows terminal with `gh` and Python:
+
+```sh
+mkdir oee-official-assets
+gh release download toolkit-v0.1.0 --repo 0xbuffdev/open-engineering-education \
+  --dir oee-official-assets \
+  --pattern 'oee_toolkit-0.1.0-py3-none-any.whl' \
+  --pattern 'oee_toolkit-0.1.0.tar.gz'
+gh release download curriculum-2026.11.1 --repo 0xbuffdev/open-engineering-education \
+  --dir oee-official-assets \
+  --pattern 'oee-curriculum-2026.11.1.tar' \
+  --pattern 'oee-curriculum-2026.11.1.attestation.json' \
+  --pattern 'oee-curriculum-2026.11.1.sig' \
+  --pattern 'oee-steward-ed25519-public.pem'
+```
+
+You can alternatively download the **same six named files** directly from
+the [Toolkit release](https://github.com/0xbuffdev/open-engineering-education/releases/tag/toolkit-v0.1.0)
+and [curriculum release](https://github.com/0xbuffdev/open-engineering-education/releases/tag/curriculum-2026.11.1)
+using your browser and put them in `oee-official-assets`. Do not extract
+the curriculum TAR yourself or use a private signing key.
+
+Before installing the Toolkit wheel, check the size and SHA-256 of each downloaded file against the values committed to this repository. The offline preflight also checks the release lock:
+
+```sh
+python scripts/install-official-curriculum.py \
+  --artifacts oee-official-assets --verify-only
+```
+
+If it passes, install the **exact checked** Toolkit wheel and the verifier
+dependency into your chosen Python virtual environment:
+
+```sh
+python -m pip install "cryptography>=44,<50"
+python -m pip install --no-index --no-deps \
+  ./oee-official-assets/oee_toolkit-0.1.0-py3-none-any.whl
+python scripts/install-official-curriculum.py --artifacts oee-official-assets
+```
+
+The installer checks the Ed25519 public-key fingerprint and detached attestation, validates the archive, then adds the curriculum to your local trusted cache. It refuses to overwrite a previously installed snapshot. Finally, Toolkit reads the committed release lock to select the correct source. The installer and Toolkit do not make network requests. Use Windows path separators where your terminal requires them.
+
+Keep notes and assessment records in your private learner repository. The downloaded public key is safe to share; the steward's private signing key is never needed or created on your computer. After a successful installation, you can delete the download folder and keep the verified local release and lock.
 
 By default, Toolkit looks for an already verified release in the following
 user-local folder:
@@ -102,14 +142,15 @@ user-local folder:
 | macOS | `~/Library/Caches/oee/curriculum-releases` |
 | Windows | `%LOCALAPPDATA%\oee\curriculum-releases` |
 
-If an official installer placed the approved archive elsewhere, use
-`--store /path/to/verified-releases` with the learner commands. This is an
-existing local directory, not a download destination; Workspace never
-creates or populates it automatically.
+If you deliberately installed the approved archive in a different store,
+pass `--store /path/to/verified-releases` to the installer and CLI commands.
+The separate explicit installer is allowed to populate the chosen trusted
+directory; Workspace's normal `doctor`, course and evidence commands never
+download or install releases automatically.
 
 ### Step 5. Check that your curriculum is ready
 
-With the official Toolkit, installed curriculum release and reviewed lock in place, open a terminal in the root of your personal Workspace and run:
+After the verified installation above, open a terminal in the root of your personal Workspace and run:
 
 ```sh
 python -m oee_workspace doctor
@@ -125,7 +166,7 @@ python -m oee_workspace doctor --lock ./oee-curriculum.lock.json --store /path/t
 
 The `--store` argument names an already verified local release store; it does not download an archive. On Windows, use the correct local path for your computer.
 
-If `doctor` reports that the source is missing or incomplete, confirm your Toolkit installation, trusted release installation and lock file against the official release instructions. Workspace will not quietly fall back to GitHub or switch to a different curriculum version.
+If `doctor` reports `store_missing` or `lock_digest_not_found`, check the installed-release directory and run the explicit installer again. Do not change the committed lock just to suppress an error. Workspace will not select another release or download one from GitHub.
 
 ### Step 6. Create your course workspace
 
@@ -156,11 +197,11 @@ YOUR-REPOSITORY/
 └── evidence/
 ```
 
-The folders hold your own work. No completed circuits, answers or course lessons are generated. The links in your new files point back to the exact OEE source that was included in the verified release.
+The generated folders are starting points for your own circuits, answers and notes. Their links point to the exact OEE source commit in your verified release.
 
 When a course has a separately approved resource map for your selected release, the command also creates `notes/SEF/SEF1/reading-plan.md`. If the map is missing, unreviewed or belongs to another release, no reading plan is attached. You can still study the course and browse the resource catalogue.
 
-If a course workspace already exists, `course add` stops rather than overwriting your files. Do not delete your work to rerun the generator.
+Running `course add` again for the same course reports a conflict and leaves your existing files in place.
 
 ### Step 7. Study each module and keep the work
 
@@ -178,7 +219,7 @@ You may study with free online material, borrowed books, paid books you already 
 
 ### Step 8. Prepare for the required assessments
 
-An exercise can help you learn without being a required course assessment. Before you claim to have completed a course, open the **Required assessments** section in OEE and read the exact work, criteria and evidence expected.
+Practice exercises may help you prepare, but course completion depends on the assessments specified in OEE. Read the course's **Required assessments** section for the work, criteria and evidence required.
 
 SEF1 has three required assessment IDs:
 
@@ -219,7 +260,7 @@ Add references to files that actually exist in your workspace. For example, afte
 
 The path is an example. Use your real file path, relative to the Workspace root, with forward slashes. Never point a local artifact entry outside your workspace. You can also add an observation describing what you tested, what happened and how you fixed a mistake. The [evidence guide](evidence/README.md) explains the supported format and optional file hashes.
 
-An evidence record documents an attempt. Creating the file does not grade the attempt or prove that an outcome was met.
+An evidence record documents what you submitted for an assessment attempt. A reviewer still needs to evaluate whether you met the outcome.
 
 ### Step 10. Check the evidence and inspect progress
 
@@ -229,7 +270,7 @@ Validate the attempt with the path printed during initialization:
 python -m oee_workspace evidence check --path evidence/SEF/SEF1/SEF1-AS1/ATTEMPT-UUID.json --dest .
 ```
 
-The validator checks the JSON format, the selected OEE release and assessment references, and the existence and integrity of any local artifacts you name. If an artifact is missing or a digest does not match, correct the reference or preserve the attempt as incomplete. The validator never runs your assignment or decides whether your solution is correct.
+The validator checks the JSON record, its release and assessment references, and the local files you cite. It also checks file digests when present. Missing or changed artifacts leave the attempt incomplete until you correct the reference. The validator does not execute or grade your assignment.
 
 To see the recorded assessment attempts and outstanding decisions for the course:
 
@@ -237,7 +278,7 @@ To see the recorded assessment attempts and outstanding decisions for the course
 python -m oee_workspace status --course SEF1 --dest .
 ```
 
-`status` reads your local attempt records. A self-reported or human-reported evaluation is not authenticated by Workspace. This command cannot certify that you have completed a course.
+`status` summarizes local attempts and recorded evaluations. Workspace does not authenticate the evaluator's identity or certify course completion.
 
 Update `progress.md` yourself with the real work completed and links to supporting files. Only mark a course complete when its actual OEE completion conditions have been satisfied through appropriate assessment and review.
 
@@ -251,7 +292,7 @@ python -m oee_workspace export --dest . --attempt ATTEMPT-UUID --output exports/
 
 Replace the UUID with an existing attempt ID. The command writes a new file at `exports/selected.json` and refuses to overwrite an existing file of that name. You can repeat `--attempt` to include more than one specific attempt.
 
-The export contains the selected attempt records only. **It does not contain the actual circuit files, programs, reports or other artifact bytes.** If an assessor needs those files, share them separately through a method you choose. Review the JSON and any attached files before sharing; the built-in secret check is limited and cannot detect every type of private information.
+The export contains only the attempt records you selected. Circuit files, programs, reports and other artifact bytes must be shared separately if an assessor needs them. Review the JSON and any supporting files before sending them; the built-in secret check does not detect every type of private information.
 
 ### Step 12. Continue with other courses and projects
 
@@ -271,7 +312,7 @@ For a project course, Workspace additionally creates `projects/SEF10/` with a pr
 
 The [resource library](resources/README.md) contains optional reading and free tools. Some courses may eventually have a reviewed reading plan linked to individual modules and lessons. The learner remains responsible for checking the exact edition, chapter, access conditions and course outcomes. A missing reading plan never removes OEE's public requirements.
 
-OEE may publish a new signed curriculum release after academic changes. Workspace does **not** automatically switch your selected release, rewrite your notes, change previous evidence records or replace a reading plan. Keep the original release identity with work completed under that version. Review a new release and its resource mapping separately before choosing to change the lock for future study. See [release comparison](docs/OEE-UPSTREAM-DRIFT.md) for what the read-only comparison can show.
+When OEE publishes a new signed curriculum release, your Workspace stays pinned to the current version. Your notes, earlier evidence and reading plans are left alone. Keep each completed attempt tied to the release you used. Review a new release and its resource mapping before updating the lock for future work. The [release comparison](docs/OEE-UPSTREAM-DRIFT.md) explains what changed without editing your files.
 
 ## Privacy, AI and your work
 
