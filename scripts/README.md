@@ -28,7 +28,7 @@ python -m oee_workspace --help
 npx --yes markdownlint-cli2@0.24.0
 ```
 
-The tests need `jsonschema==4.23.0` for the JSON Schema contract checks. CI installs it separately. Most CLI operations also require the exact official Toolkit distribution and an already installed signed release. See the [installation walkthrough](../README.md).
+The tests need `jsonschema==4.23.0` for the JSON Schema contract checks. CI installs it separately. Most CLI operations also require the exact official Toolkit distribution and an already installed signed release. The [learner CLI setup guide](../docs/CLI-SETUP.md) covers installation, and the [release trust record](../docs/OEE-RELEASE-TRUST.md) records the approved technical identities.
 
 A reviewed, release-keyed map can be checked using the exact lock and a verified store:
 
@@ -49,7 +49,7 @@ To check the downloaded assets before installation:
 python scripts/install-official-curriculum.py --artifacts oee-official-assets --verify-only
 ```
 
-After installing the exact wheel and `cryptography`, the [installer](install-official-curriculum.py) and `verify-official-workspace.py` can run offline against those assets. Follow the [README](../README.md) for the complete download, verification and install sequence. Never use a disposable CI signing key as an official learner trust anchor.
+After installing the exact wheel and `cryptography`, the [installer](install-official-curriculum.py) and `verify-official-workspace.py` can run offline against those assets. The [CLI setup guide](../docs/CLI-SETUP.md) gives the learner download and install sequence. Never use a disposable CI signing key as an official learner trust anchor.
 
 The [independent readiness workflow](../.github/workflows/release-readiness.yml) is separate: it builds and signs a disposable OEE test release, then checks Toolkit export, `doctor`, SEF1/SEF10 folders, no-overwrite behavior and evidence operations without any official signing key. Its temporary release is not approved for students.
 
