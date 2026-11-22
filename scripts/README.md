@@ -63,7 +63,7 @@ python scripts/report-oee-drift.py --lock ./oee-curriculum.lock.json --target-lo
 
 The example requires an existing active SEF1 resource map; none has been approved yet, so running it now reports no active maps. Optional `--store` and `--target-store` select existing verified release stores. The advisory comparison reports changed course source hashes, outcomes, assessments and lesson locators. It never selects a new release, transfers chapter mappings or edits learner work.
 
-Read [OEE upstream drift](../docs/OEE-UPSTREAM-DRIFT.md) and [release readiness](../docs/RELEASE-READINESS.md) before approving new mappings or releases.
+Read [OEE upstream drift](../docs/OEE-UPSTREAM-DRIFT.md) before reviewing a new resource map, and [CONTRIBUTING](../CONTRIBUTING.md#releases) before publishing another Workspace version.
 
 ## Preserve learner files
 
