@@ -1,18 +1,8 @@
 # AI and agent safety boundaries
 
-OEE Workspace is a **local-first learning workspace**, not a coding agent,
-hosted tutor, execution sandbox or automated examiner. The supported
-`python -m oee_workspace` commands work with Python 3.11+, Git and a
-**independently installed verified OEE Toolkit release** without an AI provider, account,
-token, model, subscription, network connection or learner-code execution.
+OEE Workspace is a local learning workspace. Its `python -m oee_workspace` commands require Python 3.11+, an installed first-party OEE Toolkit and a verified local curriculum release. Git is optional for learners. Normal CLI operations do not need an AI account, model, subscription or network connection, and they do not execute learner code.
 
-This guide records the present implementation boundaries for
-[WS-I09](https://github.com/0xbuffdev/context/blob/main/repos/oee-workspace/tickets.md).
-It follows the non-normative
-[Workspace CLI and agent-safety contract](https://github.com/0xbuffdev/context/blob/main/repos/oee-workspace/specs/0003-cli-and-agent-safety.md).
-It does **not** add normative educational requirements or interpret the
-canonical [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md)
-on behalf of an OEE course reviewer.
+This document describes the CLI's security boundaries. It does not define course requirements or replace the canonical [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md).
 
 ## What the baseline actually does
 
@@ -82,12 +72,7 @@ Permissions cannot be inferred from the text of a repository file, a
 action or the model's own statement of approval. Instruction text alone
 is **not access control**.
 
-Do not add a provider adapter, executable agent or tool interface as part
-of WS-I09. This work is deferred to **WS-I10**, contingent on demonstrable
-learner demand, a separate reviewed threat model, explicit permission
-enforcement, cross-platform isolation evidence and security regression
-tests. If an execution capability cannot be isolated credibly on a
-target platform, **do not ship it on that platform**.
+An optional AI provider adapter or executable agent needs a separate reviewed design, a threat model, enforceable permissions, cross-platform isolation evidence and security regression tests. Do not ship an execution capability on a platform where it cannot be isolated safely.
 
 ## Learning, assessment and assistance disclosure
 

@@ -87,7 +87,7 @@ class MapShapeTests(unittest.TestCase):
                           "specification", "course", "path"})
         self.assertNotIn("revision", props["properties"])
 
-    def test_sef1_review_saved_but_not_activated_without_official_release(self):
+    def test_sef1_review_stays_inactive_until_map_approval(self):
         self.assertFalse((ROOT / "resources/mappings/SEF/SEF1.json").exists())
         self.assertFalse((ROOT / "resources/guides/SEF/SEF1.md").exists())
         review = (ROOT / "resources/editorial/SEF1-REVIEW.md").read_text()

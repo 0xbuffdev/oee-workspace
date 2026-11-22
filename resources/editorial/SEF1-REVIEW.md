@@ -1,10 +1,8 @@
-# SEF1 — Editorial resource review before release activation
+# SEF1 resource review
 
-**New source-by-source follow-up:** the [41-lesson SEF1 editorial alignment matrix](SEF1-LESSON-MAP.md) compares current OEE SEF1 with existing Content B1/B7/B46 and independently verified free supplementary resources. It is not a release-keyed resource map or grading contract. The historical review below is preserved for source-specific comparison.
+The [41-lesson resource alignment study](SEF1-LESSON-MAP.md) expands this module-level review with lesson-specific suggestions and coverage gaps. Both records are editorial research. This file is **not an active resource map** and cannot generate a learner reading plan.
 
-This preserves the independently reviewed **resource recommendations and known gaps** from the November 20, 2026 SEF1 editorial assessment. It is **not an active resource map**, approved curriculum release, learner guide or transferable source approval.
-
-The reviewed comparison was against the immutable OEE course at Git commit `67416343f3eab17ada5d3c79ae6cc782524c29ff`. That commit is historical editorial context, **not a supported Workspace runtime selector**. An official signed curriculum release, an approved release lock, a re-review of its actual SEF1 export and new release-keyed resource-map v3 are required before publishing a reading plan.
+These module findings were recorded on November 20, 2026, against OEE Git commit `67416343f3eab17ada5d3c79ae6cc782524c29ff`. The commit identifies the material reviewed; it is not a Workspace runtime selector. The official signed [curriculum `2026.11.1`](https://github.com/0xbuffdev/open-engineering-education/releases/tag/curriculum-2026.11.1) and [Toolkit `0.1.0`](https://github.com/0xbuffdev/open-engineering-education/releases/tag/toolkit-v0.1.0) are now published. The findings still need comparison with the exact released SEF1 Toolkit export, plus separate editorial approval of a release-keyed v3 resource map.
 
 **Core distinction:** Nand to Tetris uses a 16-bit Hack computer; OEE SEF1's reference educational machine uses its own eight-bit architecture. Project and book sections are optional reference material, never substitutes for public assessment criteria. The independently identified chapter references and available free alternatives below must be reconfirmed before release activation.
 
@@ -21,9 +19,9 @@ The reviewed comparison was against the immutable OEE course at Git commit `6741
 
 ## Activation checklist
 
-1. Record steward approval of the exact signed, immutable **whole-curriculum** release, license notices, trusted signing key and `manifestSha256`.
-2. Independently install and verify it with the first-party Toolkit. Commit the separately reviewed project `oee-curriculum.lock.json`; never use a synthetic/CI key or checksum as official trust.
-3. Review the new SEF1 `exportVersion: 2` module titles, outcome/assessment references, evidence and public assessment briefs against each proposed resource. Re-check page/chapter/section claims.
+1. Verify the published signed curriculum `2026.11.1` against the [approved trust record](../../docs/OEE-RELEASE-TRUST.md) and installed Toolkit `0.1.0` using the committed `oee-curriculum.lock.json`. Never use a synthetic CI key for learner trust.
+2. Compare the signed release's SEF1 `exportVersion: 2` module and lesson titles, outcome/assessment references and public briefs against the editorial research. Re-check each proposed book edition and chapter/section claim.
+3. Document missing or partially covered requirements, accessibility and free alternatives before editorial approval.
 4. Create `resources/mappings/SEF/SEF1.json` using only schemaVersion 3 with `releaseId`, `manifestSha256`, `courseSha256` and the exact course identifiers. Record the actual remaining gaps; only mark the new mapping reviewed after documented editorial approval.
 5. Regenerate/check the guide using the locked, verified Toolkit export. Learner-owned files are never rewritten or re-pinned.
 

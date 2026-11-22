@@ -52,7 +52,7 @@ The [independent readiness workflow](.github/workflows/release-readiness.yml) us
 python scripts/verify-external-workspace.py --workspace-source . --oee-source ../open-engineering-education --report ./workspace-test.json
 ```
 
-That `--oee-source` option belongs to the fixture script, not to the learner CLI. The [release-readiness guide](docs/RELEASE-READINESS.md) explains the separate test suites and final-commit checks.
+That `--oee-source` option belongs to the fixture script, not the learner CLI. The official and disposable smoke workflows run independently on Linux, macOS and Windows.
 
 ## Templates and safe file creation
 
@@ -78,8 +78,10 @@ The documentation uses the license in [`LICENSE`](LICENSE), and scripts and temp
 
 Follow the [Developer Certificate of Origin](DCO.md) and sign commits with `git commit -s`. The [Code of Conduct](CODE_OF_CONDUCT.md) applies to all contributions.
 
-## Release procedure
+## Releases
 
-A published OEE curriculum release does not automatically publish Workspace. Before releasing a Workspace tag, merge the signed release-preparation PR, verify both three-OS release workflows and contract/quality checks on the **exact final merged main SHA**, then review the release notes and attribution. A passing PR-head run is not enough. See the [release decision](docs/RELEASE-DECISION.md) and [readiness guide](docs/RELEASE-READINESS.md).
+Workspace releases are separate from the OEE specification, Toolkit and signed curriculum. Find published versions and their notes under [GitHub Releases](https://github.com/0xbuffdev/oee-workspace/releases). Keep a published tag on its original commit.
 
-Documentation should describe currently supported features and published versions. Keep historical changes in release notes rather than presenting obsolete commands as alternatives.
+For a new release, review the source lock, signing-key trust, licenses and public documentation. Merge the DCO-signed changes, then check the [official signed-release smoke](.github/workflows/official-release-smoke.yml), [disposable release smoke](.github/workflows/release-readiness.yml), repository contracts and quality checks on the exact final `main` commit. Both smoke workflows must pass on Ubuntu, macOS and Windows. A passing PR-head run does not cover a later merge commit.
+
+Publish the new tag and notes only after those checks pass. Keep release evidence in the relevant PR, GitHub Actions runs and GitHub Release. Update the approved curriculum lock or steward signing key only through a separate reviewed change.

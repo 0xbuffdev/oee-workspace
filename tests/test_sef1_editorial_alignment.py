@@ -2,7 +2,8 @@
 
 These checks intentionally inspect only local editorial Markdown and catalogue
 metadata. The academic assertions against the *current* OEE source were
-independently compared during authoring and must be repeated at release lock.
+independently compared during authoring and must be checked against the signed
+release export before a resource map can be approved.
 """
 from __future__ import annotations
 

@@ -6,11 +6,11 @@ This directory holds the templates used by the Workspace Python CLI. Generated f
 
 | Path | Purpose |
 | --- | --- |
-| `course-workspace/` | Files created for a course's labs, exercises, and notes |
-| `project-workspace/` | Files created for a project: design, evaluation, retrospective, and (where required) authorization |
-| `progress.md` | A general progress and evidence-log template |
+| `course-workspace/` | CLI templates for course labs, exercises and notes |
+| `project-workspace/` | CLI templates for project design, evaluation and retrospective; a separate authorization template is available for manual use |
+| [`../progress.md`](../progress.md) | Progress log included in every new repository made from the Workspace template |
 
-The current [`python -m oee_workspace` CLI](../README.md) uses these files to create a consistent workspace structure.
+The [`python -m oee_workspace` CLI](../README.md) reads the course templates and the project README, design, evaluation and retrospective templates when creating new course workspaces. It does not regenerate the root `progress.md`. For work requiring formal security-test authorization, copy `project-workspace/authorization.md` manually and keep confidential approvals outside the repository.
 
 ## Relationship to OEE
 
