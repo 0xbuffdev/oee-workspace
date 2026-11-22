@@ -2,19 +2,15 @@
 
 Labs turn course concepts into practical evidence. Each lab answers one concrete engineering question and produces an artifact, measurement, or diagnostic trace that another person can inspect.
 
-## Create a course workspace
+## Create a course lab
 
-From the root of your OEE Workspace checkout, run the generator for the course you are starting:
+After [installing and verifying the published OEE release](../README.md#install-the-official-oee-curriculum), run this from your Workspace root:
 
-```bash
-./scripts/new-course-workspace SYS SYS1
+```sh
+python -m oee_workspace course add SEF1 --dest .
 ```
 
-The course code is the program code plus a number. The generator creates a directory under `labs/`, along with matching directories under `exercises/` and `notes/`.
-
-The canonical assignment stays in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education). This directory is where you perform the lab and retain the evidence.
-
-Create a course workspace when you are ready to begin the course. An empty directory is not evidence of progress.
+The command reads the selected OEE course from the verified Toolkit, then creates `labs/SEF/SEF1/` together with the course's notes and exercises folders. It refuses to overwrite an existing course directory. The curriculum defines the lab requirements; your workspace holds the results.
 
 ## Suggested layout
 

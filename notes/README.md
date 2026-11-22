@@ -4,15 +4,15 @@ Notes should help you recover an idea, explain a mechanism, revisit a decision, 
 
 The course definition in OEE remains the authoritative source for course outcomes and completion requirements. Use your notes to record your own understanding and link to evidence in your workspace.
 
-## Create a course workspace
+## Create your course notes
 
-From the root of your OEE Workspace checkout, run:
+After [verifying and installing the published OEE curriculum](../README.md#install-the-official-oee-curriculum), run this from the root of your Workspace:
 
-```bash
-./scripts/new-course-workspace AI AI6
+```sh
+python -m oee_workspace course add SEF1 --dest .
 ```
 
-The example uses a course identifier from the current OEE curriculum. The generator creates the course's notes directory together with the corresponding lab and exercise directories.
+The command creates `notes/SEF/SEF1/resources.md` and `notes/SEF/SEF1/summary.md` alongside the course lab and exercise folders. It does not overwrite existing directories. A reviewed resource map for your exact curriculum release can also add a reading plan; no SEF1 map is currently active.
 
 ## Suggested structure
 

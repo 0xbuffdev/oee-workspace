@@ -1,34 +1,37 @@
-# Public OEE resource library
+# Optional learning resources
 
-OEE Workspace provides optional resources for independent study. The [OEE specification and curriculum](https://github.com/0xbuffdev/open-engineering-education) remain authoritative for courses, outcomes, assessments and completion evidence. Neither paid books nor a private teaching platform are required.
+The Workspace catalogue collects books, free online explanations and tools you can use while studying the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education). OEE remains the source of the course order, learning outcomes and required assessments. You do not need a paid book or a 0xNAND account to study.
 
-## Current map status
+Browse the [books](catalog/books/) and [online resources](catalog/online/) directly. Check a resource's access conditions, edition and relevance to the lesson you are studying.
 
-The [resource catalogue](catalog/) remains browsable: [books](catalog/books/) and [online material](catalog/online/). However, **no active resource-map or generated SEF1 reading guide has yet been approved for an immutable curriculum release**. The previous reviewed Git-source SEF1 map cannot be transferred automatically to a new release. The [current 41-lesson SEF1 resource-alignment study](editorial/SEF1-LESSON-MAP.md) is a non-active editorial artifact, not an approved reading-plan feed. Its references, eight module descriptions and explicit learning gaps survive in the [SEF1 editorial review](editorial/SEF1-REVIEW.md). It documents the 16-bit Hack versus OEE eight-bit teaching-machine differences.
+## Reading plans and review status
 
-New public maps follow only [resource-map schema v3](schemas/course-map.schema.json). Each map identifies the exact releaseId, manifestSha256, courseSha256, OEE specification, course code/path and repository. Its draft/reviewed status describes independent resource editorial review, not source academic readiness.
+**No active, release-keyed SEF1 resource map or generated reading guide has been approved yet.** The [41-lesson SEF1 study](editorial/SEF1-LESSON-MAP.md) and [editorial findings](editorial/SEF1-REVIEW.md) are research for independent review, not a guide automatically attached to learner work.
 
-## Editorial requirements
+Published curriculum `2026.11.1` uses a signed release selected by the project lock. A resource map must use [schema v3](schemas/course-map.schema.json), identify that exact release and the course's content hash, and receive separate editorial approval before a reading plan can be generated.
 
-- Confirm each recommendation against the actual released course, authored outcome/assessment IDs, module titles and optional lesson navigation.
-- Identify edition and source section accurately. Mark module coverage mapped, partial or unmapped, recording clear gaps for partial/unmapped cases.
-- Never treat external projects, books or fees as substitutes for public OEE assessments. Preserve free alternatives.
-- Only an explicitly reviewed map with a matching verified Toolkit exportVersion 2 may generate a guide. Missing or stale maps are not silently attached.
-- Learner resources.md, personal notes, previous projects and assessment evidence are never overwritten or automatically re-pinned.
+For SEF1, *Nand to Tetris* teaches a 16-bit Hack computer while the OEE reference machine is eight-bit. Course-specific instruction behavior, fault cases and assessment criteria must come from OEE itself. Supplementary materials cannot replace those requirements.
 
-## Validate
+## Reviewing a resource map
+
+A reviewer should confirm the cited edition and section against a publisher or the material itself, map recommendations to the released course's actual lessons and outcomes, and record gaps and access limits. Preserve free alternatives where possible. Mark recommendations as reviewed only after that work is complete.
+
+Missing or stale maps cannot be silently attached. The course generator still creates study folders when no approved map exists.
+
+Run repository checks from the root:
 
 ```sh
 python scripts/check-resources.py
 python scripts/render-resource-guides.py --check
-python -m unittest discover -s tests -p "test_*.py" -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-Those commands can validate the public catalogue and the currently empty active map set without an official release. After approval and independent installation of an official signed curriculum release, use an explicitly reviewed lock:
+When a release-locked map exists, validate it against the installed and independently verified source:
 
 ```sh
 python -m oee_workspace resources check --lock ./oee-curriculum.lock.json --map resources/mappings/SEF/SEF1.json
-python scripts/render-resource-guides.py --lock ./oee-curriculum.lock.json --check
 ```
 
-The SEF1 map path above is **illustrative for future activation**, not a currently published map. Optional --store chooses an already verified local release store. A test-only signed archive is not steward authorization. [Release-drift review](../docs/OEE-UPSTREAM-DRIFT.md) is an independent read-only process.
+The map path above is an example of a future approved map; that file is not currently in the repository. `--store` can select another existing verified store.
+
+The [release-comparison guide](../docs/OEE-UPSTREAM-DRIFT.md) explains how to review curriculum changes. Publishing a new signed curriculum cannot approve a resource map or change anyone's notes, reading plans or evidence automatically.

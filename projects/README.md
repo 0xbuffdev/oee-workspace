@@ -1,94 +1,52 @@
-# Projects and portfolio
+# Projects and portfolio work
 
-Projects integrate engineering concepts into systems that can be built, tested, evaluated, and reviewed. They should provide evidence of design judgment and implementation ability, and go beyond showing that something runs.
-
-The canonical project briefs, prerequisite gates, milestones, and acceptance criteria are maintained in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum).
+An OEE project is where you apply what you have learned, make engineering decisions and show how you tested them. The requirements come from the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum), including its project brief, prerequisites, assessment criteria and evidence rules.
 
 ## Create a project workspace
 
-From the root of your OEE Workspace checkout, run a project generator:
+After [installing the official OEE release](../README.md#install-the-official-oee-curriculum), choose a course that OEE identifies as a project. For the Software Engineering Foundations capstone, run from the Workspace root:
 
-```bash
-./scripts/new-project-workspace ledgerlab
+```sh
+python -m oee_workspace course add SEF10 --dest .
 ```
 
-You can specify a different destination:
-
-```bash
-./scripts/new-project-workspace ledgerlab /path/to/workspace
-```
-
-The generator validates the project slug against its supported list and creates a project directory containing a README and technical documents.
-
-It reads each project's canonical brief from the local OEE checkout and fails until that brief exists. Keep its slug list and brief locations aligned with the project documentation in the OEE curriculum.
-
-## Suggested structure
+The command uses the verified course export and creates the normal course folders plus:
 
 ```text
-projects/<project-slug>/
+projects/SEF10/
   README.md
   BRIEF.md
   docs/
     design.md
     evaluation.md
     retrospective.md
-    authorization.md
 ```
 
-The authorization record is required for projects that involve security testing or another activity requiring explicit permission. The generator creates it for the security projects it currently recognizes.
+`BRIEF.md` links to the exact OEE source and identifies the pinned release. The other documents are starting points for your work. Add source code, tests and supporting files as needed. The CLI refuses to overwrite an existing course or project directory.
+
+Creating folders does not prove that you met the prerequisites. Read OEE's entry conditions before beginning. You can organize a personal project manually, but `course add` only accepts canonical OEE course codes, not arbitrary project names.
 
 ## Before implementation
 
-1. Read the canonical project brief.
-2. Confirm that the stated prerequisites have been met.
-3. Define the problem, intended users, scope, and explicit non-goals.
-4. Record important design decisions and constraints.
-5. Identify relevant failure modes and evaluation criteria.
-6. Establish data, access, and authorization boundaries where applicable.
+Record the problem, intended users, expected behavior, constraints and acceptance criteria. Decide what evidence a reviewer will need. For authorized testing, document the permitted systems, scope and stop conditions first.
 
-Do not begin a gated project until its entry requirements have been met. A project begun before its prerequisites becomes tutorial copying.
+The project README should give the setup, build, test, demonstration, evaluation and teardown instructions needed to reproduce your work.
 
-## Engineering expectations
+## What to document
 
-### Correctness
+| Area | What a reviewer should find |
+| --- | --- |
+| Correctness | Normal, boundary, invalid-input and failure tests with results |
+| Design | Component responsibilities, interfaces, decisions and trade-offs |
+| Reproducibility | Versions, fixtures and commands needed to repeat the work |
+| Evaluation | Claim, criteria, method, results and limitations |
+| Security and privacy | Trust boundaries, permissions, data handling and residual risks |
+| Retrospective | Important mistakes and decisions revised after testing |
 
-Test normal behavior, boundary conditions, invalid inputs, and relevant failure cases. Explain what each test establishes and what it does not.
+Use only systems you own or are explicitly authorized to assess when performing security testing. Keep sensitive authorization records, credentials, private data and exploit material out of public version control.
 
-### Reproducibility
+## Completion and portfolio
 
-Document setup, build, test, demo, evaluation, and teardown commands as applicable. A reviewer should be able to reproduce the minimum useful result from a clean checkout.
+Complete the required OEE assessments and retain supporting artifacts. A project is not complete merely because it runs or has a generated folder. The CLI does not grade work, verify prerequisite completion or grant certification.
 
-### Design
-
-Record the architecture, component responsibilities, interfaces, important trade-offs, and rejected alternatives. Explain why the chosen approach fits the problem and where it may fail.
-
-### Evaluation
-
-State the claim being tested and the acceptance criteria before recording results. Include the baseline, method, relevant environment, observed results, and limitations.
-
-### Security and privacy
-
-Projects that process sensitive data, use networks, or invoke AI tools should document relevant trust boundaries and risks.
-
-Security testing must remain within systems you own or are explicitly authorized to test. Record the authorized scope and stop conditions before testing. Keep sensitive authorization records outside public version control and commit only a suitable sanitized record.
-
-## Definition of done
-
-- Problem, scope, and non-goals are documented.
-- Relevant prerequisites have been met.
-- The minimal artifact runs from a clean checkout.
-- Tests cover normal, boundary, invalid, and failure cases where relevant.
-- Design decisions and trade-offs are documented.
-- Evaluation results can be reproduced.
-- Material limitations are clearly stated.
-- A significant failure, correction, or rejected approach is documented.
-- Required authorization and safety records are in place.
-- The retrospective identifies lessons and next steps.
-
-A project's completion claim must be supported by the evidence required in its canonical brief.
-
-## Portfolio presentation
-
-Choose projects that demonstrate meaningful engineering depth. A case study should explain the problem, design, implementation, evaluation, trade-offs, failure analysis, and limitations.
-
-Avoid making claims that the included evidence cannot substantiate.
+A portfolio case study can explain the problem, design, implementation, tests, evaluation, failures and remaining limits. Link to the evidence for each claim.
