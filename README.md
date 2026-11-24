@@ -16,7 +16,7 @@ Browse the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-educat
 - **Starting out?** Begin with [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEF/SEF1.md) and follow the [Foundations study order](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEF/README.md).
 - **Already an engineer?** Choose a course from [Application Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/APP), [Systems Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SYS), [AI Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/AI), or [Security Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEC). Check the course's prerequisites before starting.
 
-These links point to the curriculum release selected by this Workspace. You can browse the latest curriculum separately, but use the selected release for lessons and assessment evidence.
+The courses linked here belong to the release selected by your Workspace. Follow that release when studying or recording assessment evidence. You can also [browse the latest curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum) to see what has changed.
 
 ### 2. Make your own Workspace
 
@@ -74,14 +74,22 @@ The CLI leaves existing files alone. If you expect to use it later, keep your ha
 
 Update [`progress.md`](progress.md) as you study. Note what you finished, link your code or experiments, and record what you still need to work on.
 
-If you installed the CLI, you can create an assessment record after completing the relevant work. For example, for the first SEF1 assessment:
+If you use the CLI, read the assessment requirements for your selected course before starting the work:
+
+```sh
+python -m oee_workspace assessment-context SEF1
+```
+
+The command returns the original course text and any required assessment briefs. See the [evidence guide](evidence/README.md) for help reading the output.
+
+Once you have completed the work for an assessment, create a record. For example, for the first SEF1 assessment:
 
 ```sh
 python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .
 python -m oee_workspace status --course SEF1 --dest .
 ```
 
-Open the new record and add references to your actual work. The [evidence guide](evidence/README.md) explains how to check and share records. Workspace helps you organize evidence; it does not grade work or award certificates.
+Open the new record and add references to your actual work. The evidence guide also explains how to check and share records. Workspace helps you organize evidence; it does not grade work or award certificates.
 
 ## Need help?
 

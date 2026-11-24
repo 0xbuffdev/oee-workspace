@@ -2,7 +2,7 @@
 
 You can study with OEE Workspace without this setup. Follow the [getting-started guide](../README.md) to create a Workspace, choose a course and start working with Markdown files.
 
-Use the CLI when you want course folders created automatically or want to keep local assessment records.
+Use the CLI to create course folders, read assessment requirements from the selected curriculum and keep local assessment records.
 
 ## 1. Check Python
 
@@ -22,7 +22,7 @@ python -m venv .venv
 
 Activate it with `source .venv/bin/activate` on macOS/Linux or `.\.venv\Scripts\Activate.ps1` in Windows PowerShell. If PowerShell prevents activation, see the [Python venv documentation](https://docs.python.org/3/library/venv.html). The example commands below assume the environment is active.
 
-## 2. Download the course files
+## 2. Download the release files
 
 The CLI uses a verified copy of OEE locally. Download the following files from the two published releases.
 
@@ -67,7 +67,7 @@ python -I scripts/install-official-curriculum.py --artifacts ../oee-official-ass
 
 If the check fails, confirm that you downloaded all six files from the release pages and kept their names. Do not bypass a verification failure.
 
-Install the signature-verification dependency and the checked Toolkit wheel:
+Download the signature-verification packages with their approved hashes, then install them and the checked Toolkit wheel from disk. The first command needs internet access; the installation commands work offline.
 
 ```sh
 python -I -m pip download --only-binary=:all: --require-hashes -r oee-release-requirements.txt --dest ../oee-official-assets/wheels
@@ -82,7 +82,7 @@ Now install the verified curriculum:
 python -I scripts/install-official-curriculum.py --artifacts ../oee-official-assets
 ```
 
-The installer checks the official source and signature before installing the curriculum in a local store. Your Workspace already contains the matching release selection. You do not need to edit it or look up any identifiers.
+The installer verifies the signature and the approved public-key fingerprint before storing the curriculum locally. Your Workspace already contains the matching software and curriculum selections. Leave them unchanged.
 
 ## 4. Check that it works
 
@@ -105,7 +105,7 @@ Read your chosen course in the [selected OEE curriculum](https://github.com/0xbu
 python -m oee_workspace assessment-context SEF1
 ```
 
-The JSON contains the complete verified course and required linked briefs. If applicability is `manual-resolution-required`, read those documents to resolve requirements yourself; the CLI has not classified them. Optional practice remains optional. This is not grading or approval.
+The JSON contains the full verified course and any required linked briefs. If you see `manual-resolution-required`, read the original documents and applicable OEE rules to identify the requirements. The [evidence guide](../evidence/README.md#read-the-assessment-requirements) explains how to use the reviewed ranges when they are available.
 
 Store your work in the new folders and update [`progress.md`](../progress.md).
 

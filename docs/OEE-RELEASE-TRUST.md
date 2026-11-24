@@ -1,6 +1,6 @@
-# Approved OEE curriculum release trust reference
+# Approved OEE software and curriculum selection
 
-This record tells Workspace which OEE release and signing key to trust. It pins the source and public-key fingerprints for the steward-published curriculum `2026.11.1`. Updating any of these values requires an explicit review. The private signing key is never kept here.
+Workspace selects the Toolkit software and the signed curriculum independently. The values below identify the approved distributions, source release and steward public key. Changes require maintainer review.
 
 | Property | Approved value |
 | --- | --- |
@@ -19,6 +19,8 @@ This record tells Workspace which OEE release and signing key to trust. It pins 
 
 The steward's local release-script output reported the fingerprint recorded above. Check the downloaded public PEM against that independently approved value. Then verify its Ed25519 signature over the canonical attestation, which includes the archive and manifest digests. A matching tag name alone cannot establish authenticity.
 
-The [offline installer](../scripts/install-official-curriculum.py) checks the hashes of all six published files, the trusted public-key fingerprint and the detached signature. It rejects altered files, missing locks and unexpected version changes. Existing installed releases are left intact. Learners only need the public key; never commit or upload the steward's private key.
+The [offline installer](../scripts/install-official-curriculum.py) checks the hashes of all six published files, the trusted public-key fingerprint and the detached signature. It rejects altered files, missing locks and unexpected version changes. The installer leaves existing releases intact. Only the public key belongs in the download set; never commit or upload the steward's private key.
+
+Normal source commands invoke the Toolkit through `run-pinned-toolkit.py` with isolated Python. The runner checks the installed distribution and module identity against the reviewed software selection. Course exports must declare the approved software and rule set. Assessment context must also match the course export and the verified manifest, including document and range hashes. Use the pinned dependency requirements for both download and offline installation.
 
 If the signing key is compromised or revoked, stop using it for new installations. The OEE steward must publish an advisory, review affected releases and approve a replacement key. Do not silently update learner locks or replace existing files. A verified signature authenticates the source; it does not establish a course's academic readiness or a learner's achievement.

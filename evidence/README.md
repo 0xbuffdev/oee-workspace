@@ -1,6 +1,6 @@
 # Assessment evidence in your workspace
 
-You can use OEE Workspace to record what you submitted for each assessment attempt, the work it refers to and any evaluation you received. The [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/main/spec/evidence-rules.md) determine what evidence is required.
+You can use OEE Workspace to record what you submitted for each assessment attempt, the work it refers to and any evaluation you received. The [OEE Evidence Rules](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/spec/evidence-rules.md) determine what evidence is required.
 
 Workspace records attempts. It does not grade them, establish achievement or issue certificates.
 
@@ -11,6 +11,20 @@ The active format is [assessment-attempt schema v2](schemas/attempt-v2.schema.js
 New attempts start with an empty artifacts list, an empty observations list and a null evaluation. An evaluation may be self-reported or attributed to a reviewer; the CLI does not authenticate that identity.
 
 References to files inside your Workspace are relative paths. You can include SHA-256 hashes to detect changed bytes. External HTTP(S) references are display-only and are never fetched. Do not point a local artifact outside the learner directory or include private credentials.
+
+## Read the assessment requirements
+
+After [setting up the CLI](../docs/CLI-SETUP.md), run:
+
+```sh
+python -m oee_workspace assessment-context SEF1
+```
+
+Replace `SEF1` with your course code. The JSON includes the original course Markdown, required linked briefs and the source identity. You can read the same course using the release-specific link in your generated notes.
+
+For SEF1 in the selected release, `reviewedRanges` points to shared rules, individual assessments, completion requirements and optional practice. Read each range in context: some shared rules apply only to particular tasks. Optional practice does not add required assessments.
+
+If `applicability` is `manual-resolution-required`, read the complete course and relevant briefs yourself, including any applicable OEE specification rules. Workspace has no reviewed range index for that source. The command only reads source data; it never creates an attempt or determines whether you passed.
 
 ## Create, check and export
 
