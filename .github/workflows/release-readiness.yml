@@ -12,6 +12,8 @@ on:
       - "resources/**"
       - "evidence/**"
       - "scripts/**"
+      - "oee-toolkit.lock.json"
+      - "oee-release-requirements.txt"
       - "templates/**"
       - "tests/**"
       - ".github/workflows/release-readiness.yml"
@@ -26,6 +28,8 @@ on:
       - "resources/**"
       - "evidence/**"
       - "scripts/**"
+      - "oee-toolkit.lock.json"
+      - "oee-release-requirements.txt"
       - "templates/**"
       - "tests/**"
       - ".github/workflows/release-readiness.yml"
@@ -57,8 +61,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install source-built first-party Toolkit candidate and disposable signing dependency
-        run: python -m pip install --disable-pip-version-check -e ./_oee "cryptography>=44,<50"
+      - name: Install reviewed Toolkit and signature verifier
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p fixture-wheels
+          gh release download toolkit-v0.2.0 --repo 0xbuffdev/open-engineering-education --dir fixture-wheels --pattern 'oee_toolkit-0.2.0-py3-none-any.whl'
+          python -c "import hashlib,pathlib; assert hashlib.sha256(pathlib.Path('fixture-wheels/oee_toolkit-0.2.0-py3-none-any.whl').read_bytes()).hexdigest() == '933d82a09f8ca01930a9a4e76b1bb399f2d10a940783a3bc6a39e7b5e9dc46f3'"
+          python -I -m pip download --only-binary=:all: --require-hashes -r oee-release-requirements.txt --dest fixture-wheels
+          python -I -m pip install --no-index --find-links fixture-wheels --only-binary=:all: --require-hashes -r oee-release-requirements.txt
+          python -I -m pip install --no-index --no-deps fixture-wheels/oee_toolkit-0.2.0-py3-none-any.whl
+          python -I -m pip check
       - name: Exercise disposable Ed25519-signed release and offline learner path
         shell: bash
         env:

@@ -101,3 +101,23 @@ jobs:
           path: ${{ runner.temp }}/oee-workspace-official-release.json
           if-no-files-found: warn
           retention-days: 30
+
+  compare-source-results:
+    needs: official-published-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: workspace-official-oee-2026.11.1-*
+          path: reports
+      - name: Compare canonical source-derived results across all three platforms
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          reports = [json.loads(path.read_text(encoding="utf-8")) for path in Path("reports").rglob("*.json")]
+          assert len(reports) == 3
+          for field in ("toolkitExportSha256", "assessmentContextSha256", "manualContextSha256"):
+              assert len({row[field] for row in reports}) == 1, field
+          assert all(row["outcome"] == "passed" for row in reports)
+          PY

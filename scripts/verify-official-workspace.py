@@ -86,6 +86,15 @@ def main() -> int:
                 payload["course"]["code"] == "SEF1",
                 "actual release export identity mismatch")
 
+        # A malicious cwd/PYTHONPATH package must never execute.
+        shadow = root / "oee_toolkit"
+        shadow.mkdir()
+        (shadow / "__init__.py").write_text("raise RuntimeError('shadow imported')", encoding="utf-8")
+        shadow_env = {**environment, "PYTHONPATH": str(root)}
+        shadow_export = execute([python, "-I", str(workspace / "scripts/run-pinned-toolkit.py"),
+                                 "export", "SEF1", *shared, "--output", "-"],
+                                cwd=root, env=shadow_env)
+        require(shadow_export == one, "shadowed Toolkit execution")
         context_one = cli("assessment-context", "SEF1", *shared)
         context_two = cli("assessment-context", "SEF1", *shared)
         require(context_one == context_two, "context changed between reads")
@@ -157,6 +166,8 @@ def main() -> int:
                 "approved-steward-public-key-fingerprint",
                 "official-ed25519-attestation-and-offline-install",
                 "real-signed-v2-export-determinism",
+                "isolated-toolkit-shadow-rejection",
+                "verified-context-v1-indexed-and-manual",
                 "workspace-doctor-course-generation-no-clobber",
                 "evidence-v2-init-check-status-export",
                 "corrupt-lock-refused-before-learner-writes",

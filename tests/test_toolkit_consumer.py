@@ -109,6 +109,7 @@ class ReleaseConsumerTests(unittest.TestCase):
             lambda d: d.update(exportVersion=1),
             lambda d: d["source"].update(revision="c" * 40),
             lambda d: d["source"].update(specification="v0.1.0"),
+            lambda d: d["toolkit"].update(toolVersion="0.1.0"),
             lambda d: d["toolkit"].update(ruleSetVersion="unreviewed"),
             lambda d: d["toolkit"].update(legacyCompatibility=True),
         ):

@@ -30,12 +30,14 @@ IMPLEMENTATION = (
     "scripts/check-resources.py",
     "scripts/render-resource-guides.py",
     "scripts/verify-oee-export.py",
+    "scripts/verify-assessment-context.py",
+    "scripts/run-pinned-toolkit.py",
 )
 # All Python child process launches must stay in named, reviewed first-party
 # source/guide verification functions. This is an allowlist, not a sandbox.
 ALLOWED_SUBPROCESS_CALLS = {
     ("oee_workspace/__main__.py", "execute"),
-    ("scripts/check-resources.py", "read_pinned_export"),
+    ("scripts/check-resources.py", "read_pinned_artifact"),
 }
 BANNED_ROOT_IMPORTS = {
     "requests", "httpx", "aiohttp", "websockets", "websocket",

@@ -20,7 +20,7 @@ Create a fresh [virtual environment](https://docs.python.org/3/library/venv.html
 python -m venv .venv
 ```
 
-Activate it with `source .venv/bin/activate` on macOS/Linux or `.\.venv\Scripts\Activate.ps1` in Windows PowerShell. If PowerShell prevents activation, see the [Python venv documentation](https://docs.python.org/3/library/venv.html). The example commands below assume the environment is active .
+Activate it with `source .venv/bin/activate` on macOS/Linux or `.\.venv\Scripts\Activate.ps1` in Windows PowerShell. If PowerShell prevents activation, see the [Python venv documentation](https://docs.python.org/3/library/venv.html). The example commands below assume the environment is active.
 
 ## 2. Download the course files
 
@@ -99,7 +99,7 @@ Existing course folders are never overwritten. If you already created the same f
 
 ## 5. Start studying
 
-Read your chosen course in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum) and follow its lessons and assessments. For the original assessment wording and source locations, run:
+Read your chosen course in the [selected OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum) and follow its lessons and assessments. For the original assessment wording and source locations, run:
 
 ```sh
 python -m oee_workspace assessment-context SEF1
