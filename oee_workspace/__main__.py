@@ -401,7 +401,9 @@ def assessment_context(args) -> None:
         incomplete("assessment context unavailable: " + str(exc), "WSC003")
     except (consumer.ContractError, ValueError, OSError, TypeError, KeyError) as exc:
         invalid("assessment context rejected: " + str(exc), "WSC005")
-    print(json.dumps(context, ensure_ascii=False, sort_keys=True, indent=2))
+    # ASCII escapes keep JSON portable even on Windows legacy stdout encodings.
+    # JSON decoding restores the original Unicode Markdown without alteration.
+    print(json.dumps(context, ensure_ascii=True, sort_keys=True, indent=2))
 
 
 def parser() -> argparse.ArgumentParser:
