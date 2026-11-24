@@ -17,16 +17,10 @@ import sys
 
 RELEASE_ID = "2026.11.1"
 MANIFEST_SHA256 = "57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c"
-STEWARDED_KEY_DER_SHA256 = "0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef"
-PACKAGE_VERSION = "0.2.0"
 # Independently reviewed values from the official GitHub Release and steward
 # publication evidence. Do not accept a moving tag, remote "latest", or
 # arbitrary file of the same name if these bytes do not match.
-ASSETS = {
-    "oee_toolkit-0.2.0-py3-none-any.whl":
-        (45879, "933d82a09f8ca01930a9a4e76b1bb399f2d10a940783a3bc6a39e7b5e9dc46f3"),
-    "oee_toolkit-0.2.0.tar.gz":
-        (43438, "3f49234f7bf05cdc71826801e0e1402fbaea042c4fbdd57c3e232223d97476bb"),
+CURRICULUM_ASSETS = {
     "oee-curriculum-2026.11.1.tar":
         (3768320, "931b30209a2727717af331f4fd46bfc8e637c94c4d1d95d08d6ffeee753c78d2"),
     "oee-curriculum-2026.11.1.attestation.json":
@@ -63,11 +57,20 @@ def validate_lock(path: Path) -> None:
     }, "workspace lock does not identify approved OEE 2026.11.1; never auto-repin")
 
 
+def software_selection():
+    return runpy.run_path(str(Path(__file__).with_name("run-pinned-toolkit.py")))
+
+
+def asset_specs():
+    identity = software_selection()
+    return {**identity["software_assets"](identity["selection"]()), **CURRICULUM_ASSETS}
+
+
 def read_and_hash_assets(folder: Path) -> dict[str, bytes]:
     require(folder.is_dir() and not folder.is_symlink(),
             "artifact directory must be a real directory")
     result = {}
-    for name, (size, expected_sha) in ASSETS.items():
+    for name, (size, expected_sha) in asset_specs().items():
         file = folder / name
         require(file.is_file() and not file.is_symlink(),
                 f"missing or symlinked official asset: {name}")
@@ -92,15 +95,13 @@ def fingerprint_key(pem: bytes) -> str:
 
 
 def verify_official_signature(assets: dict[str, bytes]) -> None:
-    import oee_toolkit
     from oee_toolkit.release_archive import verify_attestation
-    require(oee_toolkit.__version__ == PACKAGE_VERSION,
-            "the installed Toolkit does not match approved software 0.2.0")
+    pin = software_selection()["selection"]()
     archive = assets["oee-curriculum-2026.11.1.tar"]
     attestation = assets["oee-curriculum-2026.11.1.attestation.json"]
     signature = assets["oee-curriculum-2026.11.1.sig"]
     public_pem = assets["oee-steward-ed25519-public.pem"]
-    require(fingerprint_key(public_pem) == STEWARDED_KEY_DER_SHA256,
+    require(fingerprint_key(public_pem) == pin["stewardKeySha256"],
             "steward public key differs from separately approved fingerprint")
     manifest = verify_attestation(
         archive, MANIFEST_SHA256, attestation, signature, public_pem,
@@ -145,7 +146,7 @@ def main() -> int:
                         help="check published asset SHA-256 and lock without importing Toolkit")
     args = parser.parse_args()
     try:
-        identity = runpy.run_path(str(Path(__file__).with_name("run-pinned-toolkit.py")))
+        identity = software_selection()
         identity["selection"]()
         validate_lock(args.lock)
         assets = read_and_hash_assets(args.artifacts)

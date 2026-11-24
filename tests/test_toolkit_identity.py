@@ -23,14 +23,18 @@ class ToolkitIdentityTests(unittest.TestCase):
             original = selection()
             with patch.dict(selection.__globals__, {"ROOT": Path(folder)}):
                 for data in (
-                    json.dumps({**original, "toolVersion": "0.1.0"}),
+                    json.dumps({**original, "toolVersion": "latest"}),
                     json.dumps({**original, "contextVersion": True}),
                     '{"formatVersion":1,' + json.dumps(original)[1:],
-                    json.dumps({**original, "wheelSha256": "f" * 64}),
+                    json.dumps({**original, "wheelSha256": "invalid"}),
+                    json.dumps({**original, "exportVersion": 3}),
                 ):
                     path.write_text(data, encoding="utf-8")
                     with self.assertRaises(ValueError):
                         selection()
+                changed = {**original, "toolVersion": "0.3.0", "wheelSha256": "f" * 64}
+                path.write_text(json.dumps(changed), encoding="utf-8")
+                self.assertEqual(selection(), changed)
 
     def test_wrong_distribution_and_module_origin(self):
         with patch.object(module["sys"], "flags", SimpleNamespace(isolated=1)):

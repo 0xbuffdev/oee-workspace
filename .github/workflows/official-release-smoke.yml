@@ -56,6 +56,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Create clean verification environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .verification-venv
+          if [ "$RUNNER_OS" = Windows ]; then
+            echo "VERIFY_PYTHON=$GITHUB_WORKSPACE/.verification-venv/Scripts/python.exe" >> "$GITHUB_ENV"
+          else
+            echo "VERIFY_PYTHON=$GITHUB_WORKSPACE/.verification-venv/bin/python" >> "$GITHUB_ENV"
+          fi
       - name: Fetch only the published, fixed-version OEE release files
         shell: bash
         env:
@@ -63,11 +73,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p official-release-assets
-          gh release download toolkit-v0.2.0 \
+          version=$("$VERIFY_PYTHON" -I scripts/run-pinned-toolkit.py --selected-version)
+          gh release download "toolkit-v$version" \
             --repo 0xbuffdev/open-engineering-education \
             --dir official-release-assets \
-            --pattern 'oee_toolkit-0.2.0-py3-none-any.whl' \
-            --pattern 'oee_toolkit-0.2.0.tar.gz'
+            --pattern "oee_toolkit-$version-py3-none-any.whl" \
+            --pattern "oee_toolkit-$version.tar.gz"
           gh release download curriculum-2026.11.1 \
             --repo 0xbuffdev/open-engineering-education \
             --dir official-release-assets \
@@ -76,21 +87,23 @@ jobs:
             --pattern 'oee-curriculum-2026.11.1.sig' \
             --pattern 'oee-steward-ed25519-public.pem'
       - name: Verify all published distribution hashes BEFORE pip installation
-        run: python -I scripts/install-official-curriculum.py --artifacts official-release-assets --verify-only
+        shell: bash
+        run: '"$VERIFY_PYTHON" -I scripts/install-official-curriculum.py --artifacts official-release-assets --verify-only'
       - name: Install exact approved wheel and signing verifier
         shell: bash
         run: |
           set -euo pipefail
-          python -I -m pip download --only-binary=:all: --require-hashes -r oee-release-requirements.txt --dest official-release-assets/wheels
-          python -I -m pip install --no-index --find-links official-release-assets/wheels --only-binary=:all: --require-hashes -r oee-release-requirements.txt
-          python -I -m pip install --no-index --no-deps ./official-release-assets/oee_toolkit-0.2.0-py3-none-any.whl
-          python -I -m pip check
+          "$VERIFY_PYTHON" -I -m pip download --only-binary=:all: --require-hashes -r oee-release-requirements.txt --dest official-release-assets/wheels
+          "$VERIFY_PYTHON" -I -m pip install --no-index --find-links official-release-assets/wheels --only-binary=:all: --require-hashes -r oee-release-requirements.txt
+          version=$("$VERIFY_PYTHON" -I scripts/run-pinned-toolkit.py --selected-version)
+          "$VERIFY_PYTHON" -I -m pip install --no-index --no-deps "official-release-assets/oee_toolkit-$version-py3-none-any.whl"
+          "$VERIFY_PYTHON" -I -m pip check
       - name: Real published archive, signature, lock and learner smoke
         shell: bash
         env:
           OFFICIAL_REPORT: ${{ runner.temp }}/oee-workspace-official-release.json
         run: |
-          python scripts/verify-official-workspace.py \
+          "$VERIFY_PYTHON" scripts/verify-official-workspace.py \
             --artifacts official-release-assets \
             --report "$OFFICIAL_REPORT"
       - name: Store audit without the archive, signature or any learner data

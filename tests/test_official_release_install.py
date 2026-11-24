@@ -56,7 +56,7 @@ class OfficialReleaseInstallerTests(unittest.TestCase):
     def test_rejects_same_size_but_wrong_archive_checksum(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            for name, (size, _) in installer.ASSETS.items():
+            for name, (size, _) in installer.asset_specs().items():
                 (root / name).write_bytes(b"x" * size)
             with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
                 installer.read_and_hash_assets(root)

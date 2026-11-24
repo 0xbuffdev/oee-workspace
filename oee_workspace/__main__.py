@@ -395,7 +395,8 @@ def assessment_context(args) -> None:
         context = reader.read_pinned_artifact(lock, args.store, args.code, "assessment-context")
         import runpy
         checker = runpy.run_path(str(ROOT / "scripts/verify-assessment-context.py"))
-        hashes = checker["manifest_hashes"](raw["source"], args.store)
+        manifest = reader.read_pinned_artifact(lock, args.store, args.code, "manifest")
+        hashes = checker["manifest_hashes"](raw["source"], manifest)
         checker["check_context"](context, raw, hashes)
     except reader.PinnedSourceError as exc:
         incomplete("assessment context unavailable: " + str(exc), "WSC003")

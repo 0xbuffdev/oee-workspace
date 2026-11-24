@@ -268,7 +268,7 @@ def read_pinned_export(lock: Path, store: Path | None, course: str) -> dict:
 
 def read_pinned_artifact(lock: Path, store: Path | None, course: str, operation: str) -> dict:
     """Call only the installed first-party Toolkit release consumer (no Git)."""
-    if operation not in ("export", "assessment-context"):
+    if operation not in ("export", "assessment-context", "manifest"):
         raise PinnedSourceError("invalid_reference", "unsupported Toolkit operation")
     if not isinstance(course, str) or not CODE.fullmatch(course):
         raise PinnedSourceError("invalid_reference", "invalid canonical course code")

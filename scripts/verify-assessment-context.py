@@ -3,9 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-from pathlib import Path
-import sys
 
 
 def digest(data):
@@ -27,21 +24,8 @@ def lines(markdown):
     return [part + "\n" for part in parts[:-1]] + ([parts[-1]] if parts[-1] else [])
 
 
-def manifest_hashes(source, store):
-    if store is None:
-        if os.name == "nt":
-            require(bool(os.environ.get("LOCALAPPDATA")), "missing LOCALAPPDATA")
-            root = Path(os.environ["LOCALAPPDATA"])
-        elif sys.platform == "darwin":
-            root = Path.home() / "Library/Caches"
-        else:
-            root = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
-        store = root / "oee/curriculum-releases"
-    path = store / source["manifestSha256"] / "release.json"
-    require(not path.is_symlink() and path.is_file(), "manifest unavailable")
-    data = path.read_bytes()
-    require(digest(data) == source["manifestSha256"], "manifest digest mismatch")
-    manifest = json.loads(data)
+def manifest_hashes(source, manifest):
+    require(digest(canonical(manifest)) == source["manifestSha256"], "manifest digest mismatch")
     require(manifest["releaseId"] == source["releaseId"] and
             manifest["source"]["commit"] == source["originCommit"], "manifest identity mismatch")
     return {entry["path"]: entry["sha256"] for entry in manifest["files"]}
@@ -94,32 +78,33 @@ def check_context(context, export, hashes):
         used.update(paths)
     require(ids == required and used == documents.keys(), "assessment/document applicability mismatch")
 
-    # Independently reviewed navigation index for the exact published SEF1.
-    # Never apply it to an altered revision or to any other course.
-    indexed = (export["source"]["courseSha256"] ==
-               "87f557cac53f6d3aebfe0c808858b620acae7b3a8d50ea5ea468a0e2c2b953bb"
-               and required == ["SEF1-AS1", "SEF1-AS2", "SEF1-AS3"]
-               and len(documents) == 1)
-    expected = [
-        ("completion-rules", 172, 192, required),
-        ("shared-rules", 194, 212, required),
-        ("shared-rules", 214, 273, ["SEF1-AS3"]),
-        ("assessment-definition", 277, 297, ["SEF1-AS1"]),
-        ("assessment-definition", 299, 327, ["SEF1-AS2"]),
-        ("assessment-definition", 329, 362, ["SEF1-AS3"]),
-        ("optional-practice", 364, 388, []),
-        ("completion-rules", 390, 398, required),
-    ] if indexed else []
-    require(context["applicability"] == ("source-indexed" if indexed else "manual-resolution-required"),
-            "unreviewed context applicability")
+    # Applicability belongs to the selected Toolkit, not a Workspace course index.
     ranges = context["reviewedRanges"]
-    require(type(ranges) is list and len(ranges) == len(expected), "unexpected reviewed ranges")
-    for row, (kind, start, end, applicable) in zip(ranges, expected):
-        require(end <= len(documents[course_path]), "range outside source")
-        require(row == {"kind": kind, "location": {"path": course_path,
-                    "startLine": start, "endLine": end}, "assessmentIds": applicable,
-                    "sha256": digest("".join(documents[course_path][start - 1:end]).encode("utf-8"))}
-                and type(row["location"]["startLine"]) is int
-                and type(row["location"]["endLine"]) is int,
-                "reviewed range digest or applicability mismatch")
+    require(type(ranges) is list and context["applicability"] in
+            ("source-indexed", "manual-resolution-required"), "invalid applicability")
+    require(bool(ranges) == (context["applicability"] == "source-indexed"),
+            "reviewed ranges disagree with applicability")
+    seen = set()
+    for row in ranges:
+        require(type(row) is dict and set(row) == {"kind", "location", "assessmentIds", "sha256"},
+                "invalid reviewed range")
+        kind, location, applicable = row["kind"], row["location"], row["assessmentIds"]
+        require(kind in ("completion-rules", "shared-rules", "assessment-definition", "optional-practice"),
+                "invalid reviewed range kind")
+        require(type(location) is dict and set(location) == {"path", "startLine", "endLine"},
+                "invalid range location")
+        path, start, end = location["path"], location["startLine"], location["endLine"]
+        require(type(path) is str and path in documents and type(start) is int and
+                type(end) is int and 1 <= start <= end <= len(documents[path]), "range outside source")
+        key = (path, start, end)
+        require(key not in seen, "duplicate reviewed range")
+        seen.add(key)
+        require(type(applicable) is list and all(type(i) is str for i in applicable)
+                and len(applicable) == len(set(applicable)) and set(applicable) <= set(required),
+                "invalid range assessment membership")
+        require(bool(applicable) == (kind != "optional-practice"), "invalid optional applicability")
+        require(all(path in item["sourcePaths"] for item in context["assessments"]
+                    if item["assessmentId"] in applicable), "range document is not applicable")
+        require(row["sha256"] == digest("".join(documents[path][start - 1:end]).encode("utf-8")),
+                "reviewed range digest mismatch")
     return context

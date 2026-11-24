@@ -14,6 +14,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import runpy
 import sys
 
 SOURCE = "0xbuffdev/open-engineering-education"
@@ -115,9 +116,13 @@ def check_export(data: dict, expected: dict) -> dict:
     toolkit = obj(data.get("toolkit"), "toolkit")
     require(set(toolkit) == {"toolVersion", "ruleSetVersion"},
             "WSX004", "unsupported Toolkit software identity properties")
-    require(toolkit.get("toolVersion") == "0.2.0", "WSX004",
+    try:
+        pin = runpy.run_path(str(Path(__file__).with_name("run-pinned-toolkit.py")))["selection"]()
+    except (ValueError, OSError) as exc:
+        raise ContractError("WSX004", "unsupported_format", "invalid software selection") from exc
+    require(toolkit.get("toolVersion") == pin["toolVersion"], "WSX004",
             "unapproved OEE Toolkit software version")
-    require(toolkit.get("ruleSetVersion") == "v0.2.0-ot-i04",
+    require(toolkit.get("ruleSetVersion") == pin["ruleSetVersion"],
             "WSX004", "unsupported OEE Toolkit rule set")
     course = obj(data.get("course"), "course")
     code = course.get("code")
