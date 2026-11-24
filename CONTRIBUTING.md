@@ -15,7 +15,7 @@ For help studying with Workspace, start with the [learner README](README.md). Th
 | Optional resources and mappings | [`resources/`](resources/) and resource-map schema v3 |
 | Starting files for new courses | [`templates/`](templates/) |
 
-Workspace reads the Toolkit's exportVersion 2 against an exact, reviewed curriculum lock. It does not parse OEE curriculum Markdown itself. Normal learner commands run offline and do not fetch or switch source releases. A passing validation is evidence of structural correctness, not proof of academic readiness or learner achievement.
+Workspace uses the installed Toolkit selected by `oee-toolkit.lock.json` and reads curriculum data from the release pinned by `oee-curriculum.lock.json`. Course export v2 supports structural checks. Assessment context v1 carries the original Markdown and reviewed applicability ranges where available. Workspace verifies both artifacts against the selected source without parsing the curriculum again. Normal learner commands run offline and never switch releases. Academic readiness and learner achievement require human review.
 
 Keep changes to canonical course requirements in OEE. Do not change learner data, introduce a network service, execute a learner's code or add AI grading without a separate reviewed design and security assessment.
 
@@ -31,7 +31,7 @@ A PR should say what changed, which tests ran, whether existing learner files ar
 
 ## Run checks locally
 
-Use Python 3.11 or newer. The repository's schema tests require `jsonschema==4.23.0`, which CI installs separately.
+Use Python 3.11 for the reviewed CLI installation and release smoke tests. The repository's schema tests require `jsonschema==4.23.0`, which CI installs separately.
 
 ```sh
 python -m pip install "jsonschema==4.23.0"
@@ -44,9 +44,9 @@ npx --yes markdownlint-cli2@0.24.0
 
 The optional learner CLI needs the published OEE Toolkit and verified local curriculum. The [learner CLI setup guide](docs/CLI-SETUP.md) covers installation. Maintainers should use the [approved release trust record](docs/OEE-RELEASE-TRUST.md) when reviewing or changing its source or verification steps.
 
-The [official OEE smoke workflow](.github/workflows/official-release-smoke.yml) downloads the published Toolkit `0.1.0` and signed curriculum `2026.11.1`, verifies their fixed hashes and signature and checks the learner path on Ubuntu, macOS and Windows.
+The [official OEE smoke workflow](.github/workflows/official-release-smoke.yml) downloads the published Toolkit `0.2.0` and signed curriculum `2026.11.1`, verifies their fixed hashes and signature and exercises the learner CLI on Ubuntu, macOS and Windows. The workflow compares the course export and assessment context digests across all three platforms.
 
-The [independent readiness workflow](.github/workflows/release-readiness.yml) uses a disposable signed OEE test release. It covers normal behavior and failure handling without the steward's private signing key. To run that maintainer fixture test with an OEE source checkout and the source-built Toolkit available:
+The [independent readiness workflow](.github/workflows/release-readiness.yml) uses a disposable signed OEE test release. It covers normal behavior and failure handling without the steward's private signing key. To run that maintainer fixture test with an OEE source checkout and the exact installed Toolkit 0.2.0 available:
 
 ```sh
 python scripts/verify-external-workspace.py --workspace-source . --oee-source ../open-engineering-education --report ./workspace-test.json

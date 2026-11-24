@@ -26,6 +26,10 @@ class OfficialReleaseInstallerTests(unittest.TestCase):
                  "manifestSha256": "f" * 64},
                 {"formatVersion": 1, "releaseId": "2026.11.2",
                  "manifestSha256": installer.MANIFEST_SHA256},
+                {"formatVersion": True, "releaseId": "2026.11.1",
+                 "manifestSha256": installer.MANIFEST_SHA256},
+                {"formatVersion": 1.0, "releaseId": "2026.11.1",
+                 "manifestSha256": installer.MANIFEST_SHA256},
                 {"formatVersion": 2, "releaseId": "2026.11.1",
                  "manifestSha256": installer.MANIFEST_SHA256},
                 {"formatVersion": 1, "releaseId": "2026.11.1"},
@@ -52,7 +56,7 @@ class OfficialReleaseInstallerTests(unittest.TestCase):
     def test_rejects_same_size_but_wrong_archive_checksum(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            for name, (size, _) in installer.ASSETS.items():
+            for name, (size, _) in installer.asset_specs().items():
                 (root / name).write_bytes(b"x" * size)
             with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
                 installer.read_and_hash_assets(root)

@@ -12,6 +12,8 @@ on:
       - "resources/**"
       - "evidence/**"
       - "scripts/**"
+      - "oee-toolkit.lock.json"
+      - "oee-release-requirements.txt"
       - "templates/**"
       - "tests/**"
       - ".github/workflows/release-readiness.yml"
@@ -26,6 +28,8 @@ on:
       - "resources/**"
       - "evidence/**"
       - "scripts/**"
+      - "oee-toolkit.lock.json"
+      - "oee-release-requirements.txt"
       - "templates/**"
       - "tests/**"
       - ".github/workflows/release-readiness.yml"
@@ -57,14 +61,37 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install source-built first-party Toolkit candidate and disposable signing dependency
-        run: python -m pip install --disable-pip-version-check -e ./_oee "cryptography>=44,<50"
+      - name: Create clean verification environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .verification-venv
+          if [ "$RUNNER_OS" = Windows ]; then
+            echo "VERIFY_PYTHON=$GITHUB_WORKSPACE/.verification-venv/Scripts/python.exe" >> "$GITHUB_ENV"
+          else
+            echo "VERIFY_PYTHON=$GITHUB_WORKSPACE/.verification-venv/bin/python" >> "$GITHUB_ENV"
+          fi
+      - name: Install reviewed Toolkit and signature verifier
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p fixture-wheels
+          version=$("$VERIFY_PYTHON" -I scripts/run-pinned-toolkit.py --selected-version)
+          wheel="oee_toolkit-$version-py3-none-any.whl"
+          gh release download "toolkit-v$version" --repo 0xbuffdev/open-engineering-education --dir fixture-wheels --pattern "$wheel"
+          "$VERIFY_PYTHON" -I scripts/run-pinned-toolkit.py --verify-wheel "fixture-wheels/$wheel"
+          "$VERIFY_PYTHON" -I -m pip download --only-binary=:all: --require-hashes -r oee-release-requirements.txt --dest fixture-wheels
+          "$VERIFY_PYTHON" -I -m pip install --no-index --find-links fixture-wheels --only-binary=:all: --require-hashes -r oee-release-requirements.txt
+          "$VERIFY_PYTHON" -I -m pip install --no-index --no-deps "fixture-wheels/$wheel"
+          "$VERIFY_PYTHON" -I -m pip check
       - name: Exercise disposable Ed25519-signed release and offline learner path
         shell: bash
         env:
           SMOKE_REPORT: ${{ runner.temp }}/oee-workspace-release-v2.json
         run: |
-          python scripts/verify-external-workspace.py \
+          "$VERIFY_PYTHON" scripts/verify-external-workspace.py \
             --workspace-source . --oee-source _oee --report "$SMOKE_REPORT"
       - name: Preserve platform-specific JSON-only acceptance evidence
         if: always()

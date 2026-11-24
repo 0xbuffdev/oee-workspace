@@ -11,12 +11,12 @@ OEE provides the courses, lessons and assessments. Your Workspace holds your not
 
 ### 1. Choose what to learn
 
-Browse the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum) and pick a course that fits your current experience.
+Browse the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum) and pick a course that fits your current experience.
 
-- **Starting out?** Begin with [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/SEF1.md) and follow the [Foundations study order](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/README.md).
-- **Already an engineer?** Choose a course from [Application Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/APP), [Systems Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/SYS), [AI Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/AI), or [Security Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/SEC). Check the course's prerequisites before starting.
+- **Starting out?** Begin with [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEF/SEF1.md) and follow the [Foundations study order](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEF/README.md).
+- **Already an engineer?** Choose a course from [Application Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/APP), [Systems Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SYS), [AI Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/AI), or [Security Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEC). Check the course's prerequisites before starting.
 
-You can explore the curriculum before making a Workspace.
+The courses linked here belong to the release selected by your Workspace. Follow that release when studying or recording assessment evidence. You can also [browse the latest curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum) to see what has changed.
 
 ### 2. Make your own Workspace
 
@@ -39,7 +39,7 @@ If you downloaded a ZIP, open the extracted folder instead. Open your Workspace 
 
 ### 4. Begin your course
 
-Open the course you chose in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum). Read its outcomes and required assessments, then work through the lessons and activities in the course's prescribed order.
+Open the course you chose in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum). Read its outcomes and required assessments, then work through the lessons and activities in the course's prescribed order.
 
 Keep what you produce in your Workspace:
 
@@ -59,7 +59,7 @@ When an assessment asks you to build, explain or demonstrate something, save the
 
 ## Want the Workspace to organize course folders for you?
 
-The optional Python CLI creates course folders using the OEE curriculum. It requires Python 3.11 or newer and a one-time setup. Follow the [CLI setup guide](docs/CLI-SETUP.md), then run these commands from your Workspace folder:
+The optional Python CLI creates course folders using the OEE curriculum. It requires Python 3.11 and a one-time setup. Follow the [CLI setup guide](docs/CLI-SETUP.md), then run these commands from your Workspace folder:
 
 ```sh
 python -m oee_workspace doctor
@@ -74,14 +74,22 @@ The CLI leaves existing files alone. If you expect to use it later, keep your ha
 
 Update [`progress.md`](progress.md) as you study. Note what you finished, link your code or experiments, and record what you still need to work on.
 
-If you installed the CLI, you can create an assessment record after completing the relevant work. For example, for the first SEF1 assessment:
+If you use the CLI, read the assessment requirements for your selected course before starting the work:
+
+```sh
+python -m oee_workspace assessment-context SEF1
+```
+
+The command returns the original course text and any required assessment briefs. See the [evidence guide](evidence/README.md) for help reading the output.
+
+Once you have completed the work for an assessment, create a record. For example, for the first SEF1 assessment:
 
 ```sh
 python -m oee_workspace evidence init --course SEF1 --assessment SEF1-AS1 --dest .
 python -m oee_workspace status --course SEF1 --dest .
 ```
 
-Open the new record and add references to your actual work. The [evidence guide](evidence/README.md) explains how to check and share records. Workspace helps you organize evidence; it does not grade work or award certificates.
+Open the new record and add references to your actual work. The evidence guide also explains how to check and share records. Workspace helps you organize evidence; it does not grade work or award certificates.
 
 ## Need help?
 

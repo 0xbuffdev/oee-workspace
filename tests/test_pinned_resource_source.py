@@ -38,7 +38,7 @@ class OfflineReleaseSourceTests(unittest.TestCase):
             exported = checker.read_pinned_export(self.lock, self.store, "SEF1")
         self.assertEqual(exported["exportVersion"], 2)
         argv = run.call_args.args[0]
-        self.assertEqual(argv[:4], [sys.executable, "-m", "oee_toolkit", "export"])
+        self.assertEqual(argv[:4], [sys.executable, "-I", str(ROOT / "scripts/run-pinned-toolkit.py"), "export"])
         self.assertEqual(argv[4], "SEF1")
         self.assertIn("--lock", argv)
         self.assertIn("--store", argv)

@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "toolVersion": "0.2.0",
+  "ruleSetVersion": "v0.2.0-ot-i04",
+  "exportVersion": 2,
+  "wheelSha256": "933d82a09f8ca01930a9a4e76b1bb399f2d10a940783a3bc6a39e7b5e9dc46f3",
+  "stewardKeySha256": "0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef",
+  "contextVersion": 1,
+  "wheelSize": 45879,
+  "sdistSize": 43438,
+  "sdistSha256": "3f49234f7bf05cdc71826801e0e1402fbaea042c4fbdd57c3e232223d97476bb"
+}

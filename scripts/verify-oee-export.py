@@ -14,6 +14,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import runpy
 import sys
 
 SOURCE = "0xbuffdev/open-engineering-education"
@@ -115,8 +116,13 @@ def check_export(data: dict, expected: dict) -> dict:
     toolkit = obj(data.get("toolkit"), "toolkit")
     require(set(toolkit) == {"toolVersion", "ruleSetVersion"},
             "WSX004", "unsupported Toolkit software identity properties")
-    string(toolkit.get("toolVersion"), "toolkit.toolVersion")
-    require(toolkit.get("ruleSetVersion") == "v0.2.0-ot-i04",
+    try:
+        pin = runpy.run_path(str(Path(__file__).with_name("run-pinned-toolkit.py")))["selection"]()
+    except (ValueError, OSError) as exc:
+        raise ContractError("WSX004", "unsupported_format", "invalid software selection") from exc
+    require(toolkit.get("toolVersion") == pin["toolVersion"], "WSX004",
+            "unapproved OEE Toolkit software version")
+    require(toolkit.get("ruleSetVersion") == pin["ruleSetVersion"],
             "WSX004", "unsupported OEE Toolkit rule set")
     course = obj(data.get("course"), "course")
     code = course.get("code")
@@ -251,9 +257,18 @@ def check_map(mapping: dict, verified: dict) -> None:
                         "WSX016", "resource lesson locator differs from pinned source")
 
 
+def unique_json_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON property")
+        result[key] = value
+    return result
+
+
 def load_json(path: Path) -> dict:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_json_keys)
     except (OSError, ValueError, UnicodeError) as exc:
         raise ContractError("WSX017", "missing_input",
                             f"cannot read valid JSON: {type(exc).__name__}") from exc

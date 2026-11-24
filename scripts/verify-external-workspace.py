@@ -97,9 +97,9 @@ def main():
 
         doctor = cli("doctor", *shared)
         require(FIXTURE_RELEASE in doctor, "doctor lacks release identity")
-        first = run([python, "-m", "oee_toolkit", "export", "SEF1",
+        first = run([python, "-I", str(workspace / "scripts/run-pinned-toolkit.py"), "export", "SEF1",
                      *shared, "--output", "-"], cwd=workspace, env=env)
-        second = run([python, "-m", "oee_toolkit", "export", "SEF1",
+        second = run([python, "-I", str(workspace / "scripts/run-pinned-toolkit.py"), "export", "SEF1",
                       *shared, "--output", "-"], cwd=workspace, env=env)
         require(first == second, "installed Toolkit export must be deterministic")
         exported = json.loads(first)

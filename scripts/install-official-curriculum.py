@@ -11,21 +11,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import runpy
 from pathlib import Path
 import sys
 
 RELEASE_ID = "2026.11.1"
 MANIFEST_SHA256 = "57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c"
-STEWARDED_KEY_DER_SHA256 = "0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef"
-PACKAGE_VERSION = "0.1.0"
 # Independently reviewed values from the official GitHub Release and steward
 # publication evidence. Do not accept a moving tag, remote "latest", or
 # arbitrary file of the same name if these bytes do not match.
-ASSETS = {
-    "oee_toolkit-0.1.0-py3-none-any.whl":
-        (42421, "eb20281dea91d16a03d79535d65a7b8b271894a5d7a5988cc2d356c88993ecf6"),
-    "oee_toolkit-0.1.0.tar.gz":
-        (41163, "8eb21f512b4a0e27615b18261b10cd59495f11049a6d141be9e4ae02505d6501"),
+CURRICULUM_ASSETS = {
     "oee-curriculum-2026.11.1.tar":
         (3768320, "931b30209a2727717af331f4fd46bfc8e637c94c4d1d95d08d6ffeee753c78d2"),
     "oee-curriculum-2026.11.1.attestation.json":
@@ -56,17 +51,26 @@ def validate_lock(path: Path) -> None:
     require(path.stat().st_size <= 4096, "workspace lock too large")
     data = json.loads(path.read_bytes().decode("utf-8", "strict"),
                       object_pairs_hook=_unique_keys)
-    require(type(data) is dict and data == {
+    require(type(data) is dict and type(data.get("formatVersion")) is int and data == {
         "formatVersion": 1, "releaseId": RELEASE_ID,
         "manifestSha256": MANIFEST_SHA256,
     }, "workspace lock does not identify approved OEE 2026.11.1; never auto-repin")
+
+
+def software_selection():
+    return runpy.run_path(str(Path(__file__).with_name("run-pinned-toolkit.py")))
+
+
+def asset_specs():
+    identity = software_selection()
+    return {**identity["software_assets"](identity["selection"]()), **CURRICULUM_ASSETS}
 
 
 def read_and_hash_assets(folder: Path) -> dict[str, bytes]:
     require(folder.is_dir() and not folder.is_symlink(),
             "artifact directory must be a real directory")
     result = {}
-    for name, (size, expected_sha) in ASSETS.items():
+    for name, (size, expected_sha) in asset_specs().items():
         file = folder / name
         require(file.is_file() and not file.is_symlink(),
                 f"missing or symlinked official asset: {name}")
@@ -91,15 +95,13 @@ def fingerprint_key(pem: bytes) -> str:
 
 
 def verify_official_signature(assets: dict[str, bytes]) -> None:
-    import oee_toolkit
     from oee_toolkit.release_archive import verify_attestation
-    require(oee_toolkit.__version__ == PACKAGE_VERSION,
-            "the installed Toolkit does not match approved software 0.1.0")
+    pin = software_selection()["selection"]()
     archive = assets["oee-curriculum-2026.11.1.tar"]
     attestation = assets["oee-curriculum-2026.11.1.attestation.json"]
     signature = assets["oee-curriculum-2026.11.1.sig"]
     public_pem = assets["oee-steward-ed25519-public.pem"]
-    require(fingerprint_key(public_pem) == STEWARDED_KEY_DER_SHA256,
+    require(fingerprint_key(public_pem) == pin["stewardKeySha256"],
             "steward public key differs from separately approved fingerprint")
     manifest = verify_attestation(
         archive, MANIFEST_SHA256, attestation, signature, public_pem,
@@ -112,7 +114,7 @@ def verify_official_signature(assets: dict[str, bytes]) -> None:
 def install(assets: dict[str, bytes], lock: Path, store: Path | None) -> Path:
     from oee_toolkit.release_archive import install_verified_archive
     from oee_toolkit.release_source import default_store, resolve_release
-    store = store if store is not None else default_store()
+    store = (store if store is not None else default_store()).expanduser().absolute()
     # The official installer is offline and refuses overwrites; never make
     # an existing symlink store appear trustworthy by following it.
     require(not store.is_symlink(), "trusted store must not be a symlink")
@@ -144,11 +146,14 @@ def main() -> int:
                         help="check published asset SHA-256 and lock without importing Toolkit")
     args = parser.parse_args()
     try:
+        identity = software_selection()
+        identity["selection"]()
         validate_lock(args.lock)
         assets = read_and_hash_assets(args.artifacts)
         print("All six official assets have exact approved sizes and SHA-256 hashes.")
         if args.verify_only:
             return 0
+        identity["verify_toolkit"]()
         verify_official_signature(assets)
         print("Official steward Ed25519 signature and independently pinned fingerprint: valid.")
         installed = install(assets, args.lock, args.store)
