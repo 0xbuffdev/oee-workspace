@@ -35,7 +35,7 @@ def valid_export():
             "specification": "v0.2.0",
             "coursePath": source_path,
         },
-        "toolkit": {"toolVersion": "0.3.0.dev0", "ruleSetVersion": "v0.2.0-ot-i04"},
+        "toolkit": {"toolVersion": "0.2.0", "ruleSetVersion": "v0.2.0-ot-i04"},
         "course": {"code": "SEF1", "program": "SEF", "type": "course",
                    "status": "draft", "prerequisites": []},
         "outcomes": [

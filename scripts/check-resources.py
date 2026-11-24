@@ -268,7 +268,7 @@ def read_pinned_export(lock: Path, store: Path | None, course: str) -> dict:
         raise PinnedSourceError("invalid_reference", "invalid canonical course code")
     # Toolkit enforces the reviewed lock, signature-installed store, and all
     # source bytes. No repository/local Git or moving-ref fallback exists.
-    argv = [sys.executable, "-m", "oee_toolkit", "export", course,
+    argv = [sys.executable, "-I", str(ROOT / "scripts/run-pinned-toolkit.py"), "export", course,
             "--lock", str(lock), "--output", "-"]
     if store is not None:
         argv.extend(("--store", str(store)))
@@ -306,7 +306,7 @@ def read_pinned_export(lock: Path, store: Path | None, course: str) -> dict:
             category = "tool_error"
         raise PinnedSourceError(category, detail)
     try:
-        exported = json.loads(result.stdout.decode("utf-8"))
+        exported = json.loads(result.stdout.decode("utf-8"), object_pairs_hook=load_consumer().unique_json_keys)
     except (UnicodeError, ValueError) as exc:
         raise PinnedSourceError("tool_error", "invalid Toolkit export JSON") from exc
     if not isinstance(exported, dict):

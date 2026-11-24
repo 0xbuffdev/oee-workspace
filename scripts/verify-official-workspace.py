@@ -58,7 +58,7 @@ def main() -> int:
         learner.mkdir()
 
         verified = execute([
-            python, str(workspace / "scripts/install-official-curriculum.py"),
+            python, "-I", str(workspace / "scripts/install-official-curriculum.py"),
             "--artifacts", str(args.artifacts.resolve(strict=True)),
             "--lock", str(lock), "--store", str(store),
         ], cwd=workspace, env=environment)
@@ -74,9 +74,9 @@ def main() -> int:
         doctor = cli("doctor", *shared)
         require(f"SEF1 @ {RELEASE}" in doctor, "doctor did not inspect official release")
 
-        one = execute([python, "-m", "oee_toolkit", "export", "SEF1",
+        one = execute([python, "-I", str(workspace / "scripts/run-pinned-toolkit.py"), "export", "SEF1",
                        *shared, "--output", "-"], cwd=workspace, env=environment)
-        two = execute([python, "-m", "oee_toolkit", "export", "SEF1",
+        two = execute([python, "-I", str(workspace / "scripts/run-pinned-toolkit.py"), "export", "SEF1",
                        *shared, "--output", "-"], cwd=workspace, env=environment)
         require(one == two, "official Toolkit v2 export changed between runs")
         payload = json.loads(one)
@@ -137,7 +137,7 @@ def main() -> int:
             "releaseId": RELEASE,
             "manifestSha256": MANIFEST_SHA256,
             "publicKeyFingerprint": FINGERPRINT,
-            "toolkit": "oee-toolkit 0.1.0",
+            "toolkit": "oee-toolkit 0.2.0",
             "toolkitExportSha256": hashlib.sha256(one.encode("utf-8")).hexdigest(),
             "checks": [
                 "published-asset-byte-verification",

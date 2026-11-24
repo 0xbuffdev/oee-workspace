@@ -13,8 +13,9 @@ on:
       - "oee_workspace/**"
       - "resources/**"
       - "evidence/**"
-      - "scripts/install-official-curriculum.py"
-      - "scripts/verify-official-workspace.py"
+      - "scripts/**"
+      - "oee-toolkit.lock.json"
+      - "oee-release-requirements.txt"
       - "tests/**"
       - ".github/workflows/official-release-smoke.yml"
   push:
@@ -28,8 +29,9 @@ on:
       - "oee_workspace/**"
       - "resources/**"
       - "evidence/**"
-      - "scripts/install-official-curriculum.py"
-      - "scripts/verify-official-workspace.py"
+      - "scripts/**"
+      - "oee-toolkit.lock.json"
+      - "oee-release-requirements.txt"
       - "tests/**"
       - ".github/workflows/official-release-smoke.yml"
   workflow_dispatch:
@@ -61,11 +63,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p official-release-assets
-          gh release download toolkit-v0.1.0 \
+          gh release download toolkit-v0.2.0 \
             --repo 0xbuffdev/open-engineering-education \
             --dir official-release-assets \
-            --pattern 'oee_toolkit-0.1.0-py3-none-any.whl' \
-            --pattern 'oee_toolkit-0.1.0.tar.gz'
+            --pattern 'oee_toolkit-0.2.0-py3-none-any.whl' \
+            --pattern 'oee_toolkit-0.2.0.tar.gz'
           gh release download curriculum-2026.11.1 \
             --repo 0xbuffdev/open-engineering-education \
             --dir official-release-assets \
@@ -74,13 +76,15 @@ jobs:
             --pattern 'oee-curriculum-2026.11.1.sig' \
             --pattern 'oee-steward-ed25519-public.pem'
       - name: Verify all published distribution hashes BEFORE pip installation
-        run: python scripts/install-official-curriculum.py --artifacts official-release-assets --verify-only
+        run: python -I scripts/install-official-curriculum.py --artifacts official-release-assets --verify-only
       - name: Install exact approved wheel and signing verifier
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check 'cryptography>=44,<50'
-          python -m pip install --no-index --no-deps ./official-release-assets/oee_toolkit-0.1.0-py3-none-any.whl
+          python -I -m pip download --only-binary=:all: --require-hashes -r oee-release-requirements.txt --dest official-release-assets/wheels
+          python -I -m pip install --no-index --find-links official-release-assets/wheels --only-binary=:all: --require-hashes -r oee-release-requirements.txt
+          python -I -m pip install --no-index --no-deps ./official-release-assets/oee_toolkit-0.2.0-py3-none-any.whl
+          python -I -m pip check
       - name: Real published archive, signature, lock and learner smoke
         shell: bash
         env:

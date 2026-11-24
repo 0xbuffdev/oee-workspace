@@ -11,12 +11,12 @@ OEE provides the courses, lessons and assessments. Your Workspace holds your not
 
 ### 1. Choose what to learn
 
-Browse the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum) and pick a course that fits your current experience.
+Browse the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum) and pick a course that fits your current experience.
 
-- **Starting out?** Begin with [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/SEF1.md) and follow the [Foundations study order](https://github.com/0xbuffdev/open-engineering-education/blob/main/curriculum/SEF/README.md).
-- **Already an engineer?** Choose a course from [Application Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/APP), [Systems Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/SYS), [AI Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/AI), or [Security Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum/SEC). Check the course's prerequisites before starting.
+- **Starting out?** Begin with [SEF1: Demystifying the Computer System](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEF/SEF1.md) and follow the [Foundations study order](https://github.com/0xbuffdev/open-engineering-education/blob/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEF/README.md).
+- **Already an engineer?** Choose a course from [Application Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/APP), [Systems Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SYS), [AI Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/AI), or [Security Engineering](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum/SEC). Check the course's prerequisites before starting.
 
-You can explore the curriculum before making a Workspace.
+These links point to the curriculum release selected by this Workspace. You can browse the latest curriculum separately, but use the selected release for lessons and assessment evidence.
 
 ### 2. Make your own Workspace
 
@@ -39,7 +39,7 @@ If you downloaded a ZIP, open the extracted folder instead. Open your Workspace 
 
 ### 4. Begin your course
 
-Open the course you chose in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/main/curriculum). Read its outcomes and required assessments, then work through the lessons and activities in the course's prescribed order.
+Open the course you chose in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum). Read its outcomes and required assessments, then work through the lessons and activities in the course's prescribed order.
 
 Keep what you produce in your Workspace:
 
@@ -59,7 +59,7 @@ When an assessment asks you to build, explain or demonstrate something, save the
 
 ## Want the Workspace to organize course folders for you?
 
-The optional Python CLI creates course folders using the OEE curriculum. It requires Python 3.11 or newer and a one-time setup. Follow the [CLI setup guide](docs/CLI-SETUP.md), then run these commands from your Workspace folder:
+The optional Python CLI creates course folders using the OEE curriculum. It requires Python 3.11 and a one-time setup. Follow the [CLI setup guide](docs/CLI-SETUP.md), then run these commands from your Workspace folder:
 
 ```sh
 python -m oee_workspace doctor

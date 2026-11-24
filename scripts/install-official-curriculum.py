@@ -11,21 +11,22 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import runpy
 from pathlib import Path
 import sys
 
 RELEASE_ID = "2026.11.1"
 MANIFEST_SHA256 = "57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c"
 STEWARDED_KEY_DER_SHA256 = "0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef"
-PACKAGE_VERSION = "0.1.0"
+PACKAGE_VERSION = "0.2.0"
 # Independently reviewed values from the official GitHub Release and steward
 # publication evidence. Do not accept a moving tag, remote "latest", or
 # arbitrary file of the same name if these bytes do not match.
 ASSETS = {
-    "oee_toolkit-0.1.0-py3-none-any.whl":
-        (42421, "eb20281dea91d16a03d79535d65a7b8b271894a5d7a5988cc2d356c88993ecf6"),
-    "oee_toolkit-0.1.0.tar.gz":
-        (41163, "8eb21f512b4a0e27615b18261b10cd59495f11049a6d141be9e4ae02505d6501"),
+    "oee_toolkit-0.2.0-py3-none-any.whl":
+        (45879, "933d82a09f8ca01930a9a4e76b1bb399f2d10a940783a3bc6a39e7b5e9dc46f3"),
+    "oee_toolkit-0.2.0.tar.gz":
+        (43438, "3f49234f7bf05cdc71826801e0e1402fbaea042c4fbdd57c3e232223d97476bb"),
     "oee-curriculum-2026.11.1.tar":
         (3768320, "931b30209a2727717af331f4fd46bfc8e637c94c4d1d95d08d6ffeee753c78d2"),
     "oee-curriculum-2026.11.1.attestation.json":
@@ -56,7 +57,7 @@ def validate_lock(path: Path) -> None:
     require(path.stat().st_size <= 4096, "workspace lock too large")
     data = json.loads(path.read_bytes().decode("utf-8", "strict"),
                       object_pairs_hook=_unique_keys)
-    require(type(data) is dict and data == {
+    require(type(data) is dict and type(data.get("formatVersion")) is int and data == {
         "formatVersion": 1, "releaseId": RELEASE_ID,
         "manifestSha256": MANIFEST_SHA256,
     }, "workspace lock does not identify approved OEE 2026.11.1; never auto-repin")
@@ -94,7 +95,7 @@ def verify_official_signature(assets: dict[str, bytes]) -> None:
     import oee_toolkit
     from oee_toolkit.release_archive import verify_attestation
     require(oee_toolkit.__version__ == PACKAGE_VERSION,
-            "the installed Toolkit does not match approved software 0.1.0")
+            "the installed Toolkit does not match approved software 0.2.0")
     archive = assets["oee-curriculum-2026.11.1.tar"]
     attestation = assets["oee-curriculum-2026.11.1.attestation.json"]
     signature = assets["oee-curriculum-2026.11.1.sig"]
@@ -144,11 +145,14 @@ def main() -> int:
                         help="check published asset SHA-256 and lock without importing Toolkit")
     args = parser.parse_args()
     try:
+        identity = runpy.run_path(str(Path(__file__).with_name("run-pinned-toolkit.py")))
+        identity["selection"]()
         validate_lock(args.lock)
         assets = read_and_hash_assets(args.artifacts)
         print("All six official assets have exact approved sizes and SHA-256 hashes.")
         if args.verify_only:
             return 0
+        identity["verify_toolkit"]()
         verify_official_signature(assets)
         print("Official steward Ed25519 signature and independently pinned fingerprint: valid.")
         installed = install(assets, args.lock, args.store)
