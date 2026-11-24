@@ -44,9 +44,9 @@ npx --yes markdownlint-cli2@0.24.0
 
 The optional learner CLI needs the published OEE Toolkit and verified local curriculum. The [learner CLI setup guide](docs/CLI-SETUP.md) covers installation. Maintainers should use the [approved release trust record](docs/OEE-RELEASE-TRUST.md) when reviewing or changing its source or verification steps.
 
-The [official OEE smoke workflow](.github/workflows/official-release-smoke.yml) downloads the published Toolkit `0.1.0` and signed curriculum `2026.11.1`, verifies their fixed hashes and signature and checks the learner path on Ubuntu, macOS and Windows.
+The [official OEE smoke workflow](.github/workflows/official-release-smoke.yml) downloads the published Toolkit `0.2.0` and signed curriculum `2026.11.1`, verifies their fixed hashes and signature and checks the learner path on Ubuntu, macOS and Windows.
 
-The [independent readiness workflow](.github/workflows/release-readiness.yml) uses a disposable signed OEE test release. It covers normal behavior and failure handling without the steward's private signing key. To run that maintainer fixture test with an OEE source checkout and the source-built Toolkit available:
+The [independent readiness workflow](.github/workflows/release-readiness.yml) uses a disposable signed OEE test release. It covers normal behavior and failure handling without the steward's private signing key. To run that maintainer fixture test with an OEE source checkout and the exact installed Toolkit 0.2.0 available:
 
 ```sh
 python scripts/verify-external-workspace.py --workspace-source . --oee-source ../open-engineering-education --report ./workspace-test.json

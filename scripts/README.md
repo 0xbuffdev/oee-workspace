@@ -41,12 +41,12 @@ These commands validate active maps when they exist. They do not create or appro
 
 ## Verify the published OEE release
 
-The [official-release smoke workflow](../.github/workflows/official-release-smoke.yml) downloads the Toolkit `0.1.0` wheel/sdist and curriculum `2026.11.1` archive, attestation, signature and public key. It validates their independently pinned hashes before executing the wheel, verifies the real steward-signed archive and runs the learner CLI on Linux, macOS and Windows.
+The [official-release smoke workflow](../.github/workflows/official-release-smoke.yml) downloads the Toolkit `0.2.0` wheel/sdist and curriculum `2026.11.1` archive, attestation, signature and public key. It validates their independently pinned hashes before executing the wheel, verifies the real steward-signed archive and runs the learner CLI on Linux, macOS and Windows.
 
 To check the downloaded assets before installation:
 
 ```sh
-python scripts/install-official-curriculum.py --artifacts oee-official-assets --verify-only
+python -I scripts/install-official-curriculum.py --artifacts oee-official-assets --verify-only
 ```
 
 After installing the exact wheel and `cryptography`, the [installer](install-official-curriculum.py) and `verify-official-workspace.py` can run offline against those assets. The [CLI setup guide](../docs/CLI-SETUP.md) gives the learner download and install sequence. Never use a disposable CI signing key as an official learner trust anchor.

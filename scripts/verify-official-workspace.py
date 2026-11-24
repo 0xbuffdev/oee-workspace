@@ -86,6 +86,17 @@ def main() -> int:
                 payload["course"]["code"] == "SEF1",
                 "actual release export identity mismatch")
 
+        context_one = cli("assessment-context", "SEF1", *shared)
+        context_two = cli("assessment-context", "SEF1", *shared)
+        require(context_one == context_two, "context changed between reads")
+        context = json.loads(context_one)
+        require(context["applicability"] == "source-indexed", "SEF1 index missing")
+        require(any(r["kind"] == "optional-practice" and not r["assessmentIds"]
+                    for r in context["reviewedRanges"]), "optional practice misclassified")
+        manual = json.loads(cli("assessment-context", "SEF10", *shared))
+        require(manual["applicability"] == "manual-resolution-required" and
+                not manual["reviewedRanges"], "unindexed course misclassified")
+
         cli("course", "add", "SEF1", *shared, "--dest", str(learner))
         note = learner / "notes/SEF/SEF1/resources.md"
         require(note.is_file(), "SEF1 notes file missing")
@@ -139,6 +150,8 @@ def main() -> int:
             "publicKeyFingerprint": FINGERPRINT,
             "toolkit": "oee-toolkit 0.2.0",
             "toolkitExportSha256": hashlib.sha256(one.encode("utf-8")).hexdigest(),
+            "assessmentContextSha256": context["contextSha256"],
+            "manualContextSha256": manual["contextSha256"],
             "checks": [
                 "published-asset-byte-verification",
                 "approved-steward-public-key-fingerprint",

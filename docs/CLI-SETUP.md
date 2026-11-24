@@ -99,7 +99,15 @@ Existing course folders are never overwritten. If you already created the same f
 
 ## 5. Start studying
 
-Read your chosen course in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum) and follow its lessons and assessments. Store your work in the new folders and update [`progress.md`](../progress.md).
+Read your chosen course in the [OEE curriculum](https://github.com/0xbuffdev/open-engineering-education/tree/f2afed3e36f6ae0495e2b44a8d9337661defeda1/curriculum) and follow its lessons and assessments. For the original assessment wording and source locations, run:
+
+```sh
+python -m oee_workspace assessment-context SEF1
+```
+
+The JSON contains the complete verified course and required linked briefs. If applicability is `manual-resolution-required`, read those documents to resolve requirements yourself; the CLI has not classified them. Optional practice remains optional. This is not grading or approval.
+
+Store your work in the new folders and update [`progress.md`](../progress.md).
 
 For more help, use the [labs](../labs/README.md), [exercises](../exercises/README.md), [notes](../notes/README.md), [projects](../projects/README.md) and [assessment evidence](../evidence/README.md) guides.
 

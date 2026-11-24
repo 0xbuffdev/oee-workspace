@@ -380,6 +380,30 @@ def export(args) -> None:
     print("Review user-authored text for private data before sharing.")
 
 
+def assessment_context(args) -> None:
+    """Read original source-bound requirements; never grade or write records."""
+    from .evidence import load_reader
+    reader = load_reader()
+    consumer = reader.load_consumer()
+    lock = args.lock or Path.cwd() / "oee-curriculum.lock.json"
+    try:
+        expected = consumer.load_lock(lock)
+        raw = reader.read_pinned_export(lock, args.store, args.code)
+        consumer.check_export(raw, expected)
+        if raw["course"]["code"] != args.code:
+            raise ValueError("wrong course returned")
+        context = reader.read_pinned_artifact(lock, args.store, args.code, "assessment-context")
+        import runpy
+        checker = runpy.run_path(str(ROOT / "scripts/verify-assessment-context.py"))
+        hashes = checker["manifest_hashes"](raw["source"], args.store)
+        checker["check_context"](context, raw, hashes)
+    except reader.PinnedSourceError as exc:
+        incomplete("assessment context unavailable: " + str(exc), "WSC003")
+    except (consumer.ContractError, ValueError, OSError, TypeError, KeyError) as exc:
+        invalid("assessment context rejected: " + str(exc), "WSC005")
+    print(json.dumps(context, ensure_ascii=False, sort_keys=True, indent=2))
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, prog="python -m oee_workspace")
     commands = p.add_subparsers(dest="command", required=True)
@@ -397,6 +421,11 @@ def parser() -> argparse.ArgumentParser:
     doc = commands.add_parser("doctor", help="probe local Toolkit and exact course source")
     release_options(doc)
     doc.set_defaults(run=doctor)
+
+    context = commands.add_parser("assessment-context", help="read verified original assessment requirements (JSON)")
+    context.add_argument("code")
+    release_options(context)
+    context.set_defaults(run=assessment_context)
 
     course = commands.add_parser("course", help="course workspace operations")
     courses = course.add_subparsers(dest="course_command", required=True)
