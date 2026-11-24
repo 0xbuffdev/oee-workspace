@@ -114,7 +114,7 @@ def verify_official_signature(assets: dict[str, bytes]) -> None:
 def install(assets: dict[str, bytes], lock: Path, store: Path | None) -> Path:
     from oee_toolkit.release_archive import install_verified_archive
     from oee_toolkit.release_source import default_store, resolve_release
-    store = store if store is not None else default_store()
+    store = (store if store is not None else default_store()).expanduser().absolute()
     # The official installer is offline and refuses overwrites; never make
     # an existing symlink store appear trustworthy by following it.
     require(not store.is_symlink(), "trusted store must not be a symlink")

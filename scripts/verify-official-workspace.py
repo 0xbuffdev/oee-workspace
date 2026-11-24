@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import runpy
 from pathlib import Path
 import subprocess
 import sys
@@ -18,7 +19,6 @@ import tempfile
 
 RELEASE = "2026.11.1"
 MANIFEST_SHA256 = "57441494eb69c2ff9cb3f6029c8adc3c6a56f8c6ecabc43196c9b686e5959a6c"
-FINGERPRINT = "0cbd8335bf39fab19b17a7bfaa33502d121d007fca4bddd5df0f43a9c814e2ef"
 
 
 def require(condition: bool, description: str) -> None:
@@ -49,11 +49,16 @@ def main() -> int:
     environment = {**os.environ, "PYTHONPATH": str(workspace)}
     lock = workspace / "oee-curriculum.lock.json"
     require(lock.is_file(), "reviewed official release lock is missing")
+    pin = runpy.run_path(str(workspace / "scripts/run-pinned-toolkit.py"))["selection"]()
 
     with tempfile.TemporaryDirectory(prefix="oee-ws-official-") as folder:
         root = Path(folder)
-        store = root / "trusted-release-store"
-        store.mkdir()
+        # Direct default-store lookup into the disposable test root on each OS.
+        environment.update(HOME=str(root), USERPROFILE=str(root),
+                           LOCALAPPDATA=str(root), XDG_CACHE_HOME=str(root))
+        cache = root / "Library/Caches" if sys.platform == "darwin" else root
+        store = cache / "oee/curriculum-releases"
+        store.mkdir(parents=True)
         learner = root / "learner"
         learner.mkdir()
 
@@ -99,9 +104,52 @@ def main() -> int:
         context_two = cli("assessment-context", "SEF1", *shared)
         require(context_one == context_two, "context changed between reads")
         context = json.loads(context_one)
+        require(cli("assessment-context", "SEF1", "--lock", str(lock)) == context_one,
+                "default Toolkit store disagrees with explicit store")
+        relative_store = "~/" + store.relative_to(root).as_posix()
+        require(cli("assessment-context", "SEF1", "--lock", str(lock), "--store", relative_store) == context_one,
+                "home-relative Toolkit store disagrees with explicit store")
         require(context["applicability"] == "source-indexed", "SEF1 index missing")
         require(any(r["kind"] == "optional-practice" and not r["assessmentIds"]
                     for r in context["reviewedRanges"]), "optional practice misclassified")
+        # Published SEF1 acceptance fixture; no course-specific runtime policy.
+        ranges = context["reviewedRanges"]
+        all_ids = ["SEF1-AS1", "SEF1-AS2", "SEF1-AS3"]
+        expected = [
+            ("completion-rules", 172, 192, all_ids),
+            ("shared-rules", 194, 212, all_ids),
+            ("shared-rules", 214, 273, ["SEF1-AS3"]),
+            ("assessment-definition", 277, 297, ["SEF1-AS1"]),
+            ("assessment-definition", 299, 327, ["SEF1-AS2"]),
+            ("assessment-definition", 329, 362, ["SEF1-AS3"]),
+            ("optional-practice", 364, 388, []),
+            ("completion-rules", 390, 398, all_ids),
+        ]
+        require([(r["kind"], r["location"]["startLine"], r["location"]["endLine"],
+                  r["assessmentIds"]) for r in ranges] == expected, "SEF1 applicability changed")
+        require(context["source"]["courseSha256"] ==
+                "87f557cac53f6d3aebfe0c808858b620acae7b3a8d50ea5ea468a0e2c2b953bb",
+                "SEF1 acceptance fixture source changed")
+        checker = runpy.run_path(str(workspace / "scripts/verify-assessment-context.py"))
+        lines = checker["lines"](context["documents"][0]["markdown"])
+        def excerpt(index):
+            loc = ranges[index]["location"]
+            return "".join(lines[loc["startLine"] - 1:loc["endLine"]])
+        shared_rules = excerpt(1)
+        require("For SEF1-AS1 and SEF1-AS2" in shared_rules and
+                "inspectable simulator circuits" in shared_rules and
+                "fully gate-implemented CPU is **not required**" in shared_rules,
+                "conditional circuit requirements lost")
+        require("inspectable simulator files" in excerpt(3) and
+                "independently inspectable" in excerpt(4), "circuit evidence lost")
+        machine = excerpt(2)
+        for phrase in ("these three reset to zero", "reset `Z=0`", "**untaken** `JZ`",
+                       "without changing `PC`, registers, RAM, or device latches",
+                       "`STORE F0` sets the display latch", "`LOAD F1` before input"):
+            require(phrase in machine, "AS3 reference machine constraint lost: " + phrase)
+        require("without partial state commits" in excerpt(5) and
+                "not additional summative submissions" in excerpt(6),
+                "AS3 fault or optional-practice semantics lost")
         manual = json.loads(cli("assessment-context", "SEF10", *shared))
         require(manual["applicability"] == "manual-resolution-required" and
                 not manual["reviewedRanges"], "unindexed course misclassified")
@@ -156,8 +204,8 @@ def main() -> int:
             "outcome": "passed",
             "releaseId": RELEASE,
             "manifestSha256": MANIFEST_SHA256,
-            "publicKeyFingerprint": FINGERPRINT,
-            "toolkit": "oee-toolkit 0.2.0",
+            "publicKeyFingerprint": pin["stewardKeySha256"],
+            "toolkit": "oee-toolkit " + pin["toolVersion"],
             "toolkitExportSha256": hashlib.sha256(one.encode("utf-8")).hexdigest(),
             "assessmentContextSha256": context["contextSha256"],
             "manualContextSha256": manual["contextSha256"],
@@ -168,6 +216,8 @@ def main() -> int:
                 "real-signed-v2-export-determinism",
                 "isolated-toolkit-shadow-rejection",
                 "verified-context-v1-indexed-and-manual",
+                "default-and-home-relative-store-resolution",
+                "published-sef1-conditional-assessment-semantics",
                 "workspace-doctor-course-generation-no-clobber",
                 "evidence-v2-init-check-status-export",
                 "corrupt-lock-refused-before-learner-writes",

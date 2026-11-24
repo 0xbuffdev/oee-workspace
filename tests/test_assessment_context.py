@@ -67,3 +67,36 @@ class AssessmentContextTests(unittest.TestCase):
         changed["contextSha256"] = "0" * 64
         with self.assertRaises(ValueError):
             check(changed, export, hashes)
+
+    def test_generic_index_for_any_reviewed_source(self):
+        context, export, hashes = fixture()
+        path = context["documents"][0]["path"]
+        context["applicability"] = "source-indexed"
+        context["reviewedRanges"] = [
+            {"kind": "assessment-definition",
+             "location": {"path": path, "startLine": 1, "endLine": 1},
+             "assessmentIds": ["SEF1-AS1"],
+             "sha256": digest(b"Original required assessment.\n")},
+            {"kind": "optional-practice",
+             "location": {"path": path, "startLine": 2, "endLine": 2},
+             "assessmentIds": [], "sha256": digest(b"Optional practice.\n")},
+        ]
+        seal(context)
+        self.assertEqual(check(context, export, hashes), context)
+        for mutate in (
+            lambda c: c["reviewedRanges"][0].update(sha256="f" * 64),
+            lambda c: c["reviewedRanges"][0]["location"].update(endLine=3),
+            lambda c: c["reviewedRanges"][0]["location"].update(startLine=True),
+            lambda c: c["reviewedRanges"][0]["location"].update(path="unknown.md"),
+            lambda c: c["reviewedRanges"][0].update(assessmentIds=["SEF1-AS99"]),
+            lambda c: c["reviewedRanges"][0].update(assessmentIds=[]),
+            lambda c: c["reviewedRanges"][0].update(assessmentIds=["SEF1-AS1", "SEF1-AS1"]),
+            lambda c: c["reviewedRanges"][1].update(assessmentIds=["SEF1-AS1"]),
+            lambda c: c["reviewedRanges"].append(copy.deepcopy(c["reviewedRanges"][0])),
+            lambda c: c.update(applicability="manual-resolution-required"),
+        ):
+            changed = copy.deepcopy(context)
+            mutate(changed)
+            seal(changed)
+            with self.subTest(context=changed), self.assertRaises(ValueError):
+                check(changed, export, hashes)

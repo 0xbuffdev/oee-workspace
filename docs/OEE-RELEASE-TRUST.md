@@ -1,6 +1,6 @@
 # Approved OEE software and curriculum selection
 
-Workspace selects the Toolkit software and the signed curriculum independently. The values below identify the approved distributions, source release and steward public key. Changes require maintainer review.
+Workspace selects the Toolkit software and the signed curriculum independently. The values below identify the approved distributions, source release and steward public key. Changes require maintainer review. The software lock is the machine-readable owner of the Toolkit version, rule set, distribution sizes and hashes, and independently reviewed steward fingerprint. The table records their human-readable provenance. The installer separately pins the signed curriculum assets; those pins do not change with a software upgrade.
 
 | Property | Approved value |
 | --- | --- |
